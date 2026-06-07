@@ -3,295 +3,481 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FileVault — Secure File Storage</title>
+  <title>SYNTHEXCLUSIVE™ — File Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --g:   #00ff41;
+      --gd:  #00cc33;
+      --glow: rgba(0,255,65,0.15);
+      --k:   #080808;
+      --d1:  #0d0d0d;
+      --d2:  #111111;
+      --d3:  #161616;
+      --d4:  #1c1c1c;
+      --b:   rgba(255,255,255,0.08);
+      --b2:  rgba(255,255,255,0.13);
+      --bg:  rgba(0,255,65,0.12);
+      --w:   #ffffff;
+      --gr:  #888888;
+      --gr2: #444444;
+      --fh: 'Bebas Neue', sans-serif;
+      --fb: 'Space Grotesk', sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--k);
+      color: var(--w);
+      font-family: var(--fb);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Noise ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(8,8,8,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--b);
+    }
+    .nav-logo { font-family: var(--fh); font-size: 1.4rem; letter-spacing: 0.1em; }
+    .nav-logo span { color: var(--g); }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a {
+      font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--gr); transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--w); }
+    .nav-tag {
+      background: var(--bg); border: 1px solid rgba(0,255,65,0.3);
+      color: var(--g); font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 4px 10px; border-radius: 2px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 140px 32px 80px;
+      max-width: 1200px; margin: 0 auto;
+      position: relative;
+    }
+    .hero-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--bg); border: 1px solid rgba(0,255,65,0.25);
+      color: var(--g); font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      padding: 6px 14px; border-radius: 2px; margin-bottom: 24px;
+    }
+    .hero-label::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--g); animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+    .hero h1 {
+      font-family: var(--fh); font-size: clamp(3rem, 7vw, 6rem);
+      line-height: 0.95; letter-spacing: 0.02em;
+      margin-bottom: 24px;
+    }
+    .hero h1 .accent { color: var(--g); }
+    .hero p {
+      font-size: 1.05rem; color: var(--gr); max-width: 520px;
+      line-height: 1.65; margin-bottom: 40px;
+    }
+
+    .hero-stats {
+      display: flex; gap: 40px; flex-wrap: wrap;
+    }
+    .stat-val {
+      font-family: var(--fh); font-size: 1.8rem; color: var(--g); letter-spacing: 0.04em;
+    }
+    .stat-lbl { font-size: 0.78rem; color: var(--gr); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+
+    /* ── Section ── */
+    section {
+      max-width: 1200px; margin: 0 auto;
+      padding: 60px 32px;
+    }
+    .section-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 32px; gap: 16px;
+      border-bottom: 1px solid var(--b); padding-bottom: 20px;
+    }
+    .section-head-left {}
+    .section-badge {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--g); margin-bottom: 6px;
+    }
+    .section-title {
+      font-family: var(--fh); font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: 0.04em; line-height: 1;
+    }
+    .section-count {
+      font-size: 0.8rem; color: var(--gr); font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ── File Grid ── */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    /* ── File Card ── */
+    .file-card {
+      background: var(--d2);
+      border: 1px solid var(--b);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: all 0.3s var(--ease);
+      cursor: pointer;
+      position: relative;
+    }
+    .file-card:hover {
+      border-color: rgba(0,255,65,0.35);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,65,0.1);
+    }
+
+    /* Preview area */
+    .card-preview {
+      height: 180px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--b);
+    }
+    .card-preview embed, .card-preview iframe {
+      width: 100%; height: 100%;
+      pointer-events: none;
+      border: none;
+    }
+    .card-preview-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; width: 100%; height: 100%;
+    }
+    .preview-icon { opacity: 0.5; }
+    .preview-ext {
+      font-family: var(--fh); font-size: 1.6rem; letter-spacing: 0.1em;
+      color: var(--g); opacity: 0.8;
+    }
+
+    /* Card overlay on hover */
+    .card-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,255,65,0.07);
+      opacity: 0; transition: opacity 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
+    }
+    .file-card:hover .card-overlay { opacity: 1; }
+    .overlay-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 9px 16px; border-radius: 3px;
+      font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      cursor: pointer; border: none; font-family: var(--fb);
+      transition: all 0.15s;
+    }
+    .overlay-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .overlay-btn--dl {
+      background: var(--g); color: var(--k);
+    }
+    .overlay-btn--dl:hover { background: var(--gd); }
+    .overlay-btn--view {
+      background: rgba(255,255,255,0.1); color: var(--w);
+      border: 1px solid var(--b2);
+    }
+    .overlay-btn--view:hover { background: rgba(255,255,255,0.18); }
+
+    /* Card body */
+    .card-body { padding: 16px 18px 18px; }
+    .card-type-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .card-type {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; padding: 3px 8px; border-radius: 2px;
+    }
+    .type-pdf  { background: rgba(239,68,68,0.12); color: #f87171; }
+    .type-pages { background: rgba(59,130,246,0.12); color: #60a5fa; }
+    .type-doc  { background: rgba(59,130,246,0.12); color: #60a5fa; }
+    .type-zip  { background: rgba(245,158,11,0.12); color: #fbbf24; }
+
+    .card-size { font-size: 0.75rem; color: var(--gr); }
+
+    .card-name {
+      font-size: 1rem; font-weight: 600; line-height: 1.3; margin-bottom: 6px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-desc { font-size: 0.82rem; color: var(--gr); line-height: 1.5; }
+
+    .card-footer {
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid var(--b);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-date { font-size: 0.75rem; color: var(--gr2); }
+    .card-dl-link {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; font-weight: 600; color: var(--g);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      transition: opacity 0.2s;
+    }
+    .card-dl-link svg { width: 13px; height: 13px; }
+    .card-dl-link:hover { opacity: 0.7; }
+
+    /* ── Divider ── */
+    .divider {
+      max-width: 1200px; margin: 0 auto;
+      border: none; border-top: 1px solid var(--b);
+    }
+
+    /* ── Footer ── */
+    footer {
+      max-width: 1200px; margin: 0 auto;
+      padding: 40px 32px 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .footer-logo { font-family: var(--fh); font-size: 1.1rem; letter-spacing: 0.1em; }
+    .footer-logo span { color: var(--g); }
+    .footer-copy { font-size: 0.78rem; color: var(--gr2); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--k); }
+    ::-webkit-scrollbar-thumb { background: var(--gr2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gr); }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      nav { padding: 0 16px; }
+      .nav-links { display: none; }
+      .hero { padding: 110px 16px 60px; }
+      section { padding: 40px 16px; }
+      .file-grid { grid-template-columns: 1fr; }
+      .hero-stats { gap: 24px; }
+      footer { padding: 32px 16px 48px; }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- ═══════════════ AUTH VIEW ═══════════════ -->
-  <div class="view" id="view-auth">
-    <div class="noise"></div>
-    <div class="auth-wrap">
-      <div class="auth-logo">FILE<span>VAULT</span></div>
-      <p class="auth-tagline">Secure. Fast. Yours.</p>
-      <div class="auth-card">
-        <div class="auth-tabs">
-          <button class="auth-tab active" data-tab="login">Sign In</button>
-          <button class="auth-tab" data-tab="register">Register</button>
-        </div>
-        <form class="auth-form" id="auth-form" novalidate>
-          <div class="field">
-            <label>Email</label>
-            <input type="email" id="auth-email" placeholder="your@email.com" autocomplete="email" />
-          </div>
-          <div class="field">
-            <label>Password</label>
-            <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
-          </div>
-          <div class="field" id="field-name" style="display:none">
-            <label>Display Name <span class="optional">(optional)</span></label>
-            <input type="text" id="auth-name" placeholder="Your name" autocomplete="name" />
-          </div>
-          <div class="auth-error" id="auth-error" style="display:none"></div>
-          <button type="submit" class="btn btn--green btn--full" id="auth-submit">
-            <span id="auth-btn-text">Sign In</span>
-            <div class="btn-spinner hidden" id="auth-spinner"></div>
-          </button>
-        </form>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">SYNTH<span>EXCLUSIVE</span>™</div>
+    <div class="nav-links">
+      <a href="#design">Design</a>
+      <a href="#strategy">Strategy</a>
+      <a href="#assets">Assets</a>
+      <a href="mailto:hello@synthexclusive.com">Contact</a>
+      <span class="nav-tag">FILE HUB</span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">Internal File Hub</div>
+    <h1>
+      ALL YOUR<br>
+      FILES IN<br>
+      <span class="accent">ONE PLACE.</span>
+    </h1>
+    <p>
+      Designs, strategies, and assets — organised by category.
+      Download what you need, whenever you need it.
+    </p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-val">3</div>
+        <div class="stat-lbl">Sections</div>
+      </div>
+      <div>
+        <div class="stat-val">3</div>
+        <div class="stat-lbl">Files</div>
+      </div>
+      <div>
+        <div class="stat-val">2.3 MB</div>
+        <div class="stat-lbl">Total Size</div>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════ DASHBOARD VIEW ═══════════════ -->
-  <div class="view hidden" id="view-dashboard">
-
-    <!-- Header -->
-    <header class="header" id="header">
-      <div class="header__logo">FILE<span>VAULT</span></div>
-      <div class="header__search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="search-input" placeholder="Search files..." />
-        <div class="search-results hidden" id="search-results"></div>
+  <!-- ═══ SECTION: DESIGN ═══ -->
+  <section id="design">
+    <div class="section-head">
+      <div class="section-head-left">
+        <div class="section-badge">01 — Web Design</div>
+        <div class="section-title">DESIGN FILES</div>
       </div>
-      <div class="header__user">
-        <div class="user-avatar" id="user-avatar">U</div>
-        <span class="user-email" id="user-email-display"></span>
-        <button class="btn btn--ghost btn--sm" id="logout-btn">Logout</button>
-      </div>
-    </header>
-
-    <div class="layout">
-
-      <!-- Sidebar -->
-      <aside class="sidebar" id="sidebar">
-        <button class="btn btn--green btn--full upload-main-btn" id="upload-btn-sidebar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Upload Files
-        </button>
-
-        <nav class="sidebar__nav">
-          <a href="#" class="sidebar__link active" data-nav="my-files">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            My Files
-          </a>
-          <a href="#" class="sidebar__link" data-nav="shared">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Shared Links
-          </a>
-        </nav>
-
-        <div class="sidebar__storage">
-          <div class="storage-header">
-            <span>Storage</span>
-            <span id="storage-text" class="storage-amount">—</span>
-          </div>
-          <div class="storage-bar">
-            <div class="storage-fill" id="storage-fill"></div>
-          </div>
-          <div class="storage-limit">of 1 GB free</div>
-        </div>
-      </aside>
-
-      <!-- Main -->
-      <main class="main" id="main-content">
-
-        <!-- My Files view -->
-        <div id="view-files">
-          <!-- Toolbar -->
-          <div class="toolbar">
-            <div class="breadcrumb" id="breadcrumb">
-              <button class="bc-item" data-path="">Home</button>
-            </div>
-            <div class="toolbar__actions">
-              <button class="btn btn--ghost btn--sm" id="new-folder-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-                New Folder
-              </button>
-              <div class="view-toggle">
-                <button class="view-btn active" id="btn-grid-view" title="Grid">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-                </button>
-                <button class="view-btn" id="btn-list-view" title="List">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Upload progress area -->
-          <div class="upload-progress-area hidden" id="upload-progress-area"></div>
-
-          <!-- Drop overlay -->
-          <div class="drop-overlay hidden" id="drop-overlay">
-            <div class="drop-overlay__inner">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <p>Drop files to upload</p>
-            </div>
-          </div>
-
-          <!-- File container -->
-          <div class="file-container grid-view" id="file-container"></div>
-
-          <!-- States -->
-          <div class="state-box hidden" id="state-loading">
-            <div class="spinner"></div>
-          </div>
-          <div class="state-box hidden" id="state-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            <h3>Empty folder</h3>
-            <p>Upload files or create a folder to get started</p>
-            <button class="btn btn--green" id="upload-btn-empty">Upload Files</button>
-          </div>
-        </div>
-
-        <!-- Shared Links view -->
-        <div id="view-shared" class="hidden">
-          <div class="toolbar">
-            <h2 class="section-title">Shared Links</h2>
-          </div>
-          <div id="shared-list" class="shared-list"></div>
-          <div class="state-box hidden" id="state-shared-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            <h3>No shared links</h3>
-            <p>Share a file to generate a link</p>
-          </div>
-        </div>
-
-      </main>
+      <div class="section-count">1 file</div>
     </div>
-  </div>
 
-  <!-- ═══════════════ MODALS ═══════════════ -->
+    <div class="file-grid">
 
-  <!-- New Folder Modal -->
-  <div class="modal-backdrop hidden" id="modal-folder">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal__header">
-        <h3>New Folder</h3>
-        <button class="modal__close" data-modal="modal-folder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal__body">
-        <div class="field">
-          <label>Folder Name</label>
-          <input type="text" id="folder-name-input" placeholder="Documents" maxlength="64" />
+      <!-- synthexclusive-website.pdf -->
+      <div class="file-card">
+        <div class="card-preview">
+          <embed src="files/design/synthexclusive-website.pdf#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" />
+          <div class="card-overlay">
+            <a class="overlay-btn overlay-btn--view" href="files/design/synthexclusive-website.pdf" target="_blank">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              View
+            </a>
+            <a class="overlay-btn overlay-btn--dl" href="files/design/synthexclusive-website.pdf" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+          </div>
         </div>
-      </div>
-      <div class="modal__footer">
-        <button class="btn btn--ghost" data-modal="modal-folder">Cancel</button>
-        <button class="btn btn--green" id="create-folder-confirm">Create Folder</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Rename Modal -->
-  <div class="modal-backdrop hidden" id="modal-rename">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal__header">
-        <h3>Rename</h3>
-        <button class="modal__close" data-modal="modal-rename">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal__body">
-        <div class="field">
-          <label>New Name</label>
-          <input type="text" id="rename-input" placeholder="New name" maxlength="128" />
-        </div>
-      </div>
-      <div class="modal__footer">
-        <button class="btn btn--ghost" data-modal="modal-rename">Cancel</button>
-        <button class="btn btn--green" id="rename-confirm">Rename</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Share Modal -->
-  <div class="modal-backdrop hidden" id="modal-share">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal__header">
-        <h3>Share File</h3>
-        <button class="modal__close" data-modal="modal-share">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal__body">
-        <div class="share-file-name" id="share-file-name"></div>
-        <div class="field">
-          <label>Link Expires In</label>
-          <select id="share-expiry">
-            <option value="3600">1 hour</option>
-            <option value="86400" selected>24 hours</option>
-            <option value="604800">7 days</option>
-            <option value="2592000">30 days</option>
-          </select>
-        </div>
-        <button class="btn btn--green btn--full" id="generate-link-btn">Generate Link</button>
-        <div class="share-link-wrap hidden" id="share-link-wrap">
-          <div class="field">
-            <label>Shareable Link</label>
-            <div class="link-row">
-              <input type="text" id="share-link-input" readonly />
-              <button class="btn btn--ghost btn--sm" id="copy-link-btn">Copy</button>
-            </div>
+        <div class="card-body">
+          <div class="card-type-row">
+            <span class="card-type type-pdf">PDF</span>
+            <span class="card-size">233 KB</span>
+          </div>
+          <div class="card-name">SYNTHEXCLUSIVE™ Website Design</div>
+          <div class="card-desc">
+            Full landing page design — AI Influencer Architect. Includes hero, models showcase, product pricing, courses, and client results.
+          </div>
+          <div class="card-footer">
+            <span class="card-date">Jun 2025</span>
+            <a class="card-dl-link" href="files/design/synthexclusive-website.pdf" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
           </div>
         </div>
       </div>
+
     </div>
-  </div>
+  </section>
 
-  <!-- Delete Confirm Modal -->
-  <div class="modal-backdrop hidden" id="modal-delete">
-    <div class="modal modal--sm" role="dialog" aria-modal="true">
-      <div class="modal__header">
-        <h3>Delete</h3>
-        <button class="modal__close" data-modal="modal-delete">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+  <hr class="divider" />
+
+  <!-- ═══ SECTION: STRATEGY ═══ -->
+  <section id="strategy">
+    <div class="section-head">
+      <div class="section-head-left">
+        <div class="section-badge">02 — Marketing</div>
+        <div class="section-title">STRATEGY DOCS</div>
       </div>
-      <div class="modal__body">
-        <p class="delete-msg" id="delete-msg">Are you sure you want to delete this item? This cannot be undone.</p>
-      </div>
-      <div class="modal__footer">
-        <button class="btn btn--ghost" data-modal="modal-delete">Cancel</button>
-        <button class="btn btn--danger" id="delete-confirm">Delete</button>
-      </div>
+      <div class="section-count">1 file</div>
     </div>
-  </div>
 
-  <!-- Context Menu -->
-  <div class="ctx-menu hidden" id="ctx-menu">
-    <button class="ctx-item" data-action="download">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download
-    </button>
-    <button class="ctx-item" data-action="share">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      Share Link
-    </button>
-    <button class="ctx-item" data-action="rename">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      Rename
-    </button>
-    <div class="ctx-sep"></div>
-    <button class="ctx-item ctx-danger" data-action="delete">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-      Delete
-    </button>
-  </div>
+    <div class="file-grid">
 
-  <!-- Hidden file input -->
-  <input type="file" id="file-input" multiple hidden />
+      <!-- content-strategy.pdf -->
+      <div class="file-card">
+        <div class="card-preview">
+          <embed src="files/strategy/content-strategy.pdf#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf" />
+          <div class="card-overlay">
+            <a class="overlay-btn overlay-btn--view" href="files/strategy/content-strategy.pdf" target="_blank">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              View
+            </a>
+            <a class="overlay-btn overlay-btn--dl" href="files/strategy/content-strategy.pdf" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-type-row">
+            <span class="card-type type-pdf">PDF</span>
+            <span class="card-size">1.3 MB</span>
+          </div>
+          <div class="card-name">Content Evolution: Transform Your Content for Success</div>
+          <div class="card-desc">
+            Full content strategy guide — audience analysis, video &amp; AR formats, SEO optimisation, engagement tactics, and performance tracking.
+          </div>
+          <div class="card-footer">
+            <span class="card-date">Jun 2025</span>
+            <a class="card-dl-link" href="files/strategy/content-strategy.pdf" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+          </div>
+        </div>
+      </div>
 
-  <!-- Toast container -->
-  <div class="toast-wrap" id="toast-wrap"></div>
+    </div>
+  </section>
 
-  <script src="config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="app.js"></script>
+  <hr class="divider" />
+
+  <!-- ═══ SECTION: ASSETS ═══ -->
+  <section id="assets">
+    <div class="section-head">
+      <div class="section-head-left">
+        <div class="section-badge">03 — Documents</div>
+        <div class="section-title">ASSETS & DOCS</div>
+      </div>
+      <div class="section-count">1 file</div>
+    </div>
+
+    <div class="file-grid">
+
+      <!-- document.pages -->
+      <div class="file-card">
+        <div class="card-preview">
+          <div class="card-preview-placeholder">
+            <svg class="preview-icon" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <div class="preview-ext">PAGES</div>
+          </div>
+          <div class="card-overlay">
+            <a class="overlay-btn overlay-btn--dl" href="files/assets/document.pages" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-type-row">
+            <span class="card-type type-pages">PAGES</span>
+            <span class="card-size">765 KB</span>
+          </div>
+          <div class="card-name">Document (Apple Pages)</div>
+          <div class="card-desc">
+            Apple Pages document. Open with Pages on macOS / iOS, or import into Google Docs.
+          </div>
+          <div class="card-footer">
+            <span class="card-date">Jun 2025</span>
+            <a class="card-dl-link" href="files/assets/document.pages" download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">SYNTH<span>EXCLUSIVE</span>™</div>
+    <div class="footer-copy">© 2025 SYNTHEXCLUSIVE™. All Rights Reserved.</div>
+  </footer>
+
 </body>
 </html>
