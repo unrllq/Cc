@@ -926,6 +926,102 @@ body.cursor-hover .cursor-follower { width: 48px; height: 48px; border-color: va
 .parallax-img { will-change: transform; }
 .parallax-slow { will-change: transform; }
 
+/* ============ HERO REAL IMAGE ============ */
+.hero__real-img {
+  width: 100%; aspect-ratio: 3/4; object-fit: cover;
+  display: block; filter: grayscale(15%) contrast(1.05);
+  transition: filter 0.6s var(--ease-out), transform 0.8s var(--ease-out);
+}
+.hero__image-wrap:hover .hero__real-img {
+  filter: grayscale(0%) contrast(1.1);
+  transform: scale(1.02);
+}
+
+/* ============ RETREAT CARD PHOTO ============ */
+.retreat-card__photo {
+  width: calc(100% + 72px); margin: 0 -36px 20px;
+  overflow: hidden; height: 180px;
+}
+.retreat-card__photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.8s var(--ease-out), filter 0.5s;
+  filter: grayscale(20%) brightness(0.85);
+}
+.retreat-card:hover .retreat-card__photo img {
+  transform: scale(1.05); filter: grayscale(0%) brightness(0.9);
+}
+
+/* ============ SESSIONS PORTRAIT REAL IMG ============ */
+.sessions__portrait {
+  width: 100%; max-width: 360px;
+  border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; align-self: flex-end;
+}
+.sessions__portrait-img {
+  width: 100%; display: block; object-fit: cover;
+  aspect-ratio: 4/5;
+  filter: saturate(1.1) contrast(1.05);
+  transition: transform 0.8s var(--ease-out), filter 0.5s;
+}
+.sessions__portrait:hover .sessions__portrait-img {
+  transform: scale(1.04); filter: saturate(1.2) contrast(1.1);
+}
+
+/* ============ PHOTO STRIP ============ */
+.photo-strip {
+  overflow: hidden; border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--black);
+}
+.photo-strip__track {
+  display: flex; gap: 2px; height: 320px;
+  animation: strip-drift 0.001s linear; /* will be driven by JS */
+}
+.photo-strip__item {
+  flex: 1; min-width: 220px; position: relative; overflow: hidden; cursor: none;
+}
+.photo-strip__item--wide { flex: 1.6; }
+.photo-strip__item img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.8s var(--ease-out), filter 0.5s;
+  filter: grayscale(40%) brightness(0.7);
+}
+.photo-strip__item:hover img {
+  transform: scale(1.08); filter: grayscale(0%) brightness(0.9);
+}
+.photo-strip__overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: flex-end; padding: 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.photo-strip__item:hover .photo-strip__overlay { opacity: 1; }
+.photo-strip__overlay span {
+  font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--white);
+}
+
+/* ============ SUBSCRIBE PHONE ============ */
+.subscribe__container--3col {
+  grid-template-columns: 1fr auto 1fr !important;
+  gap: 60px !important;
+  align-items: center !important;
+}
+.subscribe__phone {
+  display: flex; align-items: center; justify-content: center;
+}
+.subscribe__phone-img {
+  width: 180px; height: auto; object-fit: cover;
+  border-radius: 24px; border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  transition: transform 0.6s var(--ease-out), box-shadow 0.6s;
+  transform: rotate(-4deg);
+}
+.subscribe__phone:hover .subscribe__phone-img {
+  transform: rotate(0deg) translateY(-8px);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 40px rgba(0,255,65,0.08);
+}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width: 1200px) {
   .sound__container { grid-template-columns: 1fr 1fr; gap: 40px; }
@@ -953,6 +1049,8 @@ body.cursor-hover .cursor-follower { width: 48px; height: 48px; border-color: va
 
   .location__container { grid-template-columns: 1fr; }
   .subscribe__container { grid-template-columns: 1fr; }
+  .subscribe__container--3col { grid-template-columns: 1fr !important; }
+  .subscribe__phone { display: none; }
 
   .stats-bar__inner { flex-wrap: wrap; }
   .stat-divider { display: none; }
@@ -969,4 +1067,6 @@ body.cursor-hover .cursor-follower { width: 48px; height: 48px; border-color: va
   .offerings__grid { grid-template-columns: 1fr; }
   .sessions__grid { grid-template-columns: 1fr; }
   .hero__actions { flex-direction: column; align-items: flex-start; }
+  .photo-strip__track { height: 200px; }
+  .photo-strip__item { min-width: 140px; }
 }
