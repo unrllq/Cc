@@ -843,6 +843,23 @@ body.cursor-hover .cursor-follower { width: 48px; height: 48px; border-color: va
 .parallax-img { will-change: transform; }
 .parallax-slow { will-change: transform; }
 
+/* ============ HERO VIDEO ============ */
+.hero__video-bg {
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
+}
+.hero__video {
+  width: 100%; height: 100%; object-fit: cover;
+  opacity: 0.18;
+}
+.hero__video-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right, rgba(8,8,8,0.95) 40%, rgba(8,8,8,0.3) 100%);
+}
+.hero__bg-grid { z-index: 1; }
+.hero__content { position: relative; z-index: 2; }
+.hero__scroll-hint { position: relative; z-index: 2; }
+.hero__marquee { position: relative; z-index: 2; }
+
 /* ============ HERO PHOTO ============ */
 .hero__photo {
   width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;
@@ -884,6 +901,30 @@ body.cursor-hover .cursor-follower { width: 48px; height: 48px; border-color: va
   transition: transform 0.8s var(--ease-out), filter 0.5s;
 }
 .sessions__portrait:hover .sessions__portrait-img { transform: scale(1.04); }
+
+/* ============ LOCATION VENUE ============ */
+.location__venue {
+  position: relative; overflow: hidden; border-radius: 4px;
+  border: 1px solid var(--border); cursor: none;
+}
+.location__venue-img {
+  width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;
+  filter: brightness(0.75) saturate(0.9);
+  transition: transform 0.8s var(--ease-out), filter 0.5s;
+}
+.location__venue:hover .location__venue-img {
+  transform: scale(1.04); filter: brightness(0.9) saturate(1);
+}
+.location__venue-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+}
+.location__venue-tag {
+  font-size: 0.625rem; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--green);
+  background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 2px;
+  border: 1px solid var(--border-green);
+}
 
 /* ============ OFFERINGS VISUAL ============ */
 .offerings__visual {
