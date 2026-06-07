@@ -11,14 +11,11 @@
 </head>
 <body>
 
-  <!-- Custom Cursor -->
   <div class="cursor" id="cursor"></div>
   <div class="cursor-follower" id="cursor-follower"></div>
-
-  <!-- Noise Overlay -->
   <div class="noise"></div>
 
-  <!-- ======= NAVIGATION ======= -->
+  <!-- NAV -->
   <nav class="nav" id="nav">
     <div class="nav__logo">FRAU WONG HAUS</div>
     <ul class="nav__links">
@@ -34,7 +31,6 @@
     </button>
   </nav>
 
-  <!-- Mobile Menu -->
   <div class="mobile-menu" id="mobileMenu">
     <ul>
       <li><a href="#about">About</a></li>
@@ -46,6 +42,7 @@
   </div>
 
   <!-- ======= HERO ======= -->
+  <!-- Photo: mockup-macbook-green.jpeg — dramatic held MacBook, green screen = brand color -->
   <section class="hero" id="hero">
     <div class="hero__bg-grid"></div>
 
@@ -87,7 +84,7 @@
         </div>
         <div class="hero__image-wrap parallax-img">
           <div class="hero__image-border"></div>
-          <img src="img/macbook-air.jpeg" alt="MacBook at venue" class="hero__real-img" />
+          <img src="img/mockup-macbook-green.jpeg" alt="Stage setup" class="hero__photo" />
           <div class="hero__image-tag">Next<br/>Artist</div>
         </div>
       </div>
@@ -106,7 +103,8 @@
     </div>
   </section>
 
-  <!-- ======= SOUND SECTION ======= -->
+  <!-- ======= SOUND / ABOUT ======= -->
+  <!-- Photo: img-3933.jpeg — постер на кожаном диване, тёмно-редакционный, underground Berlin -->
   <section class="sound" id="about">
     <div class="sound__container">
       <div class="sound__left">
@@ -125,33 +123,9 @@
       </div>
 
       <div class="sound__center">
-        <div class="sound__visual parallax-slow">
-          <div class="chrome-face">
-            <div class="chrome-head">
-              <div class="chrome-eye left"></div>
-              <div class="chrome-eye right"></div>
-              <div class="chrome-nose"></div>
-              <div class="chrome-mouth"></div>
-              <div class="chrome-shine"></div>
-            </div>
-            <div class="speaker speaker-left">
-              <div class="speaker-ring r1"></div>
-              <div class="speaker-ring r2"></div>
-              <div class="speaker-ring r3"></div>
-              <div class="speaker-dot"></div>
-            </div>
-            <div class="speaker speaker-right">
-              <div class="speaker-ring r1"></div>
-              <div class="speaker-ring r2"></div>
-              <div class="speaker-ring r3"></div>
-              <div class="speaker-dot"></div>
-            </div>
-          </div>
-          <div class="sound-waves">
-            <div class="wave w1"></div>
-            <div class="wave w2"></div>
-            <div class="wave w3"></div>
-          </div>
+        <div class="sound__photo-wrap parallax-slow reveal-fade delay-1">
+          <img src="img/img-3933.jpeg" alt="The space" class="sound__photo" />
+          <div class="sound__photo-caption">Berlin Underground</div>
         </div>
       </div>
 
@@ -161,9 +135,6 @@
             <span class="dot dot--green"></span> Featured
           </div>
           <h3 class="retreat-card__title">Hidden<br/>Retreat<br/>in Berlin.</h3>
-          <div class="retreat-card__photo">
-            <img src="img/img-3933.jpeg" alt="Venue atmosphere" />
-          </div>
           <p class="retreat-card__body">
             From creative dreams after entering — a sanctuary for those who seek deeper connection through sound.
           </p>
@@ -178,7 +149,7 @@
     </div>
   </section>
 
-  <!-- ======= STATS BAR ======= -->
+  <!-- STATS -->
   <div class="stats-bar">
     <div class="stats-bar__inner">
       <div class="stat-item reveal-up">
@@ -203,7 +174,8 @@
     </div>
   </div>
 
-  <!-- ======= MORNING RAVE SESSIONS ======= -->
+  <!-- ======= SESSIONS ======= -->
+  <!-- Photo: velto-iphone.jpeg — лаймовый зелёный фон = энергетика рейва, портретный формат -->
   <section class="sessions" id="sessions">
     <div class="sessions__container">
       <div class="sessions__left">
@@ -253,13 +225,14 @@
         </div>
 
         <div class="sessions__portrait parallax-img reveal-fade delay-3">
-          <img src="img/velto-iphone.jpeg" alt="Mobile experience" class="sessions__portrait-img" />
+          <img src="img/velto-iphone.jpeg" alt="Digital access" class="sessions__portrait-img" />
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ======= OFFERINGS GRID ======= -->
+  <!-- ======= OFFERINGS ======= -->
+  <!-- Photo: macbook-air.jpeg — чистый MacBook на столе, кто-то тянется. Визуальный разделитель между сеткой и CTA -->
   <section class="offerings" id="program">
     <div class="offerings__header">
       <div class="offerings__label reveal-up">
@@ -326,46 +299,17 @@
       </div>
     </div>
 
+    <div class="offerings__visual reveal-fade delay-1">
+      <img src="img/macbook-air.jpeg" alt="Tech setup" class="offerings__visual-img" />
+      <div class="offerings__visual-text">
+        <span>Full lineup available digitally</span>
+      </div>
+    </div>
+
     <div class="offerings__cta reveal-up delay-2">
       <a href="#subscribe" class="btn btn--full-program">View Full Program</a>
     </div>
   </section>
-
-  <!-- ======= PHOTO STRIP ======= -->
-  <div class="photo-strip">
-    <div class="photo-strip__track">
-      <div class="photo-strip__item">
-        <img src="img/mockup-macbook-green.jpeg" alt="Production" />
-        <div class="photo-strip__overlay">
-          <span>Stage Setup</span>
-        </div>
-      </div>
-      <div class="photo-strip__item photo-strip__item--wide">
-        <img src="img/macbook-air.jpeg" alt="Equipment" />
-        <div class="photo-strip__overlay">
-          <span>Tech Rider</span>
-        </div>
-      </div>
-      <div class="photo-strip__item">
-        <img src="img/velto-iphone.jpeg" alt="Mobile" />
-        <div class="photo-strip__overlay">
-          <span>Digital Pass</span>
-        </div>
-      </div>
-      <div class="photo-strip__item photo-strip__item--wide">
-        <img src="img/img-3933.jpeg" alt="Lounge" />
-        <div class="photo-strip__overlay">
-          <span>Lounge Space</span>
-        </div>
-      </div>
-      <div class="photo-strip__item">
-        <img src="img/travel-app-iphone.jpeg" alt="Navigation" />
-        <div class="photo-strip__overlay">
-          <span>Journey</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ======= LOCATION ======= -->
   <section class="location" id="location">
@@ -417,7 +361,7 @@
 
   <!-- ======= SUBSCRIBE ======= -->
   <section class="subscribe" id="subscribe">
-    <div class="subscribe__container subscribe__container--3col">
+    <div class="subscribe__container">
       <div class="subscribe__left">
         <div class="subscribe__label reveal-up">
           <span class="dot dot--green"></span> Early Access
@@ -428,10 +372,6 @@
           <span class="reveal-line">and early</span>
           <span class="reveal-line">access.</span>
         </h2>
-      </div>
-
-      <div class="subscribe__phone reveal-fade delay-1">
-        <img src="img/travel-app-iphone.jpeg" alt="App experience" class="subscribe__phone-img" />
       </div>
 
       <div class="subscribe__right reveal-fade delay-2">
@@ -454,7 +394,7 @@
     </div>
   </section>
 
-  <!-- ======= FOOTER ======= -->
+  <!-- FOOTER -->
   <footer class="footer" id="contact">
     <div class="footer__top">
       <div class="footer__logo">FRAU WONG HAUS</div>
@@ -479,7 +419,6 @@
     </div>
   </footer>
 
-  <!-- Success Toast -->
   <div class="toast" id="toast">
     <span class="dot dot--green"></span> You're on the list. See you in Berlin.
   </div>
