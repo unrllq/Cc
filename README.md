@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SYNTEZIS INCUBATOR
 
-## Getting Started
+European incubator for digital influencers & synthetic media — Berlin.
 
-First, run the development server:
+A fully functional demo site built with **Next.js (App Router) · TypeScript · Tailwind CSS v4 · framer-motion**, following a shadcn-style `components/ui` structure.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+
+- **Next.js 16** (App Router, React 19)
+- **TypeScript**, strict mode
+- **Tailwind CSS v4** (`@theme` design tokens in `app/globals.css`)
+- **framer-motion** for scroll reveals, the hero mechanic and micro-interactions
+- **class-variance-authority** + `cn()` (clsx + tailwind-merge) for shadcn-style variant components
+- No backend — all "live" data lives in `lib/data.ts` and interactive state (applications, reservations, saved creators, membership, content calendar) is persisted to `localStorage`
+
+## Structure
+
+```
+app/                    Routes (home, program, studio, creators, community,
+                         apply, membership, brands, about, contact, journal,
+                         workspace, legal)
+components/ui/          shadcn-style primitives (button, dialog, sheet, tabs,
+                         accordion, field, toast…) + the scroll-morph hero
+components/site/        Page-level sections and composed components
+lib/data.ts             Demo dataset: 8 cities, 20 creators, 30 projects,
+                         12 events, 15 brand opportunities, 10 articles, 8 mentors
+lib/avatar.ts           Procedural SVG "synthetic portrait" generator
+                         (no stock photography — every portrait is generated)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Develop
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Build
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build
+npm start
+```

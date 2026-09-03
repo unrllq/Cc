@@ -3,6 +3,14 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, useTransform, useSpring, useMotionValue } from "framer-motion";
 import { generateAvatar } from "@/lib/avatar";
+import { hashSeed } from "@/lib/utils";
+
+/** Deterministic pseudo-random in [0, 1), seeded per index — keeps the
+ * scatter intro reproducible instead of relying on impure Math.random(). */
+function seededRandom(seed: number) {
+  const x = Math.sin(seed * 999) * 10000;
+  return x - Math.floor(x);
+}
 
 // --- Types ---
 export type AnimationPhase = "scatter" | "line" | "circle" | "bottom-strip";
@@ -163,15 +171,15 @@ export default function ScrollMorphHero() {
   }, []);
 
   const scatterPositions = useMemo(() => {
-    return IMAGES.map(() => ({
-      x: (Math.random() - 0.5) * 1500,
-      y: (Math.random() - 0.5) * 1000,
-      rotation: (Math.random() - 0.5) * 180,
+    const base = hashSeed("syntezis-scatter");
+    return IMAGES.map((_, i) => ({
+      x: (seededRandom(base + i * 3) - 0.5) * 1500,
+      y: (seededRandom(base + i * 3 + 1) - 0.5) * 1000,
+      rotation: (seededRandom(base + i * 3 + 2) - 0.5) * 180,
       scale: 0.6,
       opacity: 0,
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [IMAGES]);
 
   const [morphValue, setMorphValue] = useState(0);
   const [rotateValue, setRotateValue] = useState(0);

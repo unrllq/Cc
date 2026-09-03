@@ -29,7 +29,10 @@ export function SiteNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => setMenuOpen(false), [pathname]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMenuOpen(false);
+  }, [pathname]);
 
   return (
     <>

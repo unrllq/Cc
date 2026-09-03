@@ -8,9 +8,12 @@ export function useLocalSet(key: string) {
   const [ids, setIds] = useState<Set<string>>(new Set());
   const [hydrated, setHydrated] = useState(false);
 
+  // Hydrate from localStorage after mount — this intentionally syncs
+  // in-memory state with the browser's persisted state on mount/key change.
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(key);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setIds(new Set(JSON.parse(raw)));
     } catch {
       // ignore malformed/unavailable storage
@@ -44,7 +47,11 @@ export function useLocalSet(key: string) {
   const toggle = useCallback(
     (id: string) => {
       const next = new Set(ids);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       persist(next);
     },
     [ids, persist]
