@@ -1,17 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
+import { getCreator } from "@/lib/data";
 
 const ROLES = ["Creator", "Brand", "Agency", "Investor", "Partner", "Media"];
 
-export function ContactForm({ prefillMessage }: { prefillMessage?: string }) {
+export function ContactForm() {
+  const searchParams = useSearchParams();
   const [role, setRole] = useState("");
-  const [message, setMessage] = useState(prefillMessage ?? "");
+  const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const { push } = useToast();
+
+  useEffect(() => {
+    const creatorSlug = searchParams.get("creator");
+    const creator = creatorSlug ? getCreator(creatorSlug) : undefined;
+    if (creator) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMessage(`Hi — I'd like to get in touch about a collaboration with ${creator.name}.`);
+    }
+  }, [searchParams]);
 
   if (sent) {
     return (

@@ -22,9 +22,6 @@ export const metadata: Metadata = {
   title: "SYNTEZIS INCUBATOR — Berlin / Europe",
   description:
     "European incubator for digital influencers & synthetic media. A physical creative-tech incubator, creator accelerator, production studio and community in Berlin.",
-  icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
