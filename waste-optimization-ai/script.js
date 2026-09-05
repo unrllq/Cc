@@ -178,19 +178,20 @@
   }
 
   /* ---------------------------------------------------------------------
-     HERO PARTICLE WAVE — vanilla canvas 2D adaptation of the supplied
-     three.js ParticleWave concept, sized to this static site's stack.
+     HERO AMBIENT DUST — vanilla canvas 2D adaptation of the supplied
+     three.js ParticleWave concept: slow brass-lit motes drifting over the
+     hero's textured backdrop, like dust suspended in raking light.
      Respects prefers-reduced-motion, pauses when tab/section is hidden.
   --------------------------------------------------------------------- */
   var canvas = document.getElementById("waveCanvas");
   if (canvas && !reduceMotion) {
     var ctx = canvas.getContext("2d");
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var width, height, cols, rows, points = [];
+    var width, height, motes = [];
     var time = 0;
     var raf = null;
     var running = true;
-    var GAP = 34;
+    var MOTE_COUNT = 70;
 
     function resize() {
       width = canvas.parentElement.clientWidth;
@@ -200,33 +201,36 @@
       canvas.style.width = width + "px";
       canvas.style.height = height + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      buildGrid();
+      buildMotes();
     }
 
-    function buildGrid() {
-      cols = Math.ceil(width / GAP) + 2;
-      rows = Math.ceil(height / GAP) + 2;
-      points = [];
-      for (var y = 0; y < rows; y++) {
-        for (var x = 0; x < cols; x++) {
-          points.push({ x: x * GAP, y: y * GAP });
-        }
+    function buildMotes() {
+      motes = [];
+      for (var i = 0; i < MOTE_COUNT; i++) {
+        motes.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: 0.6 + Math.random() * 1.6,
+          drift: 0.15 + Math.random() * 0.35,
+          phase: Math.random() * Math.PI * 2,
+          warm: Math.random() > 0.5
+        });
       }
     }
 
     function draw() {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "rgba(200,255,92,0.55)";
-      for (var i = 0; i < points.length; i++) {
-        var p = points[i];
-        var wave = Math.sin(p.x * 0.012 + time) * 10 + Math.cos(p.y * 0.012 + time) * 6;
-        var alpha = 0.15 + (Math.sin(p.x * 0.02 + p.y * 0.02 + time) + 1) * 0.18;
-        ctx.globalAlpha = Math.max(0.04, Math.min(alpha, 0.5));
+      for (var i = 0; i < motes.length; i++) {
+        var m = motes[i];
+        var y = (m.y - time * m.drift * 12) % (height + 20);
+        if (y < -20) y += height + 20;
+        var x = m.x + Math.sin(time * 0.4 + m.phase) * 14;
+        var alpha = 0.12 + (Math.sin(time * 0.6 + m.phase) + 1) * 0.14;
+        ctx.fillStyle = m.warm ? "rgba(217,182,114," + alpha + ")" : "rgba(30,25,18," + (alpha * 0.7) + ")";
         ctx.beginPath();
-        ctx.arc(p.x, p.y + wave, 1.4, 0, Math.PI * 2);
+        ctx.arc(x, y, m.r, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
       time += 0.012;
     }
 
