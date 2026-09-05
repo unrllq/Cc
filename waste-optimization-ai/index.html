@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Waste Optimization AI — Stop throwing money away</title>
+<meta name="description" content="AI that detects food waste, finds the cause and shows you how much money you can save." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ 1. NAVIGATION ============ -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav__logo"><span class="dot" aria-hidden="true"></span>Waste Optimization AI</a>
+  <ul class="nav__links">
+    <li><a href="#product">Product</a></li>
+    <li><a href="#solutions">Solutions</a></li>
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <div class="nav__actions">
+    <a href="#" class="nav__login">Login</a>
+    <a href="#roi" class="btn btn-primary btn-sm">Get started</a>
+    <button class="nav__burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+      <span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#product">Product</a>
+  <a href="#solutions">Solutions</a>
+  <a href="#how-it-works">How it works</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#" class="btn btn-primary">Get started</a>
+</div>
+
+<main id="main">
+
+  <!-- ============ 2. HERO ============ -->
+  <section class="hero" id="product">
+    <canvas class="hero__canvas" id="waveCanvas" aria-hidden="true"></canvas>
+    <div class="hero__grid" aria-hidden="true"></div>
+    <div class="container hero__inner">
+      <div class="reveal is-visible">
+        <p class="eyebrow">AI Waste Intelligence</p>
+        <h1 class="hero__title">Your kitchen is<br>leaking <span class="grad-text">money.</span></h1>
+        <p class="hero__sub">AI that detects food waste, finds the cause and shows you how much money you can save.</p>
+        <div class="hero__cta">
+          <a href="#roi" class="btn btn-primary">
+            Analyze your waste
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a href="#how-it-works" class="btn btn-ghost">See how it works</a>
+        </div>
+      </div>
+
+      <div class="reveal is-visible">
+        <div class="beam">
+          <div class="beam__inner">
+            <div class="mock">
+              <div class="stat-grid">
+                <div class="stat-tile">
+                  <div class="stat-tile__label">Waste today</div>
+                  <div class="stat-tile__value">37.4 kg</div>
+                </div>
+                <div class="stat-tile stat-tile--loss">
+                  <div class="stat-tile__label">Financial loss</div>
+                  <div class="stat-tile__value">€284</div>
+                </div>
+                <div class="stat-tile stat-tile--save">
+                  <div class="stat-tile__label">Potential saving</div>
+                  <div class="stat-tile__value">€171</div>
+                </div>
+                <div class="stat-tile">
+                  <div class="stat-tile__label">Waste rate</div>
+                  <div class="stat-tile__value">4.7%</div>
+                </div>
+              </div>
+              <div class="insight-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 11-14h-7z"/></svg>
+                <div>
+                  <div class="insight-pill__title">Friday overproduction detected.</div>
+                  <div class="insight-pill__sub">Potential saving: €890/month.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. TRUST / DATA BAR ============ -->
+  <section class="databar" aria-label="Key metrics">
+    <div class="container databar__grid">
+      <div class="databar__item reveal">
+        <div class="databar__value" data-count="101" data-prefix="€" data-suffix="K">€0K</div>
+        <div class="databar__label">average annual waste tracked</div>
+      </div>
+      <div class="databar__item reveal">
+        <div class="databar__value" data-count="37" data-suffix="%">0%</div>
+        <div class="databar__label">avoidable waste</div>
+      </div>
+      <div class="databar__item reveal">
+        <div class="databar__value" data-count="18" data-suffix="%">0%</div>
+        <div class="databar__label">forecast improvement</div>
+      </div>
+      <div class="databar__item reveal">
+        <div class="databar__value">24/7</div>
+        <div class="databar__label">AI monitoring</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. PROBLEM ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="problem__head reveal">
+        <p class="eyebrow">The problem</p>
+        <h2 class="h-2">Food waste isn't<br>just waste.</h2>
+        <p class="lede" style="margin-top:16px">It's inventory, purchasing, production and money disappearing every week.</p>
+      </div>
+      <div class="problem__grid">
+        <div class="problem-card reveal">
+          <div class="problem-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg></div>
+          <h3>Overproduction</h3>
+          <p>Too much food prepared for the actual demand.</p>
+        </div>
+        <div class="problem-card reveal">
+          <div class="problem-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 17h.01M10.3 3.9 2.6 18a1 1 0 0 0 .9 1.5h17a1 1 0 0 0 .9-1.5L13.7 3.9a1 1 0 0 0-1.7 0Z"/></svg></div>
+          <h3>Spoilage</h3>
+          <p>Products expire before they are used.</p>
+        </div>
+        <div class="problem-card reveal">
+          <div class="problem-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8M14 6h7v7"/></svg></div>
+          <h3>Bad forecasting</h3>
+          <p>Purchasing decisions are based on assumptions instead of real demand.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. PRODUCT OVERVIEW ============ -->
+  <section class="section section-dark" id="solutions">
+    <div class="container overview">
+      <div class="reveal">
+        <p class="eyebrow">Product overview</p>
+        <h2 class="h-2">One place to see<br>where your money goes.</h2>
+        <p class="lede" style="margin-top:16px">A single live dashboard connects waste, sales and inventory data — so every euro lost is visible, explained and actionable.</p>
+        <a href="#how-it-works" class="btn btn-ghost" style="margin-top:32px">Explore the platform</a>
+      </div>
+      <div class="dash reveal">
+        <div class="dash__row">
+          <div class="stat-tile"><div class="stat-tile__label">Waste today</div><div class="stat-tile__value">37.4 kg</div></div>
+          <div class="stat-tile"><div class="stat-tile__label">Waste this week</div><div class="stat-tile__value">211 kg</div></div>
+          <div class="stat-tile stat-tile--loss"><div class="stat-tile__label">Financial loss</div><div class="stat-tile__value">€1.9K</div></div>
+          <div class="stat-tile stat-tile--save"><div class="stat-tile__label">Potential saving</div><div class="stat-tile__value">€980</div></div>
+        </div>
+        <div class="dash__chart">
+          <div class="dash__chart-head"><span>Waste by day</span><span>This week</span></div>
+          <div class="bars" role="img" aria-label="Bar chart of waste by day of week, peaking on Friday">
+            <i style="height:38%"></i><i style="height:52%"></i><i style="height:44%"></i><i style="height:60%"></i>
+            <i class="bar--peak" style="height:100%"></i><i style="height:70%"></i><i style="height:30%"></i>
+          </div>
+        </div>
+        <div class="dash__list">
+          <div class="dash__row-item"><span>Chicken</span><b>€412</b></div>
+          <div class="dash__row-item"><span>Rice</span><b>€198</b></div>
+          <div class="dash__row-item"><span>Vegetables</span><b>€146</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6. AI SCANNING ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="reveal" style="max-width:640px;margin-bottom:48px">
+        <p class="eyebrow">AI scanning</p>
+        <h2 class="h-2">See what's actually<br>being thrown away.</h2>
+      </div>
+      <div class="scan">
+        <div class="scan__frame reveal" role="img" aria-label="AI detection view of a waste bin identifying chicken, rice and vegetables with weights and values">
+          <div class="scan__tag scan__tag--1"><b>Chicken</b><span>1.8 kg · €21.40</span></div>
+          <div class="scan__tag scan__tag--2"><b>Rice</b><span>2.4 kg · €8.20</span></div>
+          <div class="scan__tag scan__tag--3"><b>Vegetables</b><span>0.9 kg · €6.70</span></div>
+        </div>
+        <div class="scan__total reveal">
+          <div>
+            <div class="scan__total-row"><span>Total waste</span><b>5.1 kg</b></div>
+            <div class="scan__total-row"><span>Total value</span><b>€36.30</b></div>
+          </div>
+          <a href="#" class="btn btn-primary">View analysis</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 7. ROOT CAUSE ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="reveal" style="max-width:640px;margin-bottom:48px">
+        <p class="eyebrow">Root cause analysis</p>
+        <h2 class="h-2">Don't just count waste.<br>Find out why.</h2>
+      </div>
+      <div class="cause reveal">
+        <div class="cause__spike">
+          <b>Waste spike detected</b>
+          <span class="cause__badge">+43%</span>
+        </div>
+        <div class="cause__grid">
+          <div class="cause__cell"><span>Product</span><b>Chicken</b></div>
+          <div class="cause__cell"><span>Day</span><b>Friday</b></div>
+          <div class="cause__cell"><span>Time</span><b>18:00–21:00</b></div>
+          <div class="cause__cell"><span>Cause</span><b>Overproduction</b></div>
+          <div class="cause__cell"><span>Forecast error</span><b>31%</b></div>
+        </div>
+        <div class="cause__rec">
+          <div>
+            <div class="cause__rec-title">AI recommendation</div>
+            <div class="cause__rec-text">Reduce Friday preparation by 18%.</div>
+          </div>
+          <div class="cause__rec-save">
+            <b>€420</b>
+            <span>Expected saving / month</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8. HOW IT WORKS ============ -->
+  <section class="section section-light" id="how-it-works">
+    <div class="container">
+      <div class="reveal" style="max-width:640px;margin-bottom:48px">
+        <p class="eyebrow">How it works</p>
+        <h2 class="h-2">From bin to insight,<br>in four steps.</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <span class="step__num">01</span>
+          <h3>Capture</h3>
+          <p>Collect waste, sales and inventory data.</p>
+          <div class="step__viz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+        </div>
+        <div class="step reveal">
+          <span class="step__num">02</span>
+          <h3>Analyze</h3>
+          <p>AI identifies products, quantities and patterns.</p>
+          <div class="step__viz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+        </div>
+        <div class="step reveal">
+          <span class="step__num">03</span>
+          <h3>Predict</h3>
+          <p>Forecast demand and upcoming waste.</p>
+          <div class="step__viz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/></svg></div>
+        </div>
+        <div class="step reveal">
+          <span class="step__num">04</span>
+          <h3>Optimize</h3>
+          <p>Get concrete actions that reduce waste.</p>
+          <div class="step__viz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 11-14h-7z"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9. FINANCIAL IMPACT ============ -->
+  <section class="section section-dark">
+    <div class="container impact">
+      <p class="eyebrow" style="justify-content:center">Financial impact</p>
+      <h2 class="h-2 reveal">Turn waste into savings.</h2>
+      <div class="impact__num reveal" data-count="37800" data-prefix="€">€0</div>
+      <div class="impact__label">Potential annual saving</div>
+      <div class="impact__grid">
+        <div class="impact__cell reveal"><b>€12,400</b><span>Purchasing</span></div>
+        <div class="impact__cell reveal"><b>€9,800</b><span>Overproduction</span></div>
+        <div class="impact__cell reveal"><b>€7,200</b><span>Spoilage</span></div>
+        <div class="impact__cell reveal"><b>€8,400</b><span>Forecasting</span></div>
+      </div>
+      <div class="impact__tag">Calculated from your data</div>
+    </div>
+  </section>
+
+  <!-- ============ 10. AI OPERATIONS AGENT ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="reveal" style="max-width:640px;margin-bottom:48px">
+        <p class="eyebrow">AI operations agent</p>
+        <h2 class="h-2">The AI that doesn't<br>just report.</h2>
+        <p class="lede" style="margin-top:16px">It finds problems and recommends what to do next.</p>
+      </div>
+      <div class="agent">
+        <div class="feed reveal" role="log" aria-label="AI activity feed">
+          <div class="feed__item" style="animation-delay:.05s"><span class="feed__time">10:42</span><span class="feed__dot" aria-hidden="true"></span><span class="feed__text">Waste anomaly detected.</span></div>
+          <div class="feed__item" style="animation-delay:.15s"><span class="feed__time">10:43</span><span class="feed__dot" aria-hidden="true"></span><span class="feed__text">Root cause identified.</span></div>
+          <div class="feed__item" style="animation-delay:.25s"><span class="feed__time">10:44</span><span class="feed__dot" aria-hidden="true"></span><span class="feed__text">Friday production forecast updated.</span></div>
+          <div class="feed__item" style="animation-delay:.35s"><span class="feed__time">10:45</span><span class="feed__dot" aria-hidden="true"></span><span class="feed__text">Kitchen manager task created.</span></div>
+          <div class="feed__item" style="animation-delay:.45s"><span class="feed__time">10:46</span><span class="feed__dot" aria-hidden="true"></span><span class="feed__text">Expected saving calculated.</span></div>
+        </div>
+        <div class="agent__side reveal">
+          <span>Projected saving</span>
+          <b>€420/month</b>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 11. INDUSTRIES ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="reveal" style="margin-bottom:40px">
+        <p class="eyebrow">Industries</p>
+        <h2 class="h-2">Built for food businesses.</h2>
+      </div>
+      <div class="industries__grid">
+        <div class="industry reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v9M7 2v9M3 6h4M5 11v11M14 2s-3 2-3 6 3 6 3 6M14 11v11"/></svg>
+          <h3>Restaurants</h3>
+          <p>Reduce kitchen waste and overproduction.</p>
+        </div>
+        <div class="industry reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13M3 21h18M9 21v-6h6v6"/></svg>
+          <h3>Hotels</h3>
+          <p>Optimize breakfast and buffet production.</p>
+        </div>
+        <div class="industry reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18l-1.5 11h-15L3 9ZM7 9V6a5 5 0 0 1 10 0v3"/></svg>
+          <h3>Supermarkets</h3>
+          <p>Reduce expiration and excess inventory.</p>
+        </div>
+        <div class="industry reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M6 19V9l6-4 6 4v10M10 19v-5h4v5"/></svg>
+          <h3>Catering</h3>
+          <p>Improve event forecasting.</p>
+        </div>
+        <div class="industry reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <h3>Food production</h3>
+          <p>Track production waste.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 12. BEFORE / AFTER ============ -->
+  <section class="section section-dark">
+    <div class="container">
+      <div class="compare reveal">
+        <div class="compare__side compare__side--no">
+          <div class="compare__title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Without Waste Optimization AI</div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Unknown waste</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Manual tracking</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Late detection</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Bad forecasts</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Hidden costs</li>
+          </ul>
+        </div>
+        <div class="compare__side compare__side--yes">
+          <div class="compare__title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>With Waste Optimization AI</div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Measured waste</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Automatic tracking</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Early alerts</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI forecasting</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Visible savings</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 13. LIVE INSIGHTS ============ -->
+  <section class="section section-light">
+    <div class="container">
+      <div class="reveal" style="max-width:640px;margin-bottom:40px">
+        <p class="eyebrow">Live insights</p>
+        <h2 class="h-2">Your business,<br>explained by AI.</h2>
+      </div>
+      <div class="insights__grid">
+        <div class="insight-card reveal">
+          <div class="insight-card__top">Chicken waste increased 31%.</div>
+          <dl>
+            <dt>Cause</dt><dd>Weekend overproduction trend</dd>
+            <dt>Recommendation</dt><dd>Cut Saturday prep by 15%</dd>
+            <dt>Expected saving</dt><dd class="is-save">€310/month</dd>
+          </dl>
+        </div>
+        <div class="insight-card reveal">
+          <div class="insight-card__top">Friday demand forecast is inaccurate.</div>
+          <dl>
+            <dt>Cause</dt><dd>Model not weighting local events</dd>
+            <dt>Recommendation</dt><dd>Enable event-aware forecasting</dd>
+            <dt>Expected saving</dt><dd class="is-save">€420/month</dd>
+          </dl>
+        </div>
+        <div class="insight-card reveal">
+          <div class="insight-card__top">12 kg of inventory expires tomorrow.</div>
+          <dl>
+            <dt>Cause</dt><dd>Overstocked ahead of low-demand day</dd>
+            <dt>Recommendation</dt><dd>Move stock to tonight's specials</dd>
+            <dt>Expected saving</dt><dd class="is-save">€96 recovered</dd>
+          </dl>
+        </div>
+        <div class="insight-card reveal">
+          <div class="insight-card__top">Tomato purchasing is 18% above demand.</div>
+          <dl>
+            <dt>Cause</dt><dd>Static supplier order quantity</dd>
+            <dt>Recommendation</dt><dd>Switch to dynamic order sizing</dd>
+            <dt>Expected saving</dt><dd class="is-save">€140/month</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 14. ROI CALCULATOR ============ -->
+  <section class="section section-dark" id="roi">
+    <div class="container">
+      <div class="reveal" style="max-width:640px;margin-bottom:40px">
+        <p class="eyebrow">ROI calculator</p>
+        <h2 class="h-2">How much are you<br>throwing away?</h2>
+      </div>
+      <form class="roi reveal" id="roiForm">
+        <div>
+          <div class="field">
+            <label for="revenue">Monthly revenue (€)</label>
+            <input type="number" id="revenue" inputmode="decimal" min="0" placeholder="e.g. 60000" required>
+          </div>
+          <div class="field">
+            <label for="locations">Number of locations</label>
+            <input type="number" id="locations" inputmode="numeric" min="1" placeholder="e.g. 1" required>
+          </div>
+          <div class="field">
+            <label for="customers">Average daily customers</label>
+            <input type="number" id="customers" inputmode="numeric" min="0" placeholder="e.g. 180" required>
+          </div>
+          <div class="field">
+            <label for="foodcost">Average food cost (%)</label>
+            <input type="number" id="foodcost" inputmode="decimal" min="0" max="100" placeholder="e.g. 30" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Calculate my savings</button>
+        </div>
+        <div class="roi__results" aria-live="polite">
+          <div class="roi__result"><span>Estimated monthly waste</span><b id="roiWaste">€0</b></div>
+          <div class="roi__result"><span>Estimated annual loss</span><b id="roiLoss">€0</b></div>
+          <div class="roi__result roi__result--save"><span>Potential saving</span><b id="roiSaving">€0</b></div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ 15. PRICING ============ -->
+  <section class="section section-dark" id="pricing">
+    <div class="container">
+      <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto 48px">
+        <p class="eyebrow" style="justify-content:center">Pricing</p>
+        <h2 class="h-2">Plans that scale<br>with your kitchen.</h2>
+      </div>
+      <div class="pricing__grid">
+        <div class="plan reveal">
+          <div class="plan__name">Starter</div>
+          <p class="plan__desc">For small businesses.</p>
+          <div class="plan__price"><b>€49</b><span>/month</span></div>
+          <ul class="plan__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Waste tracking</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Basic analytics</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI insights</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Weekly reports</li>
+          </ul>
+          <a href="#" class="btn btn-ghost">Choose Starter</a>
+        </div>
+        <div class="plan plan--featured reveal">
+          <span class="plan__badge">Most popular</span>
+          <div class="plan__name">Pro</div>
+          <p class="plan__desc">For growing food businesses.</p>
+          <div class="plan__price"><b>€149</b><span>/month</span></div>
+          <ul class="plan__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Everything in Starter</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI forecasting</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Inventory optimization</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI recommendations</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Advanced reports</li>
+          </ul>
+          <a href="#" class="btn btn-primary">Choose Pro</a>
+        </div>
+        <div class="plan reveal">
+          <div class="plan__name">Business</div>
+          <p class="plan__desc">For multiple locations.</p>
+          <div class="plan__price"><b>€399</b><span>/month</span></div>
+          <ul class="plan__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Everything in Pro</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Multi-location dashboard</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI Operations Agent</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>API</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Advanced analytics</li>
+          </ul>
+          <a href="#" class="btn btn-ghost">Choose Business</a>
+        </div>
+      </div>
+      <div class="pricing__enterprise reveal">
+        <div>
+          <h3>Enterprise</h3>
+          <p>Custom setup and integrations.</p>
+        </div>
+        <a href="#" class="btn btn-ghost">Talk to sales</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 16. TESTIMONIAL ============ -->
+  <section class="section section-dark">
+    <div class="container testimonial">
+      <div class="reveal">
+        <p class="testimonial__quote">We reduced avoidable food waste by 31% in three months.</p>
+        <div class="testimonial__meta">
+          <b>Marco Alberti</b>
+          <span>Ristorante Lume · Milan · 3 locations</span>
+        </div>
+      </div>
+      <div class="testimonial__stats reveal">
+        <div class="testimonial__stat"><b class="is-loss">-31%</b><span>Waste</span></div>
+        <div class="testimonial__stat"><b class="is-save">+€2,400</b><span>Monthly saving</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 17. FAQ ============ -->
+  <section class="section section-light">
+    <div class="container">
+      <div class="reveal" style="text-align:center;margin-bottom:40px">
+        <p class="eyebrow" style="justify-content:center">FAQ</p>
+        <h2 class="h-2">Questions, before you ask.</h2>
+      </div>
+      <div class="faq reveal">
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">What data do I need?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Sales, inventory and waste logs are enough to start. We connect to your POS or accept manual/photo entry.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">Does it work without cameras?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Yes. Cameras improve automatic detection, but manual logging and POS data work on their own.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">Can I connect my POS?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Most major POS and inventory systems integrate directly. Our team can also set up a custom import.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">How accurate is the AI?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Forecast accuracy typically improves 18% within the first month as the model learns your patterns.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">How quickly can we start?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Most kitchens are live within a day — no hardware required to begin tracking.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">Can I use it for multiple locations?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Yes, the Business plan includes a multi-location dashboard with per-site and consolidated views.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-item__q" aria-expanded="false">How is my data protected?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="faq-item__a"><p>Data is encrypted in transit and at rest, and never shared with third parties or used to train external models.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 18. FINAL CTA ============ -->
+  <section class="section final-cta">
+    <div class="final-cta__glow" aria-hidden="true"></div>
+    <div class="container final-cta__inner">
+      <h2 class="h-display">Stop throwing<br>money away.</h2>
+      <p class="lede">Connect your existing business data and let AI find where the money is leaking.</p>
+      <a href="#roi" class="btn btn-primary">Analyze your business</a>
+      <p class="final-cta__note">No hardware required to start.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ 19. FOOTER ============ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <a href="#" class="nav__logo"><span class="dot" aria-hidden="true"></span>Waste Optimization AI</a>
+        <p>AI that finds where food, money and time are being lost — and tells you what to do about it.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Company</h4>
+          <a href="#product">Product</a>
+          <a href="#solutions">Solutions</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#">Technology</a>
+          <a href="#">Contact</a>
+        </div>
+        <div class="footer__col">
+          <h4>Legal</h4>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Security</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="footer__tagline">See the waste. Understand the cause. Change the process.</div>
+      <div class="footer__copy">© 2026 Waste Optimization AI. All rights reserved.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
