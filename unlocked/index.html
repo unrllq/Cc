@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="UNLOCKED — personal challenge & performance platform. Your goals become real-world challenges. What, where, when, with whom — decided for you." />
+<meta name="theme-color" content="#060709" />
+<title>UNLOCKED — Challenge Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@300;500;700;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<noscript><style>
+  .boot,.cursor,.fx__glow{display:none!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .ticker__track{animation:none}
+  .step{opacity:1}
+  .meters .meter::after,.prog__bar::after,.match__bar::after{width:var(--v)!important}
+  .opp__bar i{width:var(--v)!important}
+  .flow li span{color:var(--text)}
+</style></noscript>
+</head>
+<body data-motion="on">
+
+<!-- ============ PRELOADER ============ -->
+<div class="boot" id="boot" role="status" aria-live="polite" aria-label="Loading">
+  <div class="boot__grid" aria-hidden="true"></div>
+  <div class="boot__inner">
+    <div class="boot__mark" aria-hidden="true">
+      <span class="boot__lock">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 10V7a5 5 0 0 1 9.9-1"/><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M12 14.5v2.5"/></svg>
+      </span>
+    </div>
+    <div class="boot__log" id="bootLog" aria-hidden="true"></div>
+    <div class="boot__bar" aria-hidden="true"><i id="bootBar"></i></div>
+    <div class="boot__meta" aria-hidden="true">
+      <span id="bootPct">000</span>
+      <span>SYSTEM / UNLOCKED</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GLOBAL HUD ============ -->
+<div class="fx" aria-hidden="true">
+  <div class="fx__grid"></div>
+  <div class="fx__scan"></div>
+  <div class="fx__noise"></div>
+  <div class="fx__glow" id="fxGlow"></div>
+</div>
+
+<div class="frame" aria-hidden="true">
+  <span class="frame__c frame__c--tl"></span>
+  <span class="frame__c frame__c--tr"></span>
+  <span class="frame__c frame__c--bl"></span>
+  <span class="frame__c frame__c--br"></span>
+</div>
+
+<div class="cursor" id="cursor" aria-hidden="true">
+  <span class="cursor__ring"></span>
+  <span class="cursor__dot"></span>
+</div>
+
+<div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+<!-- section index -->
+<nav class="index" id="sectionIndex" aria-label="Section navigation">
+  <ol></ol>
+</nav>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <a href="#hero" class="nav__logo" aria-label="UNLOCKED home">
+    <span class="nav__logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 10V7a5 5 0 0 1 9.9-1"/><rect x="4" y="10" width="16" height="11" rx="1"/></svg>
+    </span>
+    <span class="nav__logo-text" data-scramble>UNLOCKED</span>
+  </a>
+
+  <nav class="nav__links" aria-label="Primary">
+    <a href="#system">System</a>
+    <a href="#engine">Engine</a>
+    <a href="#score">Score</a>
+    <a href="#levels">Levels</a>
+    <a href="#access">Access</a>
+  </nav>
+
+  <div class="nav__right">
+    <div class="nav__clock" aria-hidden="true">
+      <span class="dot dot--live"></span>
+      <span id="clock">00:00:00</span>
+    </div>
+    <button class="btn btn--ghost btn--sm" id="motionToggle" aria-pressed="true">
+      <span class="btn__label">MOTION</span><span class="btn__state" id="motionState">ON</span>
+    </button>
+    <a href="#access" class="btn btn--acid btn--sm magnetic">
+      <span class="btn__label">GET ACCESS</span>
+      <span class="btn__arrow" aria-hidden="true">→</span>
+    </a>
+    <button class="nav__burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- fullscreen menu -->
+<div class="menu" id="menu" hidden>
+  <div class="menu__grid" aria-hidden="true"></div>
+  <ul class="menu__list">
+    <li><a href="#system"><em>01</em><span data-scramble>SYSTEM</span></a></li>
+    <li><a href="#engine"><em>02</em><span data-scramble>ENGINE</span></a></li>
+    <li><a href="#score"><em>03</em><span data-scramble>SCORE</span></a></li>
+    <li><a href="#levels"><em>04</em><span data-scramble>LEVELS</span></a></li>
+    <li><a href="#types"><em>05</em><span data-scramble>TYPES</span></a></li>
+    <li><a href="#access"><em>06</em><span data-scramble>ACCESS</span></a></li>
+  </ul>
+  <div class="menu__foot">
+    <span>UNLOCKED / PERSONAL CHALLENGE PLATFORM</span>
+    <span>HAMBURG — BERLIN — WARSAW</span>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero" data-index="HOME">
+  <div class="hero__bg" aria-hidden="true">
+    <div class="hero__rings" data-parallax="0.08"></div>
+    <svg class="hero__figure" viewBox="0 0 400 520" fill="none" data-parallax="0.16" aria-hidden="true">
+      <g class="wire" stroke="currentColor">
+        <ellipse cx="200" cy="96" rx="46" ry="56"/>
+        <path d="M154 96c30 18 62 18 92 0M200 40v112M162 66c24 10 52 10 76 0M162 126c24-10 52-10 76 0"/>
+        <path d="M200 152v150M200 176l-78 40M200 176l78 40M122 216l-14 96M278 216l14 96M200 302l-56 108M200 302l56 108M144 410l-10 78M256 410l10 78"/>
+        <circle cx="200" cy="176" r="7"/><circle cx="122" cy="216" r="7"/><circle cx="278" cy="216" r="7"/>
+        <circle cx="200" cy="302" r="9"/><circle cx="144" cy="410" r="7"/><circle cx="256" cy="410" r="7"/>
+        <circle cx="108" cy="312" r="6"/><circle cx="292" cy="312" r="6"/>
+      </g>
+      <g class="wire wire--dim" stroke="currentColor">
+        <path d="M200 40 L60 250 L200 480 L340 250 Z"/>
+        <path d="M60 250h280M200 40v440"/>
+      </g>
+    </svg>
+    <div class="hero__word" data-parallax="0.05" aria-hidden="true">UNLOCKED</div>
+  </div>
+
+  <div class="hero__inner">
+    <div class="hero__head">
+      <p class="tag reveal"><span class="dot dot--acid"></span> Personal Challenge &amp; Performance Platform</p>
+
+      <h1 class="hero__title">
+        <span class="hero__line" data-split>YOU DON'T</span>
+        <span class="hero__line hero__line--pixel" data-split>DECIDE</span>
+        <span class="hero__line" data-split>THE SYSTEM</span>
+        <span class="hero__line hero__line--out" data-split>DOES</span>
+      </h1>
+
+      <div class="hero__sub reveal">
+        <p>UNLOCKED turns your goals into real challenges in the physical world. Not advice. Not a tracker. <strong>Action.</strong></p>
+        <div class="hero__cta">
+          <a href="#access" class="btn btn--acid magnetic">
+            <span class="btn__label">START LEVEL 01</span><span class="btn__arrow" aria-hidden="true">→</span>
+          </a>
+          <a href="#engine" class="btn btn--ghost magnetic">
+            <span class="btn__label">SEE THE ENGINE</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- live next-challenge terminal -->
+    <aside class="nextcard reveal" aria-label="Next challenge preview">
+      <header class="nextcard__top">
+        <span class="nextcard__id">NEXT_CHALLENGE</span>
+        <span class="nextcard__live"><span class="dot dot--live"></span>LIVE</span>
+      </header>
+      <div class="nextcard__body">
+        <p class="nextcard__type" id="ncType">BOXING CHALLENGE</p>
+        <p class="nextcard__when" id="ncWhen">FRIDAY / 19:00</p>
+        <dl class="nextcard__rows">
+          <div><dt>WHAT</dt><dd id="ncWhat">Sparring · 6 rounds</dd></div>
+          <div><dt>WHERE</dt><dd id="ncWhere">Hamburg · Nord Box Club</dd></div>
+          <div><dt>WITH</dt><dd id="ncWho">Jürgen · matched 94%</dd></div>
+          <div><dt>LEVEL</dt><dd id="ncLevel">06 — ENDURE</dd></div>
+        </dl>
+        <div class="nextcard__bar"><i id="ncBar"></i></div>
+        <div class="nextcard__foot">
+          <span id="ncIndex">01 / 04</span>
+          <button class="nextcard__btn" id="ncNext" aria-label="Show next challenge">NEXT ▸</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="hero__meta" aria-hidden="true">
+    <span>10+ CITIES</span><span>·</span><span>REAL-WORLD ONLY</span><span>·</span><span id="heroScroll">SCROLL ▼</span>
+  </div>
+</section>
+
+<!-- ============ TICKER ============ -->
+<div class="ticker ticker--acid" data-marquee data-speed="0.9" aria-hidden="true">
+  <div class="ticker__track">
+    <span>REAL ACTION</span><span class="ticker__sep">✳</span><span>NOT ADVICE</span><span class="ticker__sep">✳</span>
+    <span>WHAT · WHERE · WHEN · WITH WHOM</span><span class="ticker__sep">✳</span><span>CHALLENGE ENGINE</span><span class="ticker__sep">✳</span>
+    <span>ADAPTIVE DIFFICULTY</span><span class="ticker__sep">✳</span>
+  </div>
+</div>
+
+<!-- ============ PROBLEM ============ -->
+<section class="sec problem" id="problem" data-index="PROBLEM">
+  <div class="sec__head">
+    <span class="sec__num">01</span>
+    <h2 class="sec__title" data-scramble>THE PROBLEM</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <div class="problem__grid">
+    <div class="problem__left">
+      <ul class="strike">
+        <li class="reveal"><span>Information</span></li>
+        <li class="reveal"><span>Workout plans</span></li>
+        <li class="reveal"><span>Goal trackers</span></li>
+        <li class="reveal"><span>Communities</span></li>
+        <li class="reveal"><span>Recommendations</span></li>
+      </ul>
+      <p class="problem__note reveal">Every platform hands you more input. The decision still lands on you.</p>
+    </div>
+    <div class="problem__right">
+      <p class="big reveal">You still have to decide <em>what</em> to do, <em>where</em> to do it, <em>when</em> to do it and <em>with whom</em>.</p>
+      <p class="lead reveal">UNLOCKED moves that decision to the system. You set the direction. The engine produces the sequence of real actions.</p>
+      <div class="switch reveal" aria-hidden="true">
+        <div class="switch__row"><span>DECISION LOAD</span><b class="switch__off">USER</b></div>
+        <div class="switch__arrow">↓</div>
+        <div class="switch__row switch__row--on"><span>DECISION LOAD</span><b>SYSTEM</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SYSTEM / STEPS ============ -->
+<section class="sec system" id="system" data-index="SYSTEM">
+  <div class="sec__head">
+    <span class="sec__num">02</span>
+    <h2 class="sec__title" data-scramble>HOW IT WORKS</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="steps__rail" aria-hidden="true"><i id="stepsRail"></i></div>
+    <div class="steps__list">
+      <article class="step" data-step="01">
+        <header><span class="step__num">STEP 01</span><h3>PROFILE</h3></header>
+        <p>Age, location, interests, goals, sport experience, professional skills, available time, preferences, limitations.</p>
+        <ul class="chips">
+          <li>AGE</li><li>LOCATION</li><li>GOALS</li><li>TIME</li><li>SKILLS</li><li>LIMITS</li>
+        </ul>
+      </article>
+      <article class="step" data-step="02">
+        <header><span class="step__num">STEP 02</span><h3>ASSESSMENT</h3></header>
+        <p>Initial testing defines your physical level, endurance, strength, speed, coordination, experience and motivation. Upload CV, certificates, results, video.</p>
+        <ul class="chips">
+          <li>ENDURANCE</li><li>STRENGTH</li><li>SPEED</li><li>COORDINATION</li><li>MOTIVATION</li>
+        </ul>
+      </article>
+      <article class="step" data-step="03">
+        <header><span class="step__num">STEP 03</span><h3>GOALS</h3></header>
+        <p>Sport, personal and career goals — combined. Prepare for HYROX. Run 10K. Start boxing. Become disciplined. Expand your circle. Find a new role.</p>
+        <ul class="chips">
+          <li>SPORT</li><li>PERSONAL</li><li>CAREER</li>
+        </ul>
+      </article>
+      <article class="step" data-step="04">
+        <header><span class="step__num">STEP 04</span><h3>CHALLENGE</h3></header>
+        <p>The engine converts goals into scheduled real-world challenges with a place, a time, a difficulty and — when needed — other people.</p>
+        <ul class="chips">
+          <li>WHAT</li><li>WHEN</li><li>WHERE</li><li>WITH WHOM</li><li>WHY</li>
+        </ul>
+      </article>
+    </div>
+    <div class="steps__visual" aria-hidden="true">
+      <div class="hudbox">
+        <div class="hudbox__label">SYSTEM STATE</div>
+        <div class="hudbox__screen" id="stepScreen">
+          <div class="hudbox__ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" id="stepRing"/></svg><b id="stepPct">25%</b></div>
+          <p class="hudbox__now" id="stepNow">BUILDING PROFILE</p>
+          <div class="hudbox__lines" id="stepLines"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENGINE ============ -->
+<section class="sec engine" id="engine" data-index="ENGINE">
+  <div class="sec__head">
+    <span class="sec__num">03</span>
+    <h2 class="sec__title" data-scramble>CHALLENGE ENGINE</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <p class="sec__lead reveal">The core product. Every challenge carries seven fields — nothing is left for you to figure out.</p>
+
+  <div class="engine__grid">
+    <ul class="anatomy">
+      <li class="reveal"><b>WHAT</b><span>the action to perform</span></li>
+      <li class="reveal"><b>WHEN</b><span>exact date and time</span></li>
+      <li class="reveal"><b>WHERE</b><span>a real place, not a suggestion</span></li>
+      <li class="reveal"><b>WITH WHOM</b><span>matched people or a team</span></li>
+      <li class="reveal"><b>DIFFICULTY</b><span>calibrated to your level</span></li>
+      <li class="reveal"><b>WHY</b><span>the goal it develops</span></li>
+      <li class="reveal"><b>RESULT</b><span>what you actually achieved</span></li>
+    </ul>
+
+    <div class="terminal reveal" aria-label="Challenge engine output">
+      <div class="terminal__bar" aria-hidden="true">
+        <span class="terminal__dots"><i></i><i></i><i></i></span>
+        <span>engine.unlocked / generate</span>
+        <span class="terminal__st">READY</span>
+      </div>
+      <pre class="terminal__body" id="termBody" aria-live="off"></pre>
+    </div>
+  </div>
+
+  <div class="feed">
+    <article class="fcard tilt reveal" data-kind="PHYSICAL">
+      <div class="fcard__top"><span>BOXING</span><span class="fcard__lvl">LVL 06</span></div>
+      <h3 class="fcard__title">SPARRING</h3>
+      <div class="fcard__pixel" aria-hidden="true">06</div>
+      <dl class="fcard__rows">
+        <div><dt>WHEN</dt><dd>Friday / 19:00</dd></div>
+        <div><dt>WHERE</dt><dd>Hamburg</dd></div>
+        <div><dt>WITH</dt><dd>Jürgen</dd></div>
+      </dl>
+      <div class="fcard__diff" aria-label="Difficulty 6 of 8"><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div>
+    </article>
+
+    <article class="fcard tilt reveal" data-kind="PHYSICAL">
+      <div class="fcard__top"><span>RUN</span><span class="fcard__lvl">LVL 04</span></div>
+      <h3 class="fcard__title">6.8 KM</h3>
+      <div class="fcard__pixel" aria-hidden="true">04</div>
+      <dl class="fcard__rows">
+        <div><dt>WHEN</dt><dd>Saturday / 07:30</dd></div>
+        <div><dt>WHERE</dt><dd>Start → Finish</dd></div>
+        <div><dt>TARGET</dt><dd>35 min</dd></div>
+      </dl>
+      <div class="fcard__diff" aria-label="Difficulty 4 of 8"><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div>
+    </article>
+
+    <article class="fcard tilt reveal" data-kind="TEAM">
+      <div class="fcard__top"><span>HYROX</span><span class="fcard__lvl">LVL 07</span></div>
+      <h3 class="fcard__title">8 STATIONS</h3>
+      <div class="fcard__pixel" aria-hidden="true">07</div>
+      <dl class="fcard__rows">
+        <div><dt>WHEN</dt><dd>Sunday / 09:00</dd></div>
+        <div><dt>WHERE</dt><dd>Team session</dd></div>
+        <div><dt>WITH</dt><dd>4 participants</dd></div>
+      </dl>
+      <div class="fcard__diff" aria-label="Difficulty 7 of 8"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i></div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ LOCATION + PEOPLE ============ -->
+<section class="sec duo" id="network" data-index="NETWORK">
+  <div class="sec__head">
+    <span class="sec__num">04</span>
+    <h2 class="sec__title" data-scramble>CITY AS INFRASTRUCTURE</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <div class="duo__grid">
+    <article class="panel reveal">
+      <h3 class="panel__title">LOCATION ENGINE</h3>
+      <p class="panel__text">UNLOCKED uses real spaces of your city. You receive a specific point on the map — not a recommendation.</p>
+      <div class="map" aria-hidden="true">
+        <div class="map__grid"></div>
+        <span class="map__pin" style="--x:22%;--y:34%"><b>BOX</b></span>
+        <span class="map__pin" style="--x:64%;--y:22%"><b>HYROX</b></span>
+        <span class="map__pin" style="--x:40%;--y:64%"><b>RUN</b></span>
+        <span class="map__pin" style="--x:78%;--y:58%"><b>POOL</b></span>
+        <span class="map__pin map__pin--you" style="--x:50%;--y:46%"><b>YOU</b></span>
+        <svg class="map__links" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line x1="50" y1="46" x2="22" y2="34"/><line x1="50" y1="46" x2="64" y2="22"/>
+          <line x1="50" y1="46" x2="40" y2="64"/><line x1="50" y1="46" x2="78" y2="58"/>
+        </svg>
+      </div>
+      <ul class="taglist">
+        <li>Clubs</li><li>Running routes</li><li>Courts</li><li>Pools</li><li>HYROX gyms</li><li>Climbing</li><li>Outdoor</li><li>Competitions</li>
+      </ul>
+    </article>
+
+    <article class="panel reveal">
+      <h3 class="panel__title">PEOPLE MATCHING</h3>
+      <p class="panel__text">The platform finds the right people for each challenge: a sparring partner, a runner with your pace, a HYROX team, a complementary skill.</p>
+      <div class="match">
+        <div class="match__row"><span>BOXING</span><i class="match__bar" style="--v:94%"></i><b>94%</b></div>
+        <div class="match__row"><span>RUNNING</span><i class="match__bar" style="--v:88%"></i><b>88%</b></div>
+        <div class="match__row"><span>HYROX TEAM</span><i class="match__bar" style="--v:76%"></i><b>76%</b></div>
+        <div class="match__row"><span>LEARNING</span><i class="match__bar" style="--v:81%"></i><b>81%</b></div>
+      </div>
+      <p class="formula-mini" aria-hidden="true">CHALLENGE → PEOPLE → REAL-WORLD INTERACTION</p>
+    </article>
+  </div>
+</section>
+
+<!-- ============ ADAPTIVE ============ -->
+<section class="sec adaptive" id="adaptive" data-index="ADAPTIVE">
+  <div class="sec__head">
+    <span class="sec__num">05</span>
+    <h2 class="sec__title" data-scramble>ADAPTIVE SYSTEM</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+  <p class="sec__lead reveal">The program is not a static schedule. It evolves with you — every next challenge depends on the previous result.</p>
+
+  <div class="adapt">
+    <article class="adapt__card reveal" data-state="up">
+      <span class="adapt__icon" aria-hidden="true">▲</span>
+      <h3>CONSISTENT</h3>
+      <p>You keep completing challenges — difficulty rises, new levels open.</p>
+      <div class="adapt__wave" aria-hidden="true"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><polyline points="0,50 30,44 60,40 90,30 120,26 150,16 200,8"/></svg></div>
+    </article>
+    <article class="adapt__card reveal" data-state="flat">
+      <span class="adapt__icon" aria-hidden="true">≡</span>
+      <h3>SLOWING DOWN</h3>
+      <p>Progress stalls — the engine rewrites the program and changes the stimulus.</p>
+      <div class="adapt__wave" aria-hidden="true"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><polyline points="0,34 30,30 60,34 90,28 120,34 150,30 200,32"/></svg></div>
+    </article>
+    <article class="adapt__card reveal" data-state="down">
+      <span class="adapt__icon" aria-hidden="true">▼</span>
+      <h3>OVERLOADED</h3>
+      <p>Load is too high — volume drops, recovery challenges take priority.</p>
+      <div class="adapt__wave" aria-hidden="true"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><polyline points="0,14 30,20 60,18 90,28 120,34 150,44 200,50"/></svg></div>
+    </article>
+  </div>
+
+  <div class="wearables reveal">
+    <span class="wearables__label">WEARABLE INTEGRATION — OPTIONAL, USER CONTROLLED</span>
+    <ul><li>Apple Watch</li><li>Garmin</li><li>Oura</li><li>Steps</li><li>Heart rate</li><li>Sleep</li><li>Recovery</li><li>Load</li></ul>
+  </div>
+</section>
+
+<!-- ============ SCORE ============ -->
+<section class="sec score" id="score" data-index="SCORE">
+  <div class="sec__head">
+    <span class="sec__num">06</span>
+    <h2 class="sec__title" data-scramble>PERFORMANCE SCORE</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <div class="score__grid">
+    <div class="score__big reveal">
+      <span class="score__label">UNLOCKED SCORE</span>
+      <b class="score__value" data-count="78">00</b>
+      <span class="score__delta">▲ +6 last 30 days</span>
+      <p class="score__note">The score does not compare you to other people. It shows your own dynamics.</p>
+    </div>
+
+    <div class="score__radar reveal" aria-hidden="true">
+      <svg viewBox="0 0 300 300" class="radar">
+        <g class="radar__web">
+          <polygon points="150,20 262,85 262,215 150,280 38,215 38,85"/>
+          <polygon points="150,63 224,106 224,194 150,237 76,194 76,106"/>
+          <polygon points="150,106 187,128 187,172 150,194 113,172 113,128"/>
+          <line x1="150" y1="150" x2="150" y2="20"/><line x1="150" y1="150" x2="262" y2="85"/>
+          <line x1="150" y1="150" x2="262" y2="215"/><line x1="150" y1="150" x2="150" y2="280"/>
+          <line x1="150" y1="150" x2="38" y2="215"/><line x1="150" y1="150" x2="38" y2="85"/>
+        </g>
+        <polygon class="radar__shape" id="radarShape" points="150,150 150,150 150,150 150,150 150,150 150,150"/>
+        <g class="radar__pts" id="radarPts"></g>
+      </svg>
+      <ul class="radar__legend">
+        <li><span>STR</span> Strength</li><li><span>END</span> Endurance</li><li><span>SPD</span> Speed</li>
+        <li><span>REC</span> Recovery</li><li><span>CNS</span> Consistency</li><li><span>SOC</span> Social</li>
+      </ul>
+    </div>
+
+    <ul class="meters reveal">
+      <li><span>STRENGTH</span><i class="meter" style="--v:74%"></i><b data-count="74">0</b></li>
+      <li><span>ENDURANCE</span><i class="meter" style="--v:82%"></i><b data-count="82">0</b></li>
+      <li><span>SPEED</span><i class="meter" style="--v:69%"></i><b data-count="69">0</b></li>
+      <li><span>RECOVERY</span><i class="meter" style="--v:81%"></i><b data-count="81">0</b></li>
+      <li><span>CONSISTENCY</span><i class="meter" style="--v:88%"></i><b data-count="88">0</b></li>
+      <li><span>SOCIAL ACTIVITY</span><i class="meter" style="--v:72%"></i><b data-count="72">0</b></li>
+    </ul>
+  </div>
+
+  <!-- progress -->
+  <div class="progress-block">
+    <h3 class="progress-block__title reveal">START → CURRENT → TARGET</h3>
+    <div class="prog reveal">
+      <div class="prog__row"><span class="prog__k">10 KM</span>
+        <div class="prog__vals"><b class="was">01:02:14</b><span aria-hidden="true">↓</span><b class="now">00:53:27</b><span aria-hidden="true">↓</span><b class="goal">00:45:00</b></div>
+        <i class="prog__bar" style="--v:64%"></i>
+      </div>
+      <div class="prog__row"><span class="prog__k">HYROX</span>
+        <div class="prog__vals"><b class="was">01:48:00</b><span aria-hidden="true">↓</span><b class="now">01:31:12</b><span aria-hidden="true">↓</span><b class="goal">01:20:00</b></div>
+        <i class="prog__bar" style="--v:58%"></i>
+      </div>
+      <div class="prog__row"><span class="prog__k">SPARRING</span>
+        <div class="prog__vals"><b class="was">3 rounds</b><span aria-hidden="true">↓</span><b class="now">6 rounds</b><span aria-hidden="true">↓</span><b class="goal">10 rounds</b></div>
+        <i class="prog__bar" style="--v:60%"></i>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TICKER 2 ============ -->
+<div class="ticker ticker--line" data-marquee data-speed="-0.7" aria-hidden="true">
+  <div class="ticker__track">
+    <span>LEVEL 01 START</span><span class="ticker__sep">/</span><span>LEVEL 02 MOVE</span><span class="ticker__sep">/</span>
+    <span>LEVEL 03 TRAIN</span><span class="ticker__sep">/</span><span>LEVEL 04 PUSH</span><span class="ticker__sep">/</span>
+    <span>LEVEL 05 COMPETE</span><span class="ticker__sep">/</span><span>LEVEL 06 ENDURE</span><span class="ticker__sep">/</span>
+    <span>LEVEL 07 PERFORM</span><span class="ticker__sep">/</span><span>LEVEL 08 ELITE</span><span class="ticker__sep">/</span>
+  </div>
+</div>
+
+<!-- ============ LEVELS ============ -->
+<section class="sec levels" id="levels" data-index="LEVELS">
+  <div class="sec__head">
+    <span class="sec__num">07</span>
+    <h2 class="sec__title" data-scramble>LEVEL SYSTEM</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+  <p class="sec__lead reveal">Eight levels. Each one unlocks harder challenges and wider access. You are currently at <b class="acid">LEVEL 06</b>.</p>
+
+  <div class="rail" id="rail">
+    <div class="rail__sticky">
+      <div class="rail__track" id="railTrack">
+        <article class="lvl done"><span class="lvl__n">01</span><h3>START</h3><p>First actions. Baseline testing.</p><span class="lvl__st">PASSED</span></article>
+        <article class="lvl done"><span class="lvl__n">02</span><h3>MOVE</h3><p>Regular activity becomes a habit.</p><span class="lvl__st">PASSED</span></article>
+        <article class="lvl done"><span class="lvl__n">03</span><h3>TRAIN</h3><p>Structured training blocks.</p><span class="lvl__st">PASSED</span></article>
+        <article class="lvl done"><span class="lvl__n">04</span><h3>PUSH</h3><p>Load increases. Comfort zone exits.</p><span class="lvl__st">PASSED</span></article>
+        <article class="lvl done"><span class="lvl__n">05</span><h3>COMPETE</h3><p>First real competitions and duels.</p><span class="lvl__st">PASSED</span></article>
+        <article class="lvl now"><span class="lvl__n">06</span><h3>ENDURE</h3><p>Volume, discipline, recovery control.</p><span class="lvl__st">CURRENT</span></article>
+        <article class="lvl"><span class="lvl__n">07</span><h3>PERFORM</h3><p>Results at a measurable level.</p><span class="lvl__st">LOCKED</span></article>
+        <article class="lvl"><span class="lvl__n">08</span><h3>ELITE</h3><p>International challenges, full access.</p><span class="lvl__st">LOCKED</span></article>
+      </div>
+      <div class="rail__meta" aria-hidden="true"><span>DRAG / SCROLL</span><div class="rail__bar"><i id="railBar"></i></div><span id="railPct">00%</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TYPES ============ -->
+<section class="sec types" id="types" data-index="TYPES">
+  <div class="sec__head">
+    <span class="sec__num">08</span>
+    <h2 class="sec__title" data-scramble>CHALLENGE TYPES</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+  <p class="sec__lead reveal">Not limited to sport. Anything that turns a goal into an action.</p>
+
+  <div class="tgrid">
+    <article class="tcard reveal" data-n="01"><h3>PHYSICAL</h3><p>Running, boxing, HYROX, swimming, cycling, strength.</p></article>
+    <article class="tcard reveal" data-n="02"><h3>SOCIAL</h3><p>Meet a person, join a community, run a team activity.</p></article>
+    <article class="tcard reveal" data-n="03"><h3>SKILL</h3><p>A practical task that develops a specific skill.</p></article>
+    <article class="tcard reveal" data-n="04"><h3>CAREER</h3><p>Events, networking, professional projects.</p></article>
+    <article class="tcard reveal" data-n="05"><h3>ADVENTURE</h3><p>Hiking, outdoor, unfamiliar places.</p></article>
+    <article class="tcard reveal" data-n="06"><h3>COMMUNITY</h3><p>Volunteering and public activity.</p></article>
+    <article class="tcard reveal" data-n="07"><h3>CULTURE</h3><p>Exhibitions, lectures, cultural formats.</p></article>
+    <article class="tcard tcard--cta reveal" data-n="∞"><h3>YOUR OWN</h3><p>Any goal can become a challenge.</p><a href="#access" class="tcard__link">REQUEST ACCESS →</a></article>
+  </div>
+</section>
+
+<!-- ============ OPPORTUNITY + ADVISOR ============ -->
+<section class="sec duo" id="ai" data-index="AI">
+  <div class="sec__head">
+    <span class="sec__num">09</span>
+    <h2 class="sec__title" data-scramble>OPPORTUNITY + ADVISOR</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <div class="duo__grid">
+    <article class="panel reveal">
+      <h3 class="panel__title">OPPORTUNITY ENGINE</h3>
+      <p class="panel__text">Grants, exchanges, fellowships, programs, competitions, volunteering, professional projects — matched to your profile.</p>
+
+      <div class="opp">
+        <div class="opp__head">
+          <span class="opp__name">EU SPORT EXCHANGE / 2026</span>
+          <span class="opp__match"><b data-count="91">0</b>%</span>
+        </div>
+        <div class="opp__bar"><i style="--v:91%"></i></div>
+        <ul class="opp__why">
+          <li>matching skills</li><li>matching age</li><li>matching location</li><li>relevant experience</li><li>goal overlap</li>
+        </ul>
+      </div>
+      <div class="opp opp--dim">
+        <div class="opp__head"><span class="opp__name">HYROX MAJOR / HAMBURG</span><span class="opp__match"><b>84</b>%</span></div>
+        <div class="opp__bar"><i style="--v:84%"></i></div>
+      </div>
+    </article>
+
+    <article class="panel reveal">
+      <h3 class="panel__title">AI ADVISOR</h3>
+      <p class="panel__text">It answers not only “what should I do today”, but “what is currently blocking my progress”.</p>
+      <div class="advisor">
+        <div class="advisor__bar" aria-hidden="true"><span class="dot dot--live"></span> advisor.session</div>
+        <pre class="advisor__body" id="advisorBody" aria-live="off"></pre>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ ARCHIVE + ACHIEVEMENTS ============ -->
+<section class="sec archive" id="archive" data-index="ARCHIVE">
+  <div class="sec__head">
+    <span class="sec__num">10</span>
+    <h2 class="sec__title" data-scramble>CHALLENGE ARCHIVE</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <ul class="arch">
+    <li class="reveal"><span class="arch__id">0147</span><span class="arch__name">SPARRING</span><span class="arch__meta">Hamburg · 6 rounds</span><span class="arch__ok">✓</span></li>
+    <li class="reveal"><span class="arch__id">0146</span><span class="arch__name">10 KM RUN</span><span class="arch__meta">00:53:27</span><span class="arch__ok">✓</span></li>
+    <li class="reveal"><span class="arch__id">0145</span><span class="arch__name">HYROX</span><span class="arch__meta">8 stations · team</span><span class="arch__ok">✓</span></li>
+    <li class="reveal"><span class="arch__id">0144</span><span class="arch__name">STRENGTH TEST</span><span class="arch__meta">+8% vs previous</span><span class="arch__ok">✓</span></li>
+    <li class="reveal"><span class="arch__id">0143</span><span class="arch__name">CLIMBING</span><span class="arch__meta">Route 6b</span><span class="arch__ok">✓</span></li>
+  </ul>
+
+  <div class="ticker ticker--badges" data-marquee data-speed="0.6" aria-hidden="true">
+    <div class="ticker__track">
+      <span class="badge">50 CHALLENGES</span><span class="badge">FIRST SPARRING</span><span class="badge">10K COMPLETED</span>
+      <span class="badge">30 DAYS CONSISTENCY</span><span class="badge">INTERNATIONAL CHALLENGE</span><span class="badge">10 NEW CONNECTIONS</span>
+      <span class="badge">COMPETITION COMPLETED</span>
+    </div>
+  </div>
+  <p class="archive__note reveal">Achievements are confirmed by real results, not by app usage.</p>
+</section>
+
+<!-- ============ ACCESS / PRICING ============ -->
+<section class="sec access" id="access" data-index="ACCESS">
+  <div class="sec__head">
+    <span class="sec__num">11</span>
+    <h2 class="sec__title" data-scramble>ACCESS</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <div class="plans">
+    <article class="plan reveal">
+      <h3 class="plan__name">SUBSCRIPTION</h3>
+      <p class="plan__price"><b>€19</b><span>/ month</span></p>
+      <ul class="plan__list">
+        <li>Challenge Engine access</li><li>Profile + assessment</li><li>Location engine</li><li>People matching</li><li>Performance score</li>
+      </ul>
+      <a href="#cta" class="btn btn--ghost btn--full magnetic"><span class="btn__label">START</span></a>
+    </article>
+
+    <article class="plan plan--main reveal">
+      <span class="plan__flag">MOST UNLOCKED</span>
+      <h3 class="plan__name">PREMIUM</h3>
+      <p class="plan__price"><b>€39</b><span>/ month</span></p>
+      <ul class="plan__list">
+        <li>Everything in Subscription</li><li>Adaptive programs</li><li>Advanced analytics</li><li>Advanced challenges</li><li>Opportunity engine</li><li>AI advisor</li>
+      </ul>
+      <a href="#cta" class="btn btn--acid btn--full magnetic"><span class="btn__label">GET PREMIUM</span><span class="btn__arrow" aria-hidden="true">→</span></a>
+    </article>
+
+    <article class="plan reveal">
+      <h3 class="plan__name">PARTNERS &amp; CORPORATE</h3>
+      <p class="plan__price"><b>CUSTOM</b></p>
+      <ul class="plan__list">
+        <li>Clubs, spaces, events</li><li>User acquisition</li><li>Own challenges &amp; competitions</li><li>Employee wellbeing</li><li>Team challenges</li>
+      </ul>
+      <a href="#cta" class="btn btn--ghost btn--full magnetic"><span class="btn__label">CONTACT</span></a>
+    </article>
+  </div>
+</section>
+
+<!-- ============ FORMULA ============ -->
+<section class="sec formula" id="formula" data-index="FORMULA">
+  <div class="sec__head">
+    <span class="sec__num">12</span>
+    <h2 class="sec__title" data-scramble>THE FORMULA</h2>
+    <span class="sec__line" aria-hidden="true"></span>
+  </div>
+
+  <ol class="flow" id="flow">
+    <li><span>YOUR GOAL</span></li>
+    <li><span>YOUR PROFILE</span></li>
+    <li><span>YOUR DATA</span></li>
+    <li><span>CHALLENGE ENGINE</span></li>
+    <li><span>REAL-WORLD ACTION</span></li>
+    <li><span>RESULT</span></li>
+    <li><span>ADAPTATION</span></li>
+    <li><span>NEXT CHALLENGE</span></li>
+    <li><span>PROGRESS</span></li>
+    <li class="flow__end"><span>UNLOCKED</span></li>
+  </ol>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta" id="cta" data-index="JOIN">
+  <div class="cta__bg" aria-hidden="true"><div class="cta__grid"></div></div>
+  <div class="cta__inner">
+    <p class="tag reveal"><span class="dot dot--acid"></span> Waitlist open — Hamburg, Berlin, Warsaw</p>
+    <h2 class="cta__title">
+      <span data-split>YOU OPEN THE APP</span>
+      <span data-split class="hero__line--pixel">BECAUSE IT ALREADY</span>
+      <span data-split>DECIDED</span>
+    </h2>
+    <form class="form reveal" id="waitForm" novalidate>
+      <div class="form__field">
+        <label for="email">EMAIL</label>
+        <input type="email" id="email" name="email" placeholder="you@domain.com" autocomplete="email" required aria-describedby="emailHelp emailErr" />
+        <p class="form__help" id="emailHelp">We send one message: your access code.</p>
+        <p class="form__err" id="emailErr" role="alert" hidden></p>
+      </div>
+      <button type="submit" class="btn btn--acid magnetic" id="submitBtn">
+        <span class="btn__label">REQUEST ACCESS</span><span class="btn__arrow" aria-hidden="true">→</span>
+      </button>
+      <p class="form__ok" id="formOk" role="status" hidden>ACCESS REQUESTED — CHECK YOUR INBOX.</p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="foot__word" aria-hidden="true" data-parallax="0.04">UNLOCKED</div>
+  <div class="foot__cols">
+    <div class="foot__col">
+      <span class="foot__h">PLATFORM</span>
+      <a href="#system">System</a><a href="#engine">Engine</a><a href="#levels">Levels</a><a href="#types">Types</a>
+    </div>
+    <div class="foot__col">
+      <span class="foot__h">COMPANY</span>
+      <a href="#access">Access</a><a href="#access">Partners</a><a href="#access">Corporate</a><a href="#cta">Contact</a>
+    </div>
+    <div class="foot__col">
+      <span class="foot__h">STATUS</span>
+      <span class="foot__stat"><span class="dot dot--live"></span> Engine online</span>
+      <span class="foot__stat" id="footClock">00:00:00 CET</span>
+      <span class="foot__stat">v0.9.4 — beta</span>
+    </div>
+  </div>
+  <div class="foot__bottom">
+    <span>© 2026 UNLOCKED — WHAT / WHERE / WHEN / WITH WHOM / WHAT'S NEXT</span>
+    <span>BUILT FOR ACTION</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
