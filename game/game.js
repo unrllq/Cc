@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 /* ============================================================
-   BOT SMASHER — click/tap the screen to drop-kick the block bot
+   BOT SMASHER — click/tap the screen to combo the block bot:
+   jab (right) → jab (left) → drop kick (finisher), on a loop
    ============================================================ */
 
 const MIXAMO_SCALE = 0.01; // Mixamo FBX exports are in centimeters
@@ -174,6 +175,32 @@ function tintMaterials(root, color) {
 let playerMixer, botMixer;
 let playerAction, botAction;
 let playerModel, botModel;
+let playerAnimating = false; // true only while the full-body kick mixer should advance
+
+// procedural jab rig — the two only-clip FBX files have no punch animation, so a
+// quick jab/cross is faked by rotating the arm bones directly on top of the
+// player's frame-0 "ready" pose
+const armBones = {};
+const armRest = {};
+
+function cacheArmBones() {
+  const names = ['mixamorigRightArm', 'mixamorigRightForeArm', 'mixamorigLeftArm', 'mixamorigLeftForeArm'];
+  names.forEach((name) => {
+    const bone = playerModel.getObjectByName(name);
+    if (bone) {
+      armBones[name] = bone;
+      armRest[name] = bone.quaternion.clone();
+    }
+  });
+}
+
+function resetPlayerPose() {
+  playerAction.reset();
+  playerAction.paused = true;
+  playerMixer.update(0);
+  playerAnimating = false;
+  Object.keys(armBones).forEach((name) => armBones[name].quaternion.copy(armRest[name]));
+}
 
 let loadedCount = 0;
 function checkAllLoaded() {
@@ -199,11 +226,13 @@ loader.load('assets/drop-kick.fbx', (fbx) => {
   playerAction = playerMixer.clipAction(clip);
   playerAction.clampWhenFinished = true;
   playerAction.loop = THREE.LoopOnce;
-  // freeze on the very first frame as an idle "ready" pose
   playerAction.timeScale = 1.35; // snappier attack, less waiting between clicks
+  // freeze on the very first frame as an idle "ready" pose
   playerAction.play();
   playerAction.paused = true;
   playerMixer.update(0);
+
+  cacheArmBones();
 
   checkAllLoaded();
 });
@@ -241,8 +270,9 @@ const state = {
   combo: 0,
   attacking: false,
   ko: false,
-  lastHitTime: 0,
 };
+
+let comboStep = 0; // 0: jab (right) next, 1: jab (left) next, 2: kick (finisher) next
 
 const clock = new THREE.Clock();
 let comboResetTimer = null;
@@ -264,17 +294,32 @@ function bumpCombo() {
   clearTimeout(comboResetTimer);
   comboResetTimer = setTimeout(() => {
     state.combo = 0;
+    comboStep = 0;
     comboBadge.classList.remove('show');
   }, 1400);
 }
 
-/* ---------------- camera shake ---------------- */
+/* ---------------- camera: idle sway + attack punch-in + shake + hit-stop ---------------- */
 
 let shakeTime = 0;
 let shakeStrength = 0;
 function triggerShake(strength = 0.12, duration = 0.28) {
   shakeStrength = strength;
   shakeTime = duration;
+}
+
+let dollyTime = 0;
+let dollyDuration = 0.25;
+let dollyStrength = 0;
+function triggerDolly(strength, duration) {
+  dollyStrength = strength;
+  dollyDuration = duration;
+  dollyTime = duration;
+}
+
+let hitStopTimer = 0;
+function triggerHitStop(duration) {
+  hitStopTimer = duration;
 }
 
 /* ---------------- synthesized hit sound (no external audio needed) ---------------- */
@@ -319,8 +364,7 @@ function playThud(power = 1) {
 const sparkGroup = new THREE.Group();
 scene.add(sparkGroup);
 
-function spawnSpark(position) {
-  const count = 18;
+function spawnSpark(position, color = 0xffd23d, count = 18) {
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(count * 3);
   const vel = [];
@@ -338,7 +382,7 @@ function spawnSpark(position) {
     ));
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const mat = new THREE.PointsMaterial({ color: 0xffd23d, size: 0.06, transparent: true, opacity: 1 });
+  const mat = new THREE.PointsMaterial({ color, size: 0.06, transparent: true, opacity: 1 });
   const points = new THREE.Points(geo, mat);
   points.userData = { vel, life: 0 };
   sparkGroup.add(points);
@@ -366,14 +410,51 @@ function updateSparks(dt) {
   }
 }
 
+/* ---------------- procedural jab (right/left cross) ---------------- */
+
+const jab = { active: false, t: 0, duration: 0.3, side: 'right' };
+
+function startJabPose(side) {
+  jab.active = true;
+  jab.t = 0;
+  jab.side = side;
+}
+
+function updateJab(dt) {
+  if (!jab.active) return;
+  jab.t += dt;
+  const p = Math.min(1, jab.t / jab.duration);
+  const punch = Math.sin(p * Math.PI); // extend out then retract
+
+  const sign = jab.side === 'right' ? 1 : -1;
+  const armName = jab.side === 'right' ? 'mixamorigRightArm' : 'mixamorigLeftArm';
+  const foreName = jab.side === 'right' ? 'mixamorigRightForeArm' : 'mixamorigLeftForeArm';
+  const armBone = armBones[armName];
+  const foreBone = armBones[foreName];
+
+  if (armBone && foreBone) {
+    const shoulderPunch = new THREE.Quaternion().setFromEuler(new THREE.Euler(punch * 1.3, punch * -0.5 * sign, punch * 0.1 * -sign));
+    const elbowExtend = new THREE.Quaternion().setFromEuler(new THREE.Euler(punch * 0.9, 0, punch * -1.6 * sign));
+    armBone.quaternion.copy(armRest[armName]).multiply(shoulderPunch);
+    foreBone.quaternion.copy(armRest[foreName]).multiply(elbowExtend);
+  }
+
+  if (p >= 1) {
+    jab.active = false;
+    if (armBone) armBone.quaternion.copy(armRest[armName]);
+    if (foreBone) foreBone.quaternion.copy(armRest[foreName]);
+  }
+}
+
 /* ---------------- bot reaction (no hit-react clip available, so we fake it) ---------------- */
 
 let botStagger = { active: false, t: 0 };
 let botKnockedOut = false;
 
-function reactBotHit() {
+function reactBotHit(strength = 1) {
   botStagger.active = true;
   botStagger.t = 0;
+  botStagger.strength = strength;
   rimRed.intensity = 12;
 }
 
@@ -384,9 +465,10 @@ function updateBotStagger(dt) {
   if (botStagger.active) {
     botStagger.t += dt;
     const d = botStagger.t;
-    const wobble = Math.sin(d * 40) * Math.max(0, 0.08 - d * 0.3);
+    const s = botStagger.strength || 1;
+    const wobble = Math.sin(d * 40) * Math.max(0, 0.08 * s - d * 0.3);
     botModel.rotation.z = wobble;
-    botModel.position.x = 1.05 + Math.sin(d * 50) * Math.max(0, 0.03 - d * 0.1);
+    botModel.position.x = 1.05 + Math.sin(d * 50) * Math.max(0, 0.03 * s - d * 0.1);
     if (d > 0.25) {
       botStagger.active = false;
       botModel.rotation.z = 0;
@@ -449,60 +531,137 @@ function respawnBot() {
   rise();
 }
 
-/* ---------------- attack flow ---------------- */
+/* ---------------- attack flow: jab → jab → kick combo ----------------
+   Driven entirely by the render loop's own dt (not setTimeout) so a slow
+   device or a throttled background tab can never let an attack's input
+   lock outlive its animation — everything advances on the same clock. */
 
-function attack() {
-  if (!playerAction || !botAction || state.attacking || state.ko) return;
+function landHit({ dmg, sparkColor, spark = 18, shake = [0.1, 0.22], dolly = [0.1, 0.16], soundPower = 1 }) {
+  if (state.ko) return;
+  state.enemyHp = Math.max(0, state.enemyHp - dmg);
+  updateHpBar();
+  addScore(dmg * 10);
+  bumpCombo();
+  reactBotHit(dmg / 8);
+  triggerShake(shake[0], shake[1]);
+  triggerDolly(dolly[0], dolly[1]);
+  playThud(soundPower);
+
+  const botHead = new THREE.Vector3(1.0, 1.55, 0.1);
+  spawnSpark(botHead, sparkColor, spark);
+
+  if (state.enemyHp <= 0) {
+    knockOutBot();
+  }
+}
+
+// { type: 'jab' | 'kick', t, impactAt, endAt, impactDone, side }
+let activeAttack = null;
+
+function doJab(side) {
+  state.attacking = true;
+  hintText.classList.add('fade');
+  startJabPose(side);
+
+  activeAttack = {
+    type: 'jab',
+    t: 0,
+    impactAt: jab.duration * 0.5,
+    endAt: jab.duration + 0.07,
+    impactDone: false,
+    side,
+  };
+}
+
+function doKick() {
   state.attacking = true;
   hintText.classList.add('fade');
 
+  playerAnimating = true;
   playerAction.reset();
   playerAction.paused = false;
   playerAction.play();
 
   const clip = playerAction.getClip();
   const duration = clip.duration / playerAction.timeScale; // real playback seconds
-  const impactDelay = duration * 0.42; // roughly when the kick connects
 
-  setTimeout(() => {
-    if (state.ko) return;
-    const dmg = 8 + Math.floor(Math.random() * 6);
-    state.enemyHp = Math.max(0, state.enemyHp - dmg);
-    updateHpBar();
-    addScore(dmg * 10);
-    bumpCombo();
-    reactBotHit();
-    triggerShake();
-    playThud(1 + Math.min(1, state.combo * 0.08));
+  activeAttack = {
+    type: 'kick',
+    t: 0,
+    impactAt: duration * 0.42, // roughly when the kick connects
+    endAt: duration + 0.06,
+    impactDone: false,
+  };
+}
 
-    const botHead = new THREE.Vector3(1.0, 1.55, 0.1);
-    spawnSpark(botHead);
+function updateActiveAttack(dt) {
+  if (!activeAttack) return;
+  activeAttack.t += dt;
 
-    if (state.enemyHp <= 0) {
-      setTimeout(knockOutBot, 120);
+  if (!activeAttack.impactDone && activeAttack.t >= activeAttack.impactAt) {
+    activeAttack.impactDone = true;
+    if (activeAttack.type === 'jab') {
+      landHit({
+        dmg: 3 + Math.floor(Math.random() * 3),
+        sparkColor: 0x9fd8ff,
+        spark: 10,
+        shake: [0.06, 0.14],
+        dolly: [0.07, 0.14],
+        soundPower: 0.6 + Math.min(0.6, state.combo * 0.05),
+      });
+    } else {
+      triggerHitStop(0.055); // brief freeze-frame for a punchier finisher
+      landHit({
+        dmg: 12 + Math.floor(Math.random() * 7),
+        sparkColor: 0xffd23d,
+        spark: 26,
+        shake: [0.3, 0.42],
+        dolly: [0.32, 0.4],
+        soundPower: 1.3 + Math.min(0.6, state.combo * 0.08),
+      });
     }
-  }, impactDelay * 1000);
+  }
 
-  setTimeout(() => {
+  if (activeAttack.t >= activeAttack.endAt) {
+    const wasKick = activeAttack.type === 'kick';
+    activeAttack = null;
     state.attacking = false;
     hintText.classList.remove('fade');
-  }, duration * 1000 + 60);
+    if (wasKick && !state.ko) resetPlayerPose();
+  }
+}
+
+function performAttack() {
+  if (!playerAction || !botAction || state.attacking || state.ko) return;
+
+  if (comboStep < 2) {
+    doJab(comboStep === 0 ? 'right' : 'left');
+    comboStep++;
+  } else {
+    doKick();
+    comboStep = 0;
+  }
 }
 
 canvas.addEventListener('pointerdown', () => {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  attack();
+  performAttack();
 });
 
 /* ---------------- render loop ---------------- */
 
 function animate() {
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt = Math.min(clock.getDelta(), 0.05);
+  const dt = hitStopTimer > 0 ? 0 : rawDt;
+  hitStopTimer = Math.max(0, hitStopTimer - rawDt);
   const t = clock.elapsedTime;
 
-  if (playerMixer) playerMixer.update(dt);
+  if (playerMixer && playerAnimating) playerMixer.update(dt);
   if (botMixer && !state.ko) botMixer.update(dt);
+
+  updateJab(dt);
+  updateActiveAttack(dt);
 
   if (idleBob && playerModel && !state.attacking) {
     playerModel.position.y = Math.sin(t * 1.6) * 0.01;
@@ -517,14 +676,29 @@ function animate() {
   ring.material.opacity = 0.45 + Math.sin(t * 2) * 0.1;
   particles.rotation.y += dt * 0.02;
 
-  // camera shake
-  let camOffset = new THREE.Vector3();
+  // --- camera: slow idle sway + attack dolly punch-in + shake + hit-stop ---
+  const swayX = Math.sin(t * 0.17) * 0.16;
+  const swayY = Math.sin(t * 0.23) * 0.035;
+
+  let dollyOffset = 0;
+  if (dollyTime > 0) {
+    dollyTime -= dt;
+    const p = 1 - Math.max(0, dollyTime) / dollyDuration;
+    dollyOffset = -dollyStrength * Math.sin(Math.min(1, p) * Math.PI);
+  }
+
+  let shakeOffset = new THREE.Vector3();
   if (shakeTime > 0) {
     shakeTime -= dt;
     const s = shakeStrength * (shakeTime / 0.3);
-    camOffset.set((Math.random() - 0.5) * s, (Math.random() - 0.5) * s, 0);
+    shakeOffset.set((Math.random() - 0.5) * s, (Math.random() - 0.5) * s, 0);
   }
-  camera.position.copy(cameraBasePos).add(camOffset);
+
+  camera.position.set(
+    cameraBasePos.x + swayX + shakeOffset.x,
+    cameraBasePos.y + swayY + shakeOffset.y,
+    cameraBasePos.z + dollyOffset + shakeOffset.z
+  );
   camera.lookAt(cameraLookAt);
 
   renderer.render(scene, camera);
