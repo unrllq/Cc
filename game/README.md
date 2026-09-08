@@ -16,6 +16,8 @@ A tiny 3D fighting minigame built with Three.js.
   feels static.
 - At 0 HP the bot topples over, shows a "K.O." banner, then gets back up
   with full health so the fight continues.
+- The fight happens in front of a real scanned stone outcrop (a user-supplied
+  glTF scan), not a generic procedural backdrop.
 
 ## Assets
 
@@ -29,6 +31,22 @@ same Mixamo rig but don't need their own mesh, so instead of shipping 4 more
 `THREE.AnimationClip.toJSON()` into `assets/moves.json` (~650KB total) and
 are loaded with `THREE.AnimationClip.parse()` at runtime, then bound to
 both characters' mixers.
+
+`assets/location.glb` is the scanned stone outcrop used as the arena's
+backdrop. Its surface is too jagged for the fighters to stand on believably,
+so it sits scaled up behind them as the location's centerpiece while a plain
+circular floor remains the actual walkable ground. The original upload was
+11MB (a 4096×4096 PNG texture plus ~167k untouched vertices); it's checked in
+here resized to a 1024×1024 texture and with quantized geometry (~4.2MB)
+via `@gltf-transform/cli`:
+
+```
+gltf-transform resize   in.glb tmp1.glb --width 1024 --height 1024
+gltf-transform jpeg     tmp1.glb tmp2.glb --quality 85
+gltf-transform quantize tmp2.glb assets/location.glb
+```
+(Draco got it down to ~430KB, but pulling in a WASM decoder wasn't worth it
+at this size — quantization alone was enough.)
 
 `ChapaGiratoria.fbx` (a spinning kick) was supplied but its file turned out
 to be corrupted — both three.js's FBXLoader and an independent parser

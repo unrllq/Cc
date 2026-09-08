@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ============================================================
    BOT SMASHER — tap the LEFT side of the screen to throw punches
@@ -33,8 +34,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0c14);
-scene.fog = new THREE.Fog(0x0a0c14, 6, 16);
+scene.background = new THREE.Color(0x100e0c);
+scene.fog = new THREE.Fog(0x100e0c, 7, 18);
 
 const VFOV_DEG = 42;
 const FRAME_HALF_WIDTH = 2.6; // world units that must stay visible on either side of center
@@ -60,12 +61,12 @@ function onResize() {
 window.addEventListener('resize', onResize);
 onResize();
 
-/* ---------------- arena ---------------- */
+/* ---------------- arena: a real scanned stone outcrop as the location ---------------- */
 
-const ambient = new THREE.AmbientLight(0x8899bb, 0.55);
+const ambient = new THREE.AmbientLight(0xaaa38c, 0.6);
 scene.add(ambient);
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+const keyLight = new THREE.DirectionalLight(0xfff2d8, 1.7);
 keyLight.position.set(2.5, 5, 3.5);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
@@ -78,6 +79,11 @@ keyLight.shadow.camera.bottom = -4;
 keyLight.shadow.bias = -0.0015;
 scene.add(keyLight);
 
+// low warm bounce light so the rock face isn't a flat silhouette from the back
+const bounceLight = new THREE.DirectionalLight(0xffd9a0, 0.4);
+bounceLight.position.set(-1, 0.6, 4);
+scene.add(bounceLight);
+
 const rimRed = new THREE.PointLight(0xff2e4d, 6, 8, 2);
 rimRed.position.set(1.6, 1.6, -1.5);
 scene.add(rimRed);
@@ -86,50 +92,37 @@ const rimBlue = new THREE.PointLight(0x3d8bff, 5, 8, 2);
 rimBlue.position.set(-1.8, 1.4, -1.2);
 scene.add(rimBlue);
 
-// floor
-const floorGeo = new THREE.CircleGeometry(6, 64);
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x14161f, roughness: 0.85, metalness: 0.1 });
+// ground — a plain earthy floor; the fighters don't stand on the scanned rock
+// itself (its scanned surface is too jagged to stand on believably), it
+// stands behind them as the location's centerpiece
+const floorGeo = new THREE.CircleGeometry(7, 64);
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x342f26, roughness: 0.95, metalness: 0.02 });
 const floor = new THREE.Mesh(floorGeo, floorMat);
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
 
-// glowing ring on the floor to frame the fight
-const ringGeo = new THREE.RingGeometry(1.55, 1.62, 64);
-const ringMat = new THREE.MeshBasicMaterial({ color: 0xff2e4d, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
-const ring = new THREE.Mesh(ringGeo, ringMat);
-ring.rotation.x = -Math.PI / 2;
-ring.position.y = 0.01;
-scene.add(ring);
+// the scanned stone location, filling the backdrop behind the fight
+const gltfLoader = new GLTFLoader();
+gltfLoader.load('assets/location.glb', (gltf) => {
+  const rock = gltf.scene;
+  rock.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  const LOCATION_SCALE = 2.6;
+  rock.scale.setScalar(LOCATION_SCALE);
+  rock.rotation.y = 0.5;
+  // the model's own lowest point is embedded slightly into the floor so no
+  // gap is visible where the two meet
+  rock.position.set(0.3, -(-0.6391) * LOCATION_SCALE - 0.35, -2.6);
+  scene.add(rock);
+});
 
-const ring2Geo = new THREE.RingGeometry(2.35, 2.4, 64);
-const ring2 = new THREE.Mesh(ring2Geo, new THREE.MeshBasicMaterial({ color: 0x3d8bff, transparent: true, opacity: 0.28, side: THREE.DoubleSide }));
-ring2.rotation.x = -Math.PI / 2;
-ring2.position.y = 0.008;
-scene.add(ring2);
-
-// backdrop wall with vertical neon strips
-const backWall = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 8),
-  new THREE.MeshStandardMaterial({ color: 0x0c0d14, roughness: 1 })
-);
-backWall.position.set(0, 4, -4);
-scene.add(backWall);
-
-function makeStrip(x, color) {
-  const strip = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.06, 8),
-    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5 })
-  );
-  strip.position.set(x, 4, -3.98);
-  scene.add(strip);
-}
-for (let i = -9; i <= 9; i += 1.5) {
-  makeStrip(i, i % 3 === 0 ? 0xff2e4d : 0x22263a);
-}
-
-// simple drifting particles for atmosphere
-const particleCount = 120;
+// drifting dust motes for atmosphere
+const particleCount = 90;
 const particleGeo = new THREE.BufferGeometry();
 const particlePos = new Float32Array(particleCount * 3);
 for (let i = 0; i < particleCount; i++) {
@@ -138,7 +131,7 @@ for (let i = 0; i < particleCount; i++) {
   particlePos[i * 3 + 2] = (Math.random() - 0.5) * 10 - 1;
 }
 particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-const particles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0x556, size: 0.02, transparent: true, opacity: 0.5 }));
+const particles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0xb8a684, size: 0.018, transparent: true, opacity: 0.4 }));
 scene.add(particles);
 
 /* ---------------- move catalogue ----------------
@@ -729,7 +722,6 @@ function animate() {
   updateBotStagger(dt);
   updateSparks(dt);
 
-  ring.material.opacity = 0.45 + Math.sin(t * 2) * 0.1;
   particles.rotation.y += dt * 0.02;
 
   // --- camera: slow idle sway + attack dolly punch-in + shake + hit-stop ---
