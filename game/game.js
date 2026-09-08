@@ -73,7 +73,7 @@ function onResize() {
 window.addEventListener('resize', onResize);
 onResize();
 
-/* ---------------- arena: a real scanned stone outcrop as the location ---------------- */
+/* ---------------- arena: asphalt lot in front of a McDonald's ---------------- */
 
 const ambient = new THREE.AmbientLight(0xaaa38c, 0.6);
 scene.add(ambient);
@@ -104,97 +104,41 @@ const rimBlue = new THREE.PointLight(0x3d8bff, 5, 8, 2);
 rimBlue.position.set(-1.8, 1.4, -1.2);
 scene.add(rimBlue);
 
-// ground — a plain earthy floor; the fighters don't stand on the scanned rock
-// itself (its scanned surface is too jagged to stand on believably), it
-// stands behind them as the location's centerpiece
+// ground — a plain asphalt floor, the actual walkable parking-lot surface
+// the fighters clash on (the McDonald's model behind them supplies its own
+// lot geometry too, but it's full of curbs/lane markings, so a clean flat
+// disc reads better as the immediate fighting surface)
 const floorGeo = new THREE.CircleGeometry(7, 64);
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x342f26, roughness: 0.95, metalness: 0.02 });
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x38383c, roughness: 0.92, metalness: 0.05 });
 const floor = new THREE.Mesh(floorGeo, floorMat);
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
 
-// the scanned stone location, pushed well back so it reads as a distant
-// backdrop behind the fence ring rather than looming over the fight
+// the McDonald's building sits in the background as pure backdrop scenery,
+// pushed back so its base overlaps the far edge of the floor with no gap
 const gltfLoader = new GLTFLoader();
-gltfLoader.load('assets/location.glb', (gltf) => {
-  const rock = gltf.scene;
-  rock.traverse((child) => {
+gltfLoader.load('assets/mcdonalds.glb', (gltf) => {
+  const building = gltf.scene;
+  building.traverse((child) => {
     if (child.isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
     }
   });
-  const LOCATION_SCALE = 3.4;
-  rock.scale.setScalar(LOCATION_SCALE);
-  rock.rotation.y = 0.5;
-  // the model's own lowest point is embedded slightly into the floor so no
-  // gap is visible where the two meet
-  rock.position.set(0.3, -(-0.6391) * LOCATION_SCALE - 0.35, -7.6);
-  scene.add(rock);
+  // the model's front facade (arches + drive-thru) faces its own local +X —
+  // rotate it 90° so that faces our camera, then recenter the (now rotated,
+  // rescaled) bounding box onto world X=0, drop its lowest point onto the
+  // floor (y=0), and pull it in a bit so the arches sign reads in frame
+  const MCD_SCALE = 0.8;
+  building.scale.setScalar(MCD_SCALE);
+  building.rotation.y = Math.PI / 2;
+  building.position.set(0.48 * MCD_SCALE, -0.103 * MCD_SCALE, -5.5 - 8.1 * MCD_SCALE);
+  scene.add(building);
   checkAllLoaded();
 }, undefined, (err) => {
-  console.error('location.glb failed to load', err);
+  console.error('mcdonalds.glb failed to load', err);
   checkAllLoaded(); // decorative — don't block the fight over it
-});
-
-// a circular barrier of concrete fence segments surrounds the fight, with a
-// wide gap left open on the camera-facing side so the view stays clear
-const FENCE_SCALE = 0.01;
-const RING_RADIUS = 4;
-const RING_GAP_DEG = 110; // open arc facing the camera
-gltfLoader.load('assets/fence.glb', (gltf) => {
-  gltf.scene.updateMatrixWorld(true);
-  let fenceMesh = null;
-  gltf.scene.traverse((child) => {
-    if (child.isMesh && !fenceMesh) fenceMesh = child;
-  });
-  const geo = fenceMesh.geometry.clone();
-  geo.applyMatrix4(fenceMesh.matrixWorld);
-  geo.computeBoundingBox();
-  const segLength = (geo.boundingBox.max.z - geo.boundingBox.min.z) * FENCE_SCALE;
-  const groundY = -geo.boundingBox.min.y * FENCE_SCALE;
-
-  const usableArc = THREE.MathUtils.degToRad(360 - RING_GAP_DEG);
-  const spacing = segLength * 0.55; // slight overlap reads as a solid barrier wall
-  const count = THREE.MathUtils.clamp(Math.round((usableArc * RING_RADIUS) / spacing), 6, 24);
-
-  const fence = new THREE.InstancedMesh(geo, fenceMesh.material, count);
-  fence.castShadow = true;
-  fence.receiveShadow = true;
-  const dummy = new THREE.Object3D();
-  for (let i = 0; i < count; i++) {
-    const theta = Math.PI - usableArc / 2 + (usableArc * i) / (count - 1);
-    dummy.position.set(Math.sin(theta) * RING_RADIUS, groundY, Math.cos(theta) * RING_RADIUS);
-    dummy.rotation.set(0, theta, 0);
-    dummy.scale.setScalar(FENCE_SCALE);
-    dummy.updateMatrix();
-    fence.setMatrixAt(i, dummy.matrix);
-  }
-  fence.instanceMatrix.needsUpdate = true;
-  scene.add(fence);
-  checkAllLoaded();
-}, undefined, (err) => {
-  console.error('fence.glb failed to load', err);
-  checkAllLoaded();
-});
-
-// a spectator behind the fence, watching from the far side (opposite camera)
-gltfLoader.load('assets/spectator.glb', (gltf) => {
-  const girl = gltf.scene;
-  girl.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-  girl.position.set(0.15, 0, -(RING_RADIUS + 1.1));
-  girl.rotation.y = Math.PI; // face back toward the fight
-  scene.add(girl);
-  checkAllLoaded();
-}, undefined, (err) => {
-  console.error('spectator.glb failed to load', err);
-  checkAllLoaded();
 });
 
 // drifting dust motes for atmosphere
@@ -283,8 +227,8 @@ function resetPlayerPose() {
 }
 
 // 2 character FBX files (mesh + skeleton) + 1 JSON file with the other moves'
-// animation curves (see assets/moves.json) + the fence ring + the spectator
-const TOTAL_ASSETS = 5;
+// animation curves (see assets/moves.json) + the McDonald's backdrop
+const TOTAL_ASSETS = 4;
 let loadedCount = 0;
 function checkAllLoaded() {
   loadedCount++;
@@ -820,15 +764,24 @@ function unlockAudio() {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }
 
+// only the PLAYER's own charge-in sequence should block punch/kick — the
+// bot's periodic rush runs on the same shared `activeRun` slot but doesn't
+// touch the player's mixer/model at all, so blocking on it too used to leave
+// every button dead for ~1-2s each time the bot rushed in (every 6-9s), which
+// read as "the game randomly stops responding"
+function isPlayerRunning() {
+  return activeRun && activeRun.who === 'player';
+}
+
 function performPunch() {
-  if (!playerActions.dropKick || state.attacking || state.ko || activeRun) return;
+  if (!playerActions.dropKick || state.attacking || state.ko || isPlayerRunning()) return;
   const name = PLAYER_PUNCH_SEQUENCE[punchIndex % PLAYER_PUNCH_SEQUENCE.length];
   punchIndex++;
   doPlayerMove(name);
 }
 
 function performKick() {
-  if (!playerActions.dropKick || state.attacking || state.ko || activeRun) return;
+  if (!playerActions.dropKick || state.attacking || state.ko || isPlayerRunning()) return;
   const name = PLAYER_KICK_SEQUENCE[kickIndex % PLAYER_KICK_SEQUENCE.length];
   kickIndex++;
   doPlayerMove(name);

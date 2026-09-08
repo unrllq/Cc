@@ -11,7 +11,12 @@ A tiny 3D fighting minigame built with Three.js.
 - The bot stands its ground in a looping "Center Block" stance, randomly
   throws one of the punch/kick moves back between blocks, and every so
   often dashes in with its own charge attack too (cosmetic only — it
-  doesn't damage the player), mirroring the player's РЫВОК.
+  doesn't damage the player), mirroring the player's РЫВОК. УДАР/КИК stay
+  live the whole time this is happening — only the player's *own* РЫВОК is
+  exclusive with the bot's, since it's the only move that shares the bot's
+  charge-attack state machine. (An earlier version blocked all three
+  buttons on any charge attack, player's or bot's, which made the game feel
+  like it randomly stopped responding to input every 6-9 seconds.)
 - Each connecting hit chips the bot's health bar, adds score and a combo
   counter, and triggers camera shake + a forward dolly punch-in (bigger for
   kicks and the charge attack, with a brief hit-stop freeze-frame on the
@@ -20,11 +25,8 @@ A tiny 3D fighting minigame built with Three.js.
   feels static.
 - At 0 HP the bot topples over, shows a "K.O." banner, then gets back up
   with full health so the fight continues.
-- The fight happens in the center of a circular concrete-fence barrier (a
-  user-supplied glTF model, instanced many times around the ring, with a
-  wide gap left open on the camera-facing side), in front of a real scanned
-  stone outcrop pushed back into the distance, with a spectator standing
-  behind the fence watching the fight.
+- The fight happens on a plain asphalt lot in front of a McDonald's,
+  pushed back into the distance as pure backdrop scenery.
 
 ## Assets
 
@@ -48,58 +50,22 @@ for the РЫВОК dash is driven separately by a small tween
 (`startRunSequence`/`updateActiveRun`) shared by both the player's button
 and the bot's own charge attack.
 
-`assets/location.glb` is the scanned stone outcrop used as the arena's
-backdrop, pushed well back and rescaled so the fighters clash in the center
-of the fence ring instead of standing right in front of it. Its surface is
-too jagged for the fighters to stand on believably, so it sits behind them
-as the location's centerpiece while a plain circular floor remains the
-actual walkable ground. The original upload was 11MB (a 4096×4096 PNG
-texture plus ~167k untouched vertices); it's checked in here resized to a
-1024×1024 texture and with quantized geometry (~4.2MB) via
-`@gltf-transform/cli`:
+`assets/mcdonalds.glb` is the backdrop building, pushed back so its base
+overlaps the far edge of the floor with no gap, rotated 90° so its front
+facade (the arches sign + drive-thru menu boards) faces the camera, and
+scaled down slightly (0.8×) to fit the frame. The original upload was
+12MB — almost entirely two 4096×2048 PNG textures — so it's checked in here
+at 463KB via the standard `@gltf-transform/cli` pipeline:
 
 ```
-gltf-transform resize   in.glb tmp1.glb --width 1024 --height 1024
-gltf-transform jpeg     tmp1.glb tmp2.glb --quality 85
-gltf-transform quantize tmp2.glb assets/location.glb
-```
-(Draco got it down to ~430KB, but pulling in a WASM decoder wasn't worth it
-at this size — quantization alone was enough.)
-
-`assets/fence.glb` is the concrete-barrier segment instanced into a full
-ring around the fight (`RING_RADIUS`/`RING_GAP_DEG` in `game.js` control the
-radius and how wide a gap is left open facing the camera). The original
-upload was 19.9MB; it's checked in here at 925KB via the same
-resize+jpeg pipeline as above, **but deliberately not quantized**:
-
-```
-gltf-transform resize in.glb tmp1.glb --width 1024 --height 1024
-gltf-transform jpeg   tmp1.glb assets/fence.glb --quality 85 --formats png
-```
-The fence mesh's own node carries a leftover ~135× scale + 90° rotation
-transform from its original export, which needs to be baked into the raw
-geometry (`geometry.applyMatrix4(mesh.matrixWorld)`) before it can be used
-as an `InstancedMesh` template with independent per-instance transforms.
-`BufferGeometry.applyMatrix4()` silently re-clamps a *quantized* (normalized
-integer) position attribute back into its ±1 representable range after
-transforming it, which would destroy that baked-in scale — so quantization
-is skipped for this asset specifically.
-
-`assets/spectator.glb` is the girl model placed behind the fence, facing
-back toward the fight. The original upload was 18.7MB; it's checked in here
-at 1.04MB via resize + jpeg + quantize + an aggressive simplify pass:
-
-```
-gltf-transform resize    in.glb tmp1.glb --width 512 --height 512
-gltf-transform jpeg      tmp1.glb tmp2.glb --quality 85 --formats png
+gltf-transform resize    in.glb tmp1.glb --width 1024 --height 1024
+gltf-transform jpeg      tmp1.glb tmp2.glb --quality 82 --formats png
 gltf-transform weld      tmp2.glb tmp3.glb
-gltf-transform simplify  tmp3.glb tmp4.glb --ratio 0.1 --error 0.1 --lock-border false
-gltf-transform quantize  tmp4.glb assets/spectator.glb
+gltf-transform quantize  tmp3.glb assets/mcdonalds.glb
 ```
-`--lock-border false` matters here: the default locks every UV-seam vertex
-as a "border" and scan/DAZ-style meshes are heavily seamed, so without it
-`simplify` barely reduces the triangle count at all (the hair mesh alone
-went from 149,512 to 21,476 vertices with the flag set).
+Earlier rounds used a scanned stone outcrop, a concrete-fence ring, and a
+spectator model here; all three were removed per a later request to clean
+up the background and fight in front of the McDonald's instead.
 
 `ChapaGiratoria.fbx` (a spinning kick) was supplied but its file turned out
 to be corrupted — both three.js's FBXLoader and an independent parser
