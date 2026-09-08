@@ -3,10 +3,12 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ============================================================
-   BOT SMASHER — tap the LEFT side of the screen to throw punches
-   (Punching → Boxing → Punching Bag) and the RIGHT side to throw
-   kicks (Martelo → Drop Kick), each cycling in turn. The bot fires
-   back a random move from its own pool between blocking stances.
+   BOT SMASHER — three buttons, full control:
+   УДАР cycles punches (Punching → Boxing → Punching Bag), КИК
+   cycles kicks (Martelo → Drop Kick), and РЫВОК dashes in for a
+   Fist Fight charge attack, then dashes back. The bot blocks,
+   randomly throws moves back, and periodically rushes in with
+   its own charge attack too.
    ============================================================ */
 
 const MIXAMO_SCALE = 0.01; // Mixamo FBX exports are in centimeters
@@ -22,6 +24,16 @@ const comboBadge = document.getElementById('comboBadge');
 const comboValueEl = document.getElementById('comboValue');
 const koBadge = document.getElementById('koBadge');
 const hintText = document.getElementById('hintText');
+const btnPunch = document.getElementById('btnPunch');
+const btnRun = document.getElementById('btnRun');
+const btnKick = document.getElementById('btnKick');
+
+// stand marks both fighters return to between moves, and the closer
+// "clash" marks the RUN charge attack dashes in to
+const PLAYER_STAND_X = -1.05;
+const BOT_STAND_X = 1.05;
+const PLAYER_CLASH_X = -0.18;
+const BOT_CLASH_X = 0.18;
 
 /* ---------------- renderer / scene / camera ---------------- */
 
@@ -35,7 +47,7 @@ renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x100e0c);
-scene.fog = new THREE.Fog(0x100e0c, 7, 18);
+scene.fog = new THREE.Fog(0x100e0c, 8, 24);
 
 const VFOV_DEG = 42;
 const FRAME_HALF_WIDTH = 2.6; // world units that must stay visible on either side of center
@@ -102,7 +114,8 @@ floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
 
-// the scanned stone location, filling the backdrop behind the fight
+// the scanned stone location, pushed well back so it reads as a distant
+// backdrop behind the fence ring rather than looming over the fight
 const gltfLoader = new GLTFLoader();
 gltfLoader.load('assets/location.glb', (gltf) => {
   const rock = gltf.scene;
@@ -112,13 +125,76 @@ gltfLoader.load('assets/location.glb', (gltf) => {
       child.receiveShadow = true;
     }
   });
-  const LOCATION_SCALE = 2.6;
+  const LOCATION_SCALE = 3.4;
   rock.scale.setScalar(LOCATION_SCALE);
   rock.rotation.y = 0.5;
   // the model's own lowest point is embedded slightly into the floor so no
   // gap is visible where the two meet
-  rock.position.set(0.3, -(-0.6391) * LOCATION_SCALE - 0.35, -2.6);
+  rock.position.set(0.3, -(-0.6391) * LOCATION_SCALE - 0.35, -7.6);
   scene.add(rock);
+  checkAllLoaded();
+}, undefined, (err) => {
+  console.error('location.glb failed to load', err);
+  checkAllLoaded(); // decorative — don't block the fight over it
+});
+
+// a circular barrier of concrete fence segments surrounds the fight, with a
+// wide gap left open on the camera-facing side so the view stays clear
+const FENCE_SCALE = 0.01;
+const RING_RADIUS = 4;
+const RING_GAP_DEG = 110; // open arc facing the camera
+gltfLoader.load('assets/fence.glb', (gltf) => {
+  gltf.scene.updateMatrixWorld(true);
+  let fenceMesh = null;
+  gltf.scene.traverse((child) => {
+    if (child.isMesh && !fenceMesh) fenceMesh = child;
+  });
+  const geo = fenceMesh.geometry.clone();
+  geo.applyMatrix4(fenceMesh.matrixWorld);
+  geo.computeBoundingBox();
+  const segLength = (geo.boundingBox.max.z - geo.boundingBox.min.z) * FENCE_SCALE;
+  const groundY = -geo.boundingBox.min.y * FENCE_SCALE;
+
+  const usableArc = THREE.MathUtils.degToRad(360 - RING_GAP_DEG);
+  const spacing = segLength * 0.55; // slight overlap reads as a solid barrier wall
+  const count = THREE.MathUtils.clamp(Math.round((usableArc * RING_RADIUS) / spacing), 6, 24);
+
+  const fence = new THREE.InstancedMesh(geo, fenceMesh.material, count);
+  fence.castShadow = true;
+  fence.receiveShadow = true;
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < count; i++) {
+    const theta = Math.PI - usableArc / 2 + (usableArc * i) / (count - 1);
+    dummy.position.set(Math.sin(theta) * RING_RADIUS, groundY, Math.cos(theta) * RING_RADIUS);
+    dummy.rotation.set(0, theta, 0);
+    dummy.scale.setScalar(FENCE_SCALE);
+    dummy.updateMatrix();
+    fence.setMatrixAt(i, dummy.matrix);
+  }
+  fence.instanceMatrix.needsUpdate = true;
+  scene.add(fence);
+  checkAllLoaded();
+}, undefined, (err) => {
+  console.error('fence.glb failed to load', err);
+  checkAllLoaded();
+});
+
+// a spectator behind the fence, watching from the far side (opposite camera)
+gltfLoader.load('assets/spectator.glb', (gltf) => {
+  const girl = gltf.scene;
+  girl.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  girl.position.set(0.15, 0, -(RING_RADIUS + 1.1));
+  girl.rotation.y = Math.PI; // face back toward the fight
+  scene.add(girl);
+  checkAllLoaded();
+}, undefined, (err) => {
+  console.error('spectator.glb failed to load', err);
+  checkAllLoaded();
 });
 
 // drifting dust motes for atmosphere
@@ -147,12 +223,14 @@ const MOVES = {
   boxing: { group: 'punch', timeScale: 1.2, impactFrac: 0.32, dmg: [5, 9], sparkColor: 0x9fd8ff, spark: 14, shake: [0.1, 0.18], dolly: [0.1, 0.16], sound: 0.9 },
   punchingBag: { group: 'punch', timeScale: 1.15, impactFrac: 0.38, dmg: [4, 8], sparkColor: 0x9fd8ff, spark: 13, shake: [0.09, 0.17], dolly: [0.09, 0.15], sound: 0.85 },
   martelo: { group: 'kick', timeScale: 1.2, impactFrac: 0.5, dmg: [10, 15], sparkColor: 0xffb23d, spark: 22, shake: [0.22, 0.32], dolly: [0.24, 0.3], sound: 1.15, hitStop: 0.045 },
+  // the RUN button's charge attack — a long combo clip, sped up
+  fistFight: { group: 'charge', timeScale: 2.6, impactFrac: 0.38, dmg: [16, 23], sparkColor: 0xffe9a8, spark: 30, shake: [0.32, 0.44], dolly: [0.34, 0.42], sound: 1.4, hitStop: 0.06 },
   // the signature move — full FBX with the player's own visible mesh
   dropKick: { file: 'assets/drop-kick.fbx', group: 'kick', timeScale: 1.35, impactFrac: 0.42, dmg: [12, 18], sparkColor: 0xffd23d, spark: 26, shake: [0.3, 0.42], dolly: [0.32, 0.4], sound: 1.3, hitStop: 0.055 },
 };
 
-const PLAYER_PUNCH_SEQUENCE = ['punching', 'boxing', 'punchingBag']; // left side of the screen
-const PLAYER_KICK_SEQUENCE = ['martelo', 'dropKick']; // right side of the screen
+const PLAYER_PUNCH_SEQUENCE = ['punching', 'boxing', 'punchingBag']; // УДАР button
+const PLAYER_KICK_SEQUENCE = ['martelo', 'dropKick']; // КИК button
 const BOT_MOVE_POOL = ['punching', 'boxing', 'punchingBag', 'martelo']; // random showboating between blocks
 
 /* ---------------- loading manager ---------------- */
@@ -205,8 +283,8 @@ function resetPlayerPose() {
 }
 
 // 2 character FBX files (mesh + skeleton) + 1 JSON file with the other moves'
-// animation curves only (same shared rig, no mesh — see assets/moves.json)
-const TOTAL_ASSETS = 3;
+// animation curves (see assets/moves.json) + the fence ring + the spectator
+const TOTAL_ASSETS = 5;
 let loadedCount = 0;
 function checkAllLoaded() {
   loadedCount++;
@@ -223,7 +301,7 @@ function checkAllLoaded() {
 loader.load(MOVES.dropKick.file, (fbx) => {
   playerModel = fbx;
   fbx.scale.setScalar(MIXAMO_SCALE);
-  fbx.position.set(-1.05, 0, 0.15);
+  fbx.position.set(PLAYER_STAND_X, 0, 0.15);
   fbx.rotation.y = Math.PI / 2 + 0.15;
   tintMaterials(fbx, 0x3d8bff);
   scene.add(fbx);
@@ -246,7 +324,7 @@ loader.load(MOVES.dropKick.file, (fbx) => {
 loader.load('assets/center-block.fbx', (fbx) => {
   botModel = fbx;
   fbx.scale.setScalar(MIXAMO_SCALE);
-  fbx.position.set(1.05, 0, 0);
+  fbx.position.set(BOT_STAND_X, 0, 0);
   fbx.rotation.y = -Math.PI / 2 - 0.15;
   tintMaterials(fbx, 0xff2e4d);
   scene.add(fbx);
@@ -280,9 +358,41 @@ fetch('assets/moves.json')
     console.error(err);
   });
 
+// Standard_Run carries a lot of baked-in forward root motion (it's meant to
+// travel, not loop in place) — zero out its Hips X/Z so it can be looped as
+// a pure leg-cycling animation while WE drive the actual translation.
+function makeInPlaceClip(clip) {
+  const inPlace = clip.clone();
+  const track = inPlace.tracks.find((t) => t.name.endsWith('Hips.position'));
+  if (track) {
+    const vals = track.values;
+    const baseX = vals[0];
+    const baseZ = vals[2];
+    for (let i = 0; i < vals.length; i += 3) {
+      vals[i] = baseX;
+      vals[i + 2] = baseZ;
+    }
+  }
+  return inPlace;
+}
+
 function bindPendingClipsIfReady() {
   if (!playerMixer || !botMixer) return;
   Object.keys(pendingClips).forEach((name) => {
+    if (name === 'standardRun') {
+      if (!playerActions.runCycle) {
+        const pAction = playerMixer.clipAction(makeInPlaceClip(pendingClips[name]));
+        pAction.loop = THREE.LoopRepeat;
+        playerActions.runCycle = pAction;
+      }
+      if (!botActions.runCycle) {
+        const bAction = botMixer.clipAction(makeInPlaceClip(pendingClips[name]));
+        bAction.loop = THREE.LoopRepeat;
+        botActions.runCycle = bAction;
+      }
+      return;
+    }
+
     if (playerActions[name] && botActions[name]) return;
     const clip = pendingClips[name];
     const cfg = MOVES[name];
@@ -469,6 +579,8 @@ function reactBotHit(strength = 1) {
   botStagger.active = true;
   botStagger.t = 0;
   botStagger.strength = strength;
+  // wobble relative to wherever the bot currently is (it may be mid-rush)
+  botStagger.baseX = botModel.position.x;
   rimRed.intensity = 12;
 }
 
@@ -482,11 +594,11 @@ function updateBotStagger(dt) {
     const s = botStagger.strength || 1;
     const wobble = Math.sin(d * 40) * Math.max(0, 0.08 * s - d * 0.3);
     botModel.rotation.z = wobble;
-    botModel.position.x = 1.05 + Math.sin(d * 50) * Math.max(0, 0.03 * s - d * 0.1);
+    botModel.position.x = botStagger.baseX + Math.sin(d * 50) * Math.max(0, 0.03 * s - d * 0.1);
     if (d > 0.25) {
       botStagger.active = false;
       botModel.rotation.z = 0;
-      botModel.position.x = 1.05;
+      botModel.position.x = botStagger.baseX;
     }
   }
 }
@@ -495,6 +607,7 @@ function knockOutBot() {
   if (!botModel || botKnockedOut) return;
   botKnockedOut = true;
   state.ko = true;
+  if (activeRun && activeRun.who === 'bot') activeRun = null; // cancel a rush in progress
   if (botCurrentAction) botCurrentAction.paused = true;
   koBadge.classList.add('show');
   hintText.classList.add('fade');
@@ -532,6 +645,7 @@ function respawnBot() {
     else {
       botModel.rotation.x = 0;
       botModel.position.y = 0;
+      botModel.position.x = BOT_STAND_X;
 
       botMixer.stopAllAction();
       const idle = botActions.centerBlock;
@@ -556,12 +670,17 @@ function respawnBot() {
 
 /* ---------------- bot AI: idle block, then randomly throw a move ---------------- */
 
-const botAI = { mode: 'idle', timer: 0, threshold: 2.5, activeMove: null, lastMove: null };
+const botAI = {
+  mode: 'idle', timer: 0, threshold: 2.5, activeMove: null, lastMove: null,
+  rushTimer: 0, rushThreshold: 6 + Math.random() * 3,
+};
 
 function startBotAI() {
   botAI.mode = 'idle';
   botAI.timer = 0;
   botAI.threshold = 2 + Math.random() * 1.5;
+  botAI.rushTimer = 0;
+  botAI.rushThreshold = 6 + Math.random() * 3;
 }
 
 function pickBotMove() {
@@ -571,10 +690,31 @@ function pickBotMove() {
 
 function updateBotAI(dt) {
   if (state.ko || !botMixer) return;
+  if (activeRun && activeRun.who === 'bot') return; // the rush sequence drives the bot itself
   bindPendingClipsIfReady();
+
+  // rush timer keeps ticking regardless of idle/move sub-state, so a run of
+  // showboat moves can't keep pushing the rush attack further away
+  botAI.rushTimer += dt;
+  if (
+    botAI.mode === 'idle' &&
+    botAI.rushTimer >= botAI.rushThreshold &&
+    botActions.runCycle &&
+    botActions.fistFight
+  ) {
+    botAI.rushTimer = 0;
+    botAI.rushThreshold = 6 + Math.random() * 3;
+    botAI.mode = 'rush';
+    startRunSequence({
+      who: 'bot', model: botModel, mixer: botMixer, actions: botActions,
+      fromX: BOT_STAND_X, toX: BOT_CLASH_X, attackName: 'fistFight', dealsDamage: false,
+    });
+    return;
+  }
 
   if (botAI.mode === 'idle') {
     botAI.timer += dt;
+
     if (botAI.timer >= botAI.threshold) {
       const name = pickBotMove();
       const action = botActions[name];
@@ -676,26 +816,118 @@ function updateActiveAttack(dt) {
   }
 }
 
-function performAttack(clientX) {
-  if (!playerActions.dropKick || state.attacking || state.ko) return;
-  bindPendingClipsIfReady();
-
-  const isLeft = clientX < window.innerWidth / 2;
-  if (isLeft) {
-    const name = PLAYER_PUNCH_SEQUENCE[punchIndex % PLAYER_PUNCH_SEQUENCE.length];
-    punchIndex++;
-    doPlayerMove(name);
-  } else {
-    const name = PLAYER_KICK_SEQUENCE[kickIndex % PLAYER_KICK_SEQUENCE.length];
-    kickIndex++;
-    doPlayerMove(name);
-  }
+function unlockAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-canvas.addEventListener('pointerdown', (e) => {
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  performAttack(e.clientX);
-});
+function performPunch() {
+  if (!playerActions.dropKick || state.attacking || state.ko || activeRun) return;
+  const name = PLAYER_PUNCH_SEQUENCE[punchIndex % PLAYER_PUNCH_SEQUENCE.length];
+  punchIndex++;
+  doPlayerMove(name);
+}
+
+function performKick() {
+  if (!playerActions.dropKick || state.attacking || state.ko || activeRun) return;
+  const name = PLAYER_KICK_SEQUENCE[kickIndex % PLAYER_KICK_SEQUENCE.length];
+  kickIndex++;
+  doPlayerMove(name);
+}
+
+function performRunAttack() {
+  if (!playerActions.runCycle || !playerActions.fistFight || state.attacking || state.ko || activeRun) return;
+  state.attacking = true;
+  playerAnimating = true;
+  hintText.classList.add('fade');
+  startRunSequence({
+    who: 'player', model: playerModel, mixer: playerMixer, actions: playerActions,
+    fromX: PLAYER_STAND_X, toX: PLAYER_CLASH_X, attackName: 'fistFight', dealsDamage: true,
+  });
+}
+
+btnPunch.addEventListener('pointerdown', () => { unlockAudio(); performPunch(); });
+btnKick.addEventListener('pointerdown', () => { unlockAudio(); performKick(); });
+btnRun.addEventListener('pointerdown', () => { unlockAudio(); performRunAttack(); });
+
+/* ---------------- run-in charge attack: shared by player (РЫВОК) and bot ----------------
+   approach (translate + looping run cycle) → attack clip → return (translate back) */
+
+let activeRun = null;
+
+function startRunSequence({ who, model, mixer, actions, fromX, toX, attackName, dealsDamage }) {
+  mixer.stopAllAction();
+  const run = actions.runCycle;
+  run.reset();
+  run.timeScale = 2.3;
+  run.play();
+
+  activeRun = {
+    who, model, mixer, actions, fromX, toX, attackName, dealsDamage,
+    phase: 'approach', t: 0,
+    approachDur: 0.4,
+    returnDur: 0.32,
+    impactDone: false,
+  };
+}
+
+function updateActiveRun(dt) {
+  if (!activeRun) return;
+  const r = activeRun;
+  r.t += dt;
+
+  if (r.phase === 'approach') {
+    const p = Math.min(1, r.t / r.approachDur);
+    const eased = p * p * (3 - 2 * p);
+    r.model.position.x = r.fromX + (r.toX - r.fromX) * eased;
+
+    if (p >= 1) {
+      r.mixer.stopAllAction();
+      const atk = r.actions[r.attackName];
+      atk.reset();
+      atk.play();
+      r.phase = 'attack';
+      r.t = 0;
+      r.attackDur = atk.getClip().duration / atk.timeScale;
+      r.impactAt = r.attackDur * MOVES[r.attackName].impactFrac;
+    }
+  } else if (r.phase === 'attack') {
+    if (r.dealsDamage && !r.impactDone && r.t >= r.impactAt) {
+      r.impactDone = true;
+      landHit(MOVES[r.attackName]);
+    }
+
+    if (r.t >= r.attackDur + 0.05) {
+      r.phase = 'return';
+      r.t = 0;
+      if (r.who === 'player') {
+        resetPlayerPose(); // stops the mixer + freezes the ready pose
+      } else {
+        r.mixer.stopAllAction();
+        const idle = r.actions.centerBlock;
+        idle.reset();
+        idle.play();
+        botCurrentAction = idle;
+      }
+    }
+  } else if (r.phase === 'return') {
+    const p = Math.min(1, r.t / r.returnDur);
+    const eased = p * p * (3 - 2 * p);
+    r.model.position.x = r.toX + (r.fromX - r.toX) * eased;
+
+    if (p >= 1) {
+      r.model.position.x = r.fromX;
+      if (r.who === 'player') {
+        state.attacking = false;
+        hintText.classList.remove('fade');
+      } else {
+        botAI.mode = 'idle';
+        botAI.timer = 0;
+        botAI.threshold = 2 + Math.random() * 1.8;
+      }
+      activeRun = null;
+    }
+  }
+}
 
 /* ---------------- render loop ---------------- */
 
@@ -710,6 +942,7 @@ function animate() {
   if (botMixer && !state.ko) botMixer.update(dt);
 
   updateActiveAttack(dt);
+  updateActiveRun(dt);
   updateBotAI(dt);
 
   if (idleBob && playerModel && !state.attacking) {
