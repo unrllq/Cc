@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BOT SMASHER — Drop Kick Arena</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="loading" class="loading">
+    <div class="loading__title">BOT SMASHER</div>
+    <div class="loading__bar-track">
+      <div class="loading__bar-fill" id="loadingFill"></div>
+    </div>
+    <div class="loading__label" id="loadingLabel">Загрузка арены… 0%</div>
+  </div>
+
+  <div id="hud" class="hud hidden">
+    <div class="hud__top">
+      <div class="hud__enemy">
+        <div class="hud__name">
+          <span class="hud__tag">BOT</span> CENTER-BLOCK UNIT
+        </div>
+        <div class="hp hp--enemy">
+          <div class="hp__fill" id="enemyHpFill"></div>
+        </div>
+      </div>
+      <div class="hud__score">
+        <div class="hud__score-label">СЧЁТ</div>
+        <div class="hud__score-value" id="scoreValue">0</div>
+      </div>
+    </div>
+
+    <div class="hud__combo" id="comboBadge">
+      COMBO ×<span id="comboValue">0</span>
+    </div>
+
+    <div class="hud__ko" id="koBadge">K.O.</div>
+
+    <div class="hud__bottom">
+      <div class="hud__hint" id="hintText">Бей руками, сближайся рывком, добивай ногой</div>
+      <div class="hud__controls">
+        <button type="button" class="ctrlBtn ctrlBtn--punch" id="btnPunch"><span>УДАР</span></button>
+        <button type="button" class="ctrlBtn ctrlBtn--run" id="btnRun"><span>РЫВОК</span></button>
+        <button type="button" class="ctrlBtn ctrlBtn--kick" id="btnKick"><span>КИК</span></button>
+      </div>
+      <div class="hud__footer">
+        <span>DROP KICK ARENA</span>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="scene"></canvas>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/build/three.module.min.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

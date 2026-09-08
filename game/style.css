@@ -1,0 +1,272 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05060a;
+  font-family: 'Space Grotesk', sans-serif;
+  color: #f2f2f2;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#scene {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ============ LOADING ============ */
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: radial-gradient(ellipse at center, #14151d 0%, #05060a 75%);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.loading.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loading__title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 8vw, 72px);
+  letter-spacing: 6px;
+  color: #ff2e4d;
+  text-shadow: 0 0 24px rgba(255, 46, 77, 0.55);
+}
+.loading__bar-track {
+  width: min(320px, 70vw);
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.loading__bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff2e4d, #ff8a3d);
+  transition: width 0.2s ease;
+}
+.loading__label {
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ============ HUD ============ */
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: max(18px, env(safe-area-inset-top)) 18px 18px;
+  transition: opacity 0.4s ease;
+}
+.hud.hidden { opacity: 0; }
+
+.hud__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hud__enemy {
+  flex: 1;
+  max-width: 420px;
+}
+.hud__name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: #ffdede;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.hud__tag {
+  display: inline-block;
+  background: #ff2e4d;
+  color: #14151d;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-right: 6px;
+  letter-spacing: 1px;
+}
+
+.hp {
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.5);
+  border: 2px solid rgba(255,255,255,0.25);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+.hp__fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ff2e4d, #ff6b3d);
+  transition: width 0.25s cubic-bezier(.2,.8,.3,1);
+}
+
+.hud__score {
+  text-align: right;
+  flex-shrink: 0;
+}
+.hud__score-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+}
+.hud__score-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  color: #7dffb0;
+  text-shadow: 0 0 18px rgba(125,255,176,0.45);
+  line-height: 1;
+}
+
+.hud__combo {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.6);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 2px;
+  color: #ffd23d;
+  text-shadow: 0 0 16px rgba(255,210,61,0.6);
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.hud__combo.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.hud__ko {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.4) rotate(-6deg);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(70px, 16vw, 160px);
+  letter-spacing: 6px;
+  color: #ff2e4d;
+  text-shadow: 0 0 40px rgba(255,46,77,0.8), 0 0 90px rgba(255,46,77,0.5);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.35s cubic-bezier(.2,1.4,.4,1);
+}
+.hud__ko.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) rotate(-6deg);
+}
+
+.hud__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud__hint {
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  background: rgba(0,0,0,0.35);
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.4s ease;
+}
+.hud__hint.fade { opacity: 0; }
+
+.hud__footer {
+  text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 6px;
+  color: rgba(255,255,255,0.25);
+}
+
+/* ============ CONTROLS ============ */
+.hud__controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.ctrlBtn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 2px;
+  color: #f2f2f2;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03));
+  border: 2px solid var(--ctrl-accent, rgba(255,255,255,0.3));
+  border-radius: 16px;
+  padding: 14px 20px;
+  min-width: 88px;
+  font-size: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.2s ease;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  -webkit-tap-highlight-color: transparent;
+}
+.ctrlBtn:active {
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.ctrlBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ctrlBtn--punch { --ctrl-accent: #9fd8ff; }
+.ctrlBtn--kick { --ctrl-accent: #ffb23d; }
+.ctrlBtn--run {
+  --ctrl-accent: #ffd23d;
+  min-width: 104px;
+  padding: 16px 24px;
+  font-size: 18px;
+  background: linear-gradient(180deg, rgba(255,210,61,0.28), rgba(255,210,61,0.06));
+}
+
+@media (max-width: 480px) {
+  .hud__name { font-size: 16px; }
+  .hud__score-value { font-size: 28px; }
+  .hp { height: 14px; }
+  .hud__hint { font-size: 11px; padding: 7px 14px; }
+  .hud__footer { letter-spacing: 4px; }
+  .hud__combo { top: 78px; font-size: 24px; }
+  .ctrlBtn { min-width: 72px; padding: 12px 14px; font-size: 14px; }
+  .ctrlBtn--run { min-width: 84px; padding: 13px 18px; font-size: 15px; }
+  .hud__controls { gap: 10px; }
+}
