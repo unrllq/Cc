@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 /* ============================================================
-   BOT SMASHER — click/tap the screen to combo the block bot:
-   jab (right) → jab (left) → drop kick (finisher), on a loop
+   BOT SMASHER — tap the LEFT side of the screen to throw punches
+   (Punching → Boxing → Punching Bag) and the RIGHT side to throw
+   kicks (Martelo → Drop Kick), each cycling in turn. The bot fires
+   back a random move from its own pool between blocking stances.
    ============================================================ */
 
 const MIXAMO_SCALE = 0.01; // Mixamo FBX exports are in centimeters
@@ -139,6 +141,27 @@ particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
 const particles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0x556, size: 0.02, transparent: true, opacity: 0.5 }));
 scene.add(particles);
 
+/* ---------------- move catalogue ----------------
+   Every clip is Mixamo's shared "X Bot" rig, so any clip can be
+   bound to either character's mixer regardless of which FBX it
+   came from. Only the two clips that carry a visible mesh (drop
+   kick for the player, center block for the bot) are added to the
+   scene — the rest are loaded purely to harvest their AnimationClip. */
+
+const MOVES = {
+  // curves-only moves, bound from assets/moves.json (no mesh of their own)
+  punching: { group: 'punch', timeScale: 1.4, impactFrac: 0.45, dmg: [4, 7], sparkColor: 0x9fd8ff, spark: 12, shake: [0.08, 0.16], dolly: [0.09, 0.15], sound: 0.75 },
+  boxing: { group: 'punch', timeScale: 1.2, impactFrac: 0.32, dmg: [5, 9], sparkColor: 0x9fd8ff, spark: 14, shake: [0.1, 0.18], dolly: [0.1, 0.16], sound: 0.9 },
+  punchingBag: { group: 'punch', timeScale: 1.15, impactFrac: 0.38, dmg: [4, 8], sparkColor: 0x9fd8ff, spark: 13, shake: [0.09, 0.17], dolly: [0.09, 0.15], sound: 0.85 },
+  martelo: { group: 'kick', timeScale: 1.2, impactFrac: 0.5, dmg: [10, 15], sparkColor: 0xffb23d, spark: 22, shake: [0.22, 0.32], dolly: [0.24, 0.3], sound: 1.15, hitStop: 0.045 },
+  // the signature move — full FBX with the player's own visible mesh
+  dropKick: { file: 'assets/drop-kick.fbx', group: 'kick', timeScale: 1.35, impactFrac: 0.42, dmg: [12, 18], sparkColor: 0xffd23d, spark: 26, shake: [0.3, 0.42], dolly: [0.32, 0.4], sound: 1.3, hitStop: 0.055 },
+};
+
+const PLAYER_PUNCH_SEQUENCE = ['punching', 'boxing', 'punchingBag']; // left side of the screen
+const PLAYER_KICK_SEQUENCE = ['martelo', 'dropKick']; // right side of the screen
+const BOT_MOVE_POOL = ['punching', 'boxing', 'punchingBag', 'martelo']; // random showboating between blocks
+
 /* ---------------- loading manager ---------------- */
 
 const manager = new THREE.LoadingManager();
@@ -173,47 +196,38 @@ function tintMaterials(root, color) {
 }
 
 let playerMixer, botMixer;
-let playerAction, botAction;
 let playerModel, botModel;
-let playerAnimating = false; // true only while the full-body kick mixer should advance
-
-// procedural jab rig — the two only-clip FBX files have no punch animation, so a
-// quick jab/cross is faked by rotating the arm bones directly on top of the
-// player's frame-0 "ready" pose
-const armBones = {};
-const armRest = {};
-
-function cacheArmBones() {
-  const names = ['mixamorigRightArm', 'mixamorigRightForeArm', 'mixamorigLeftArm', 'mixamorigLeftForeArm'];
-  names.forEach((name) => {
-    const bone = playerModel.getObjectByName(name);
-    if (bone) {
-      armBones[name] = bone;
-      armRest[name] = bone.quaternion.clone();
-    }
-  });
-}
+const playerActions = {};
+const botActions = {};
+let playerAnimating = false; // true only while a player move's mixer should advance
 
 function resetPlayerPose() {
-  playerAction.reset();
-  playerAction.paused = true;
+  playerMixer.stopAllAction();
+  const idle = playerActions.dropKick;
+  idle.reset();
+  idle.play();
+  idle.paused = true;
   playerMixer.update(0);
   playerAnimating = false;
-  Object.keys(armBones).forEach((name) => armBones[name].quaternion.copy(armRest[name]));
 }
 
+// 2 character FBX files (mesh + skeleton) + 1 JSON file with the other moves'
+// animation curves only (same shared rig, no mesh — see assets/moves.json)
+const TOTAL_ASSETS = 3;
 let loadedCount = 0;
 function checkAllLoaded() {
   loadedCount++;
-  if (loadedCount === 2) {
+  if (loadedCount === TOTAL_ASSETS) {
+    bindPendingClipsIfReady();
     loadingEl.classList.add('hidden');
     hud.classList.remove('hidden');
     startIdle();
+    startBotAI();
   }
 }
 
-// PLAYER — Drop Kick rig, held at frame 0 as a ready stance until clicked
-loader.load('assets/drop-kick.fbx', (fbx) => {
+// PLAYER — Drop Kick rig supplies the visible mesh; held at frame 0 as a ready stance
+loader.load(MOVES.dropKick.file, (fbx) => {
   playerModel = fbx;
   fbx.scale.setScalar(MIXAMO_SCALE);
   fbx.position.set(-1.05, 0, 0.15);
@@ -222,22 +236,20 @@ loader.load('assets/drop-kick.fbx', (fbx) => {
   scene.add(fbx);
 
   playerMixer = new THREE.AnimationMixer(fbx);
-  const clip = fbx.animations[0];
-  playerAction = playerMixer.clipAction(clip);
-  playerAction.clampWhenFinished = true;
-  playerAction.loop = THREE.LoopOnce;
-  playerAction.timeScale = 1.35; // snappier attack, less waiting between clicks
+  const action = playerMixer.clipAction(fbx.animations[0]);
+  action.clampWhenFinished = true;
+  action.loop = THREE.LoopOnce;
+  action.timeScale = MOVES.dropKick.timeScale;
+  playerActions.dropKick = action;
   // freeze on the very first frame as an idle "ready" pose
-  playerAction.play();
-  playerAction.paused = true;
+  action.play();
+  action.paused = true;
   playerMixer.update(0);
-
-  cacheArmBones();
 
   checkAllLoaded();
 });
 
-// BOT — Center Block rig, loops its blocking stance forever
+// BOT — Center Block rig supplies the visible mesh; loops its blocking stance
 loader.load('assets/center-block.fbx', (fbx) => {
   botModel = fbx;
   fbx.scale.setScalar(MIXAMO_SCALE);
@@ -247,13 +259,57 @@ loader.load('assets/center-block.fbx', (fbx) => {
   scene.add(fbx);
 
   botMixer = new THREE.AnimationMixer(fbx);
-  const clip = fbx.animations[0];
-  botAction = botMixer.clipAction(clip);
-  botAction.loop = THREE.LoopRepeat;
-  botAction.play();
+  const action = botMixer.clipAction(fbx.animations[0]);
+  action.loop = THREE.LoopRepeat;
+  botActions.centerBlock = action;
+  action.play();
+  botCurrentAction = action;
 
   checkAllLoaded();
 });
+
+// The remaining moves carry no character of their own, so instead of shipping
+// 4 more full FBX files (mesh + skin weights we'd throw away) their animation
+// curves were pre-extracted once via AnimationClip.toJSON() into a single
+// small JSON file — bind each curve set to BOTH mixers (same Mixamo rig).
+const pendingClips = {};
+
+fetch('assets/moves.json')
+  .then((r) => r.json())
+  .then((data) => {
+    Object.keys(data).forEach((name) => {
+      pendingClips[name] = THREE.AnimationClip.parse(data[name]);
+    });
+    checkAllLoaded();
+  })
+  .catch((err) => {
+    loadingLabel.textContent = `Ошибка загрузки: assets/moves.json`;
+    console.error(err);
+  });
+
+function bindPendingClipsIfReady() {
+  if (!playerMixer || !botMixer) return;
+  Object.keys(pendingClips).forEach((name) => {
+    if (playerActions[name] && botActions[name]) return;
+    const clip = pendingClips[name];
+    const cfg = MOVES[name];
+
+    if (!playerActions[name]) {
+      const pAction = playerMixer.clipAction(clip);
+      pAction.clampWhenFinished = true;
+      pAction.loop = THREE.LoopOnce;
+      pAction.timeScale = cfg.timeScale;
+      playerActions[name] = pAction;
+    }
+    if (!botActions[name]) {
+      const bAction = botMixer.clipAction(clip);
+      bAction.clampWhenFinished = true;
+      bAction.loop = THREE.LoopOnce;
+      bAction.timeScale = cfg.timeScale;
+      botActions[name] = bAction;
+    }
+  });
+}
 
 function startIdle() {
   // gentle bob so the "ready" pose doesn't feel frozen
@@ -272,7 +328,8 @@ const state = {
   ko: false,
 };
 
-let comboStep = 0; // 0: jab (right) next, 1: jab (left) next, 2: kick (finisher) next
+let punchIndex = 0; // next move in PLAYER_PUNCH_SEQUENCE
+let kickIndex = 0; // next move in PLAYER_KICK_SEQUENCE
 
 const clock = new THREE.Clock();
 let comboResetTimer = null;
@@ -294,7 +351,6 @@ function bumpCombo() {
   clearTimeout(comboResetTimer);
   comboResetTimer = setTimeout(() => {
     state.combo = 0;
-    comboStep = 0;
     comboBadge.classList.remove('show');
   }, 1400);
 }
@@ -410,46 +466,11 @@ function updateSparks(dt) {
   }
 }
 
-/* ---------------- procedural jab (right/left cross) ---------------- */
-
-const jab = { active: false, t: 0, duration: 0.3, side: 'right' };
-
-function startJabPose(side) {
-  jab.active = true;
-  jab.t = 0;
-  jab.side = side;
-}
-
-function updateJab(dt) {
-  if (!jab.active) return;
-  jab.t += dt;
-  const p = Math.min(1, jab.t / jab.duration);
-  const punch = Math.sin(p * Math.PI); // extend out then retract
-
-  const sign = jab.side === 'right' ? 1 : -1;
-  const armName = jab.side === 'right' ? 'mixamorigRightArm' : 'mixamorigLeftArm';
-  const foreName = jab.side === 'right' ? 'mixamorigRightForeArm' : 'mixamorigLeftForeArm';
-  const armBone = armBones[armName];
-  const foreBone = armBones[foreName];
-
-  if (armBone && foreBone) {
-    const shoulderPunch = new THREE.Quaternion().setFromEuler(new THREE.Euler(punch * 1.3, punch * -0.5 * sign, punch * 0.1 * -sign));
-    const elbowExtend = new THREE.Quaternion().setFromEuler(new THREE.Euler(punch * 0.9, 0, punch * -1.6 * sign));
-    armBone.quaternion.copy(armRest[armName]).multiply(shoulderPunch);
-    foreBone.quaternion.copy(armRest[foreName]).multiply(elbowExtend);
-  }
-
-  if (p >= 1) {
-    jab.active = false;
-    if (armBone) armBone.quaternion.copy(armRest[armName]);
-    if (foreBone) foreBone.quaternion.copy(armRest[foreName]);
-  }
-}
-
 /* ---------------- bot reaction (no hit-react clip available, so we fake it) ---------------- */
 
 let botStagger = { active: false, t: 0 };
 let botKnockedOut = false;
+let botCurrentAction = null;
 
 function reactBotHit(strength = 1) {
   botStagger.active = true;
@@ -481,7 +502,7 @@ function knockOutBot() {
   if (!botModel || botKnockedOut) return;
   botKnockedOut = true;
   state.ko = true;
-  botAction.paused = true;
+  if (botCurrentAction) botCurrentAction.paused = true;
   koBadge.classList.add('show');
   hintText.classList.add('fade');
   triggerShake(0.28, 0.5);
@@ -518,8 +539,17 @@ function respawnBot() {
     else {
       botModel.rotation.x = 0;
       botModel.position.y = 0;
-      botAction.paused = false;
-      botAction.play();
+
+      botMixer.stopAllAction();
+      const idle = botActions.centerBlock;
+      idle.reset();
+      idle.paused = false;
+      idle.play();
+      botCurrentAction = idle;
+      botAI.mode = 'idle';
+      botAI.timer = 0;
+      botAI.threshold = 2 + Math.random() * 1.5;
+
       state.enemyHp = state.maxHp;
       updateHpBar();
       state.ko = false;
@@ -531,64 +561,106 @@ function respawnBot() {
   rise();
 }
 
-/* ---------------- attack flow: jab → jab → kick combo ----------------
+/* ---------------- bot AI: idle block, then randomly throw a move ---------------- */
+
+const botAI = { mode: 'idle', timer: 0, threshold: 2.5, activeMove: null, lastMove: null };
+
+function startBotAI() {
+  botAI.mode = 'idle';
+  botAI.timer = 0;
+  botAI.threshold = 2 + Math.random() * 1.5;
+}
+
+function pickBotMove() {
+  const pool = BOT_MOVE_POOL.filter((m) => m !== botAI.lastMove);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function updateBotAI(dt) {
+  if (state.ko || !botMixer) return;
+  bindPendingClipsIfReady();
+
+  if (botAI.mode === 'idle') {
+    botAI.timer += dt;
+    if (botAI.timer >= botAI.threshold) {
+      const name = pickBotMove();
+      const action = botActions[name];
+      if (action) {
+        botMixer.stopAllAction();
+        action.reset();
+        action.play();
+        botCurrentAction = action;
+        botAI.mode = 'move';
+        botAI.timer = 0;
+        botAI.activeMove = name;
+        botAI.lastMove = name;
+      } else {
+        botAI.timer = 0; // clip not loaded yet, try again shortly
+      }
+    }
+  } else if (botAI.mode === 'move') {
+    const cfg = MOVES[botAI.activeMove];
+    const duration = botCurrentAction.getClip().duration / botCurrentAction.timeScale;
+    botAI.timer += dt;
+    if (botAI.timer >= duration + 0.1) {
+      botMixer.stopAllAction();
+      const idle = botActions.centerBlock;
+      idle.reset();
+      idle.play();
+      botCurrentAction = idle;
+      botAI.mode = 'idle';
+      botAI.timer = 0;
+      botAI.threshold = 2 + Math.random() * 1.8;
+    }
+  }
+}
+
+/* ---------------- player attack flow ----------------
    Driven entirely by the render loop's own dt (not setTimeout) so a slow
    device or a throttled background tab can never let an attack's input
    lock outlive its animation — everything advances on the same clock. */
 
-function landHit({ dmg, sparkColor, spark = 18, shake = [0.1, 0.22], dolly = [0.1, 0.16], soundPower = 1 }) {
+function landHit(cfg) {
   if (state.ko) return;
+  const dmg = cfg.dmg[0] + Math.floor(Math.random() * (cfg.dmg[1] - cfg.dmg[0] + 1));
   state.enemyHp = Math.max(0, state.enemyHp - dmg);
   updateHpBar();
   addScore(dmg * 10);
   bumpCombo();
   reactBotHit(dmg / 8);
-  triggerShake(shake[0], shake[1]);
-  triggerDolly(dolly[0], dolly[1]);
-  playThud(soundPower);
+  triggerShake(cfg.shake[0], cfg.shake[1]);
+  triggerDolly(cfg.dolly[0], cfg.dolly[1]);
+  if (cfg.hitStop) triggerHitStop(cfg.hitStop);
+  playThud(cfg.sound + Math.min(0.5, state.combo * 0.05));
 
   const botHead = new THREE.Vector3(1.0, 1.55, 0.1);
-  spawnSpark(botHead, sparkColor, spark);
+  spawnSpark(botHead, cfg.sparkColor, cfg.spark);
 
   if (state.enemyHp <= 0) {
     knockOutBot();
   }
 }
 
-// { type: 'jab' | 'kick', t, impactAt, endAt, impactDone, side }
+// { name, t, impactAt, endAt, impactDone }
 let activeAttack = null;
 
-function doJab(side) {
-  state.attacking = true;
-  hintText.classList.add('fade');
-  startJabPose(side);
+function doPlayerMove(name) {
+  const action = playerActions[name];
+  if (!action) return; // clip not loaded yet
 
-  activeAttack = {
-    type: 'jab',
-    t: 0,
-    impactAt: jab.duration * 0.5,
-    endAt: jab.duration + 0.07,
-    impactDone: false,
-    side,
-  };
-}
-
-function doKick() {
   state.attacking = true;
   hintText.classList.add('fade');
 
+  playerMixer.stopAllAction();
+  action.reset();
+  action.play();
   playerAnimating = true;
-  playerAction.reset();
-  playerAction.paused = false;
-  playerAction.play();
 
-  const clip = playerAction.getClip();
-  const duration = clip.duration / playerAction.timeScale; // real playback seconds
-
+  const duration = action.getClip().duration / action.timeScale;
   activeAttack = {
-    type: 'kick',
+    name,
     t: 0,
-    impactAt: duration * 0.42, // roughly when the kick connects
+    impactAt: duration * MOVES[name].impactFrac,
     endAt: duration + 0.06,
     impactDone: false,
   };
@@ -600,52 +672,36 @@ function updateActiveAttack(dt) {
 
   if (!activeAttack.impactDone && activeAttack.t >= activeAttack.impactAt) {
     activeAttack.impactDone = true;
-    if (activeAttack.type === 'jab') {
-      landHit({
-        dmg: 3 + Math.floor(Math.random() * 3),
-        sparkColor: 0x9fd8ff,
-        spark: 10,
-        shake: [0.06, 0.14],
-        dolly: [0.07, 0.14],
-        soundPower: 0.6 + Math.min(0.6, state.combo * 0.05),
-      });
-    } else {
-      triggerHitStop(0.055); // brief freeze-frame for a punchier finisher
-      landHit({
-        dmg: 12 + Math.floor(Math.random() * 7),
-        sparkColor: 0xffd23d,
-        spark: 26,
-        shake: [0.3, 0.42],
-        dolly: [0.32, 0.4],
-        soundPower: 1.3 + Math.min(0.6, state.combo * 0.08),
-      });
-    }
+    landHit(MOVES[activeAttack.name]);
   }
 
   if (activeAttack.t >= activeAttack.endAt) {
-    const wasKick = activeAttack.type === 'kick';
     activeAttack = null;
     state.attacking = false;
     hintText.classList.remove('fade');
-    if (wasKick && !state.ko) resetPlayerPose();
+    if (!state.ko) resetPlayerPose();
   }
 }
 
-function performAttack() {
-  if (!playerAction || !botAction || state.attacking || state.ko) return;
+function performAttack(clientX) {
+  if (!playerActions.dropKick || state.attacking || state.ko) return;
+  bindPendingClipsIfReady();
 
-  if (comboStep < 2) {
-    doJab(comboStep === 0 ? 'right' : 'left');
-    comboStep++;
+  const isLeft = clientX < window.innerWidth / 2;
+  if (isLeft) {
+    const name = PLAYER_PUNCH_SEQUENCE[punchIndex % PLAYER_PUNCH_SEQUENCE.length];
+    punchIndex++;
+    doPlayerMove(name);
   } else {
-    doKick();
-    comboStep = 0;
+    const name = PLAYER_KICK_SEQUENCE[kickIndex % PLAYER_KICK_SEQUENCE.length];
+    kickIndex++;
+    doPlayerMove(name);
   }
 }
 
-canvas.addEventListener('pointerdown', () => {
+canvas.addEventListener('pointerdown', (e) => {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  performAttack();
+  performAttack(e.clientX);
 });
 
 /* ---------------- render loop ---------------- */
@@ -660,13 +716,13 @@ function animate() {
   if (playerMixer && playerAnimating) playerMixer.update(dt);
   if (botMixer && !state.ko) botMixer.update(dt);
 
-  updateJab(dt);
   updateActiveAttack(dt);
+  updateBotAI(dt);
 
   if (idleBob && playerModel && !state.attacking) {
     playerModel.position.y = Math.sin(t * 1.6) * 0.01;
   }
-  if (botModel && !state.ko) {
+  if (botModel && !state.ko && botAI.mode === 'idle') {
     botModel.position.y = Math.sin(t * 1.4 + 1) * 0.008;
   }
 
