@@ -1,264 +1,408 @@
 /* =========================================
-   FRAU WONG HAUS — Main Script
+   MIA OBSESSED — Main Script
    ========================================= */
 
-// ============ CURSOR ============
-const cursor = document.getElementById('cursor');
-const follower = document.getElementById('cursor-follower');
-let mouseX = 0, mouseY = 0;
-let followerX = 0, followerY = 0;
+import * as THREE from 'three';
+import { GLTFLoader } from './assets/vendor/three/examples/jsm/loaders/GLTFLoader.js';
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-  cursor.style.left = mouseX + 'px';
-  cursor.style.top = mouseY + 'px';
-});
-
-function animateFollower() {
-  followerX += (mouseX - followerX) * 0.12;
-  followerY += (mouseY - followerY) * 0.12;
-  follower.style.left = followerX + 'px';
-  follower.style.top = followerY + 'px';
-  requestAnimationFrame(animateFollower);
-}
-animateFollower();
-
-document.querySelectorAll('a, button, .session-card, .offering-item, .retreat-card, .subscribe__input').forEach(el => {
-  el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
-  el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
-});
-
-// ============ NAV SCROLL ============
-const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 40);
-}, { passive: true });
-
-// ============ MOBILE MENU ============
-const hamburger = document.getElementById('hamburger');
+/* ============ NAV / MOBILE MENU ============ */
+const burger = document.getElementById('burger');
 const mobileMenu = document.getElementById('mobileMenu');
+burger?.addEventListener('click', () => {
+  burger.classList.toggle('is-active');
+  mobileMenu.classList.toggle('is-open');
+});
+mobileMenu?.querySelectorAll('a').forEach((a) =>
+  a.addEventListener('click', () => {
+    burger.classList.remove('is-active');
+    mobileMenu.classList.remove('is-open');
+  })
+);
 
-hamburger.addEventListener('click', () => {
-  const open = mobileMenu.classList.toggle('open');
-  hamburger.classList.toggle('active', open);
-  document.body.style.overflow = open ? 'hidden' : '';
+/* ============ WISHLIST / BAG COUNTERS ============ */
+const bagCountEl = document.getElementById('bagCount');
+const wishCountEl = document.getElementById('wishCount');
+const wishBtn = document.getElementById('wishBtn');
+let bagCount = 0;
+let wishCount = 0;
+
+wishBtn?.addEventListener('click', () => {
+  wishCount++;
+  wishCountEl.textContent = wishCount;
+  wishBtn.style.transform = 'scale(1.15)';
+  setTimeout(() => (wishBtn.style.transform = ''), 180);
 });
 
-mobileMenu.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', () => {
-    mobileMenu.classList.remove('open');
-    hamburger.classList.remove('active');
-    document.body.style.overflow = '';
-  });
-});
-
-// ============ INTERSECTION OBSERVER ============
-const observerOpts = { threshold: 0.12, rootMargin: '0px 0px -60px 0px' };
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-    }
-  });
-}, observerOpts);
-
-document.querySelectorAll('.reveal-up, .reveal-fade').forEach(el => observer.observe(el));
-
-// Staggered reveal for reveal-line elements
-const lineObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const lines = entry.target.querySelectorAll('.reveal-line');
-      lines.forEach((line, i) => {
-        setTimeout(() => line.classList.add('visible'), i * 100);
-      });
-      lineObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.2 });
-
-document.querySelectorAll('.sound__headline, .sessions__title, .subscribe__title').forEach(el => lineObserver.observe(el));
-
-// ============ COUNTER ANIMATION ============
-const counterObs = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const el = entry.target;
-      const target = parseInt(el.dataset.target);
-      animateCounter(el, target);
-      counterObs.unobserve(el);
-    }
-  });
-}, { threshold: 0.5 });
-
-document.querySelectorAll('.stat-num[data-target]').forEach(el => counterObs.observe(el));
-
-function animateCounter(el, target) {
-  const duration = 1800;
-  const start = performance.now();
-  const startVal = 0;
-
-  function step(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(startVal + (target - startVal) * eased);
-    el.textContent = String(current).padStart(String(target).length, '0');
-    if (progress < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
-// ============ PARALLAX ============
-const parallaxItems = [];
-
-document.querySelectorAll('.parallax-img').forEach(el => {
-  parallaxItems.push({ el, speed: 0.3, type: 'img' });
-});
-document.querySelectorAll('.parallax-slow').forEach(el => {
-  parallaxItems.push({ el, speed: 0.15, type: 'slow' });
-});
-
-let ticking = false;
-window.addEventListener('scroll', () => {
-  if (!ticking) {
-    requestAnimationFrame(updateParallax);
-    ticking = true;
-  }
-}, { passive: true });
-
-function updateParallax() {
-  const scrollY = window.scrollY;
-  parallaxItems.forEach(({ el, speed }) => {
-    const rect = el.getBoundingClientRect();
-    const center = rect.top + rect.height / 2;
-    const offset = (window.innerHeight / 2 - center) * speed;
-    el.style.transform = `translateY(${offset}px)`;
-  });
-  ticking = false;
-}
-
-// ============ FORM SUBMIT ============
-const form = document.getElementById('subscribeForm');
-const toast = document.getElementById('toast');
-
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const btn = form.querySelector('.subscribe__submit span');
-  btn.textContent = 'You\'re in...';
-
+/* ============ HERO QUOTE CAROUSEL ============ */
+const quotes = [
+  { text: 'She doesn’t ask for attention. She becomes it.', by: 'Mia — the muse' },
+  { text: 'Worn like a secret, felt like obsession.', by: 'The Manifesto' },
+  { text: 'One spray in, and the room remembers her.', by: 'Drop 03 — AW’26' },
+];
+let quoteIndex = 0;
+const quoteText = document.getElementById('quoteText');
+const quoteCount = document.getElementById('quoteCount');
+const quoteByline = document.querySelector('.aside__byline');
+function renderQuote() {
+  const q = quotes[quoteIndex];
+  quoteText.style.opacity = '0';
   setTimeout(() => {
-    form.reset();
-    btn.textContent = 'Get Early Access';
-    showToast();
-  }, 1000);
+    quoteText.textContent = q.text;
+    quoteText.style.opacity = '1';
+    if (quoteByline) quoteByline.textContent = q.by;
+  }, 220);
+  quoteCount.textContent = `${String(quoteIndex + 1).padStart(2, '0')} / ${String(quotes.length).padStart(2, '0')}`;
+}
+document.getElementById('quoteNext')?.addEventListener('click', () => {
+  quoteIndex = (quoteIndex + 1) % quotes.length;
+  renderQuote();
+  restartQuoteTimer();
+});
+document.getElementById('quotePrev')?.addEventListener('click', () => {
+  quoteIndex = (quoteIndex - 1 + quotes.length) % quotes.length;
+  renderQuote();
+  restartQuoteTimer();
+});
+let quoteTimer;
+function restartQuoteTimer() {
+  clearInterval(quoteTimer);
+  quoteTimer = setInterval(() => {
+    quoteIndex = (quoteIndex + 1) % quotes.length;
+    renderQuote();
+  }, 5200);
+}
+restartQuoteTimer();
+
+/* ============ PRODUCT GLYPHS (inline SVG, no imagery needed) ============ */
+const glyphs = {
+  bottle: `<svg class="card-product__glyph" viewBox="0 0 100 130" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+      <rect x="32" y="8" width="36" height="16" rx="3"/>
+      <path d="M40 24v14c0 3-4 5-6 9-3 5-4 11-4 17v46a6 6 0 0 0 6 6h28a6 6 0 0 0 6-6V64c0-6-1-12-4-17-2-4-6-6-6-9V24"/>
+      <line x1="30" y1="80" x2="70" y2="80"/>
+    </svg>`,
+  jar: `<svg class="card-product__glyph" viewBox="0 0 100 130" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+      <rect x="26" y="10" width="48" height="14" rx="3"/>
+      <path d="M30 24h40l6 14a70 70 0 0 1 4 24v46a8 8 0 0 1-8 8H28a8 8 0 0 1-8-8V62a70 70 0 0 1 4-24l6-14Z"/>
+      <line x1="24" y1="70" x2="76" y2="70"/>
+    </svg>`,
+  roller: `<svg class="card-product__glyph" viewBox="0 0 100 130" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+      <circle cx="50" cy="20" r="10"/>
+      <path d="M34 30h32l-4 20H38l-4-20Z"/>
+      <rect x="30" y="50" width="40" height="62" rx="10"/>
+    </svg>`,
+  candle: `<svg class="card-product__glyph" viewBox="0 0 100 130" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+      <path d="M50 10c6 10 6 14 0 20-6-6-6-10 0-20Z"/>
+      <rect x="24" y="34" width="52" height="80" rx="6"/>
+      <line x1="24" y1="56" x2="76" y2="56"/>
+    </svg>`,
+};
+
+/* ============ PRODUCT DATA ============ */
+const products = [
+  { name: 'Mia Eau de Parfum', sub: '50ml · Signature', price: '$128', tag: 'Bestseller', cat: 'fragrance', glyph: 'bottle', grad: 'linear-gradient(160deg,#3a1a0f,#ff7a33 130%)' },
+  { name: 'Obsession Body Oil', sub: '100ml · Dry finish', price: '$58', tag: 'New', cat: 'body', glyph: 'jar', grad: 'linear-gradient(160deg,#1a1522,#a24bd6 130%)' },
+  { name: 'Midnight Musk Roll-On', sub: '10ml · Travel size', price: '$42', tag: null, cat: 'fragrance', glyph: 'roller', grad: 'linear-gradient(160deg,#101820,#2e7d8f 130%)' },
+  { name: 'Mia Eau de Parfum', sub: '100ml · Signature', price: '$185', tag: 'Bestseller', cat: 'fragrance', glyph: 'bottle', grad: 'linear-gradient(160deg,#241108,#ffb020 130%)' },
+  { name: 'Silhouette Hair Mist', sub: '75ml · Weightless', price: '$46', tag: null, cat: 'body', glyph: 'roller', grad: 'linear-gradient(160deg,#1a0f1d,#ff5a8a 130%)' },
+  { name: 'Signature Candle', sub: '220g · Hand-poured', price: '$64', tag: 'New', cat: 'accessories', glyph: 'candle', grad: 'linear-gradient(160deg,#141416,#ff5a1f 130%)' },
+];
+
+const productGrid = document.getElementById('productGrid');
+function renderProducts() {
+  productGrid.innerHTML = products
+    .map(
+      (p, i) => `
+    <article class="card-product" data-cat="${p.cat}" style="transition-delay:${(i % 3) * 80}ms">
+      <div class="card-product__media" style="background:${p.grad}">
+        ${p.tag ? `<span class="card-product__tag">${p.tag}</span>` : ''}
+        ${glyphs[p.glyph]}
+      </div>
+      <div class="card-product__body">
+        <div>
+          <div class="card-product__name">${p.name}</div>
+          <div class="card-product__sub">${p.sub}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="card-product__price">${p.price}</span>
+          <button class="card-product__add" aria-label="Add ${p.name} to bag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </div>
+    </article>`
+    )
+    .join('');
+
+  productGrid.querySelectorAll('.card-product__add').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!btn.classList.contains('is-added')) {
+        bagCount++;
+        bagCountEl.textContent = bagCount;
+      }
+      btn.classList.add('is-added');
+      setTimeout(() => btn.classList.remove('is-added'), 260);
+    });
+  });
+
+  observeReveal();
+}
+renderProducts();
+
+/* ============ FILTER PILLS ============ */
+document.getElementById('filterPills')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-pill');
+  if (!btn) return;
+  document.querySelectorAll('.filter-pill').forEach((p) => p.classList.remove('is-active'));
+  btn.classList.add('is-active');
+  const filter = btn.dataset.filter;
+  productGrid.querySelectorAll('.card-product').forEach((card) => {
+    const show = filter === 'all' || card.dataset.cat === filter;
+    card.style.display = show ? '' : 'none';
+  });
 });
 
-function showToast() {
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 4000);
-}
+/* ============ NEWSLETTER ============ */
+const newsletterForm = document.getElementById('newsletterForm');
+const newsletterNote = document.getElementById('newsletterNote');
+newsletterForm?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  newsletterNote.textContent = 'You’re in. Welcome to the obsession.';
+  newsletterNote.classList.add('is-success');
+  newsletterForm.reset();
+});
 
-// ============ SMOOTH ANCHOR SCROLL ============
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', (e) => {
-    const target = document.querySelector(anchor.getAttribute('href'));
-    if (target) {
-      e.preventDefault();
-      const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
-      const top = target.getBoundingClientRect().top + window.scrollY - navH;
-      window.scrollTo({ top, behavior: 'smooth' });
+/* ============ SCROLL REVEAL ============ */
+function observeReveal() {
+  const els = document.querySelectorAll('.reveal:not(.in-view), .card-product:not(.in-view)');
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+  els.forEach((el) => io.observe(el));
+}
+observeReveal();
+
+/* ============ EXPLORE BADGE ============ */
+document.getElementById('stageBadge')?.addEventListener('click', () => {
+  document.getElementById('collection')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+/* =========================================================
+   3D STAGE — Mia, draggable / auto-rotating GLB viewer
+   ========================================================= */
+(function initStage() {
+  const wrap = document.getElementById('stageCanvasWrap');
+  const stage = document.getElementById('stage');
+  const loader = document.getElementById('stageLoader');
+  const loaderFill = document.getElementById('loaderFill');
+  const loaderWord = document.getElementById('loaderWord');
+  const hint = document.getElementById('stageHint');
+  if (!wrap) return;
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+  camera.position.set(0, 1.28, 4.4);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  wrap.appendChild(renderer.domElement);
+
+  /* lighting rig */
+  const hemi = new THREE.HemisphereLight(0xfff1e0, 0x1a0f08, 1.15);
+  scene.add(hemi);
+
+  const key = new THREE.DirectionalLight(0xfff2df, 2.6);
+  key.position.set(2.4, 3.6, 3.2);
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0x9fd6ff, 0.55);
+  fill.position.set(-3, 1.2, 1.6);
+  scene.add(fill);
+
+  const rim = new THREE.DirectionalLight(0xff9a4d, 1.6);
+  rim.position.set(-1.2, 3.4, -3.4);
+  scene.add(rim);
+
+  /* fake contact shadow */
+  const shadowCanvas = document.createElement('canvas');
+  shadowCanvas.width = shadowCanvas.height = 256;
+  const sctx = shadowCanvas.getContext('2d');
+  const grad = sctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(0,0,0,0.55)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  sctx.fillStyle = grad;
+  sctx.fillRect(0, 0, 256, 256);
+  const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+  const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+  const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), shadowMat);
+  shadowMesh.rotation.x = -Math.PI / 2;
+  scene.add(shadowMesh);
+
+  /* pivot group the model rotates around */
+  const pivot = new THREE.Group();
+  scene.add(pivot);
+
+  let modelReady = false;
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.load(
+    './assets/models/mia-obsessed.glb',
+    (gltf) => {
+      const model = gltf.scene;
+
+      // Skinned meshes store their raw geometry in bind-pose local space,
+      // which does not reflect the actual posed silhouette — computeBoundingBox()
+      // resolves each vertex through the skeleton and already lands in the
+      // model's own local space (its bindMatrix cancels the mesh's own
+      // matrixWorld), so it must NOT be re-transformed by matrixWorld here.
+      model.updateWorldMatrix(true, true);
+      const box = new THREE.Box3();
+      let boxStarted = false;
+      model.traverse((n) => {
+        if (n.isSkinnedMesh) {
+          n.computeBoundingBox();
+          boxStarted ? box.union(n.boundingBox) : (box.copy(n.boundingBox), (boxStarted = true));
+        } else if (n.isMesh) {
+          if (!n.geometry.boundingBox) n.geometry.computeBoundingBox();
+          const b = n.geometry.boundingBox.clone().applyMatrix4(n.matrixWorld);
+          boxStarted ? box.union(b) : (box.copy(b), (boxStarted = true));
+        }
+        if (n.isMesh) {
+          n.castShadow = false;
+          n.receiveShadow = false;
+          if (n.material) n.material.envMapIntensity = 1.0;
+        }
+      });
+      const size = new THREE.Vector3();
+      box.getSize(size);
+
+      const targetHeight = 2.05;
+      const scale = targetHeight / (size.y || 1);
+      model.scale.setScalar(scale);
+
+      const center2 = new THREE.Vector3();
+      box.getCenter(center2);
+      model.position.x -= center2.x * scale;
+      model.position.z -= center2.z * scale;
+      model.position.y -= box.min.y * scale;
+
+      pivot.add(model);
+      shadowMesh.position.y = 0.001;
+
+      camera.position.set(0, targetHeight * 0.62, 4.35);
+      camera.lookAt(0, targetHeight * 0.52, 0);
+
+      modelReady = true;
+      loader.classList.add('is-hidden');
+    },
+    (evt) => {
+      if (evt.total) {
+        const pct = Math.min(100, Math.round((evt.loaded / evt.total) * 100));
+        loaderFill.style.width = pct + '%';
+        loaderWord.textContent = `Loading Mia — ${pct}%`;
+      }
+    },
+    (err) => {
+      loaderWord.textContent = 'Could not load the model';
+      console.error('GLTF load error', err);
     }
-  });
-});
+  );
 
-// ============ TEXT GLITCH ON HOVER ============
-const glitchChars = '!<>-_\\/[]{}—=+*^?#_';
-
-document.querySelectorAll('.hero__title .line').forEach(el => {
-  const original = el.textContent;
-  let interval = null;
-  let iteration = 0;
-
-  el.addEventListener('mouseenter', () => {
-    clearInterval(interval);
-    iteration = 0;
-    interval = setInterval(() => {
-      el.textContent = original.split('').map((char, i) => {
-        if (i < iteration) return original[i];
-        if (char === ' ') return ' ';
-        return glitchChars[Math.floor(Math.random() * glitchChars.length)];
-      }).join('');
-      if (iteration >= original.length) clearInterval(interval);
-      iteration += 1 / 2;
-    }, 35);
-  });
-
-  el.addEventListener('mouseleave', () => {
-    clearInterval(interval);
-    el.textContent = original;
-  });
-});
-
-// ============ SECTION ENTER HIGHLIGHT ============
-const sectionObs = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.style.setProperty('--section-visible', '1');
-    }
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('section').forEach(s => sectionObs.observe(s));
-
-// ============ SPEAKER BEAT ANIMATION ============
-function triggerBeat() {
-  document.querySelectorAll('.speaker').forEach(s => {
-    s.style.transform = s.classList.contains('speaker-left')
-      ? 'translateY(-50%) scale(1.15)'
-      : 'translateY(-50%) scale(1.15)';
-    setTimeout(() => {
-      s.style.transform = s.classList.contains('speaker-left')
-        ? 'translateY(-50%) scale(1)'
-        : 'translateY(-50%) scale(1)';
-    }, 120);
-  });
-}
-setInterval(triggerBeat, 800);
-setInterval(triggerBeat, 1600);
-
-// ============ WAVE AUDIO VISUALIZER ============
-const waveEls = document.querySelectorAll('.wave');
-function animateWaves() {
-  const t = Date.now() / 1000;
-  waveEls.forEach((w, i) => {
-    const scale = 1 + Math.sin(t * 1.2 + i * 1.2) * 0.04;
-    w.style.transform = `scale(${scale})`;
-  });
-  requestAnimationFrame(animateWaves);
-}
-if (waveEls.length) animateWaves();
-
-// ============ MARQUEE SPEED ON SCROLL ============
-const marquee = document.querySelector('.marquee-track');
-let lastScroll = 0;
-window.addEventListener('scroll', () => {
-  const delta = Math.abs(window.scrollY - lastScroll);
-  lastScroll = window.scrollY;
-  if (marquee) {
-    const speed = Math.max(20, 20 - delta * 0.5);
-    marquee.style.animationDuration = speed + 's';
-    setTimeout(() => { if (marquee) marquee.style.animationDuration = '20s'; }, 400);
+  /* ============ resize ============ */
+  function resize() {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
   }
-}, { passive: true });
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+  resize();
 
-// ============ INIT ============
-document.addEventListener('DOMContentLoaded', () => {
-  // Trigger visible for elements already in view
-  document.querySelectorAll('.reveal-up, .reveal-fade').forEach(el => {
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight * 0.9) el.classList.add('visible');
-  });
-});
+  /* ============ drag-to-rotate + auto-rotate ============ */
+  let isDragging = false;
+  let lastX = 0;
+  let lastY = 0;
+  let velocityY = 0;
+  let targetTiltX = 0;
+  let idleTimeout = null;
+  const autoRotateSpeed = 0.22; // rad/s
+  let autoRotateActive = true;
+  const ROTATE_SPEED = 0.010;
+  const TILT_SPEED = 0.006;
+  const TILT_LIMIT = 0.22;
+
+  function hideHint() {
+    hint.style.opacity = '0';
+  }
+
+  function onPointerDown(e) {
+    isDragging = true;
+    autoRotateActive = false;
+    clearTimeout(idleTimeout);
+    lastX = e.clientX;
+    lastY = e.clientY;
+    velocityY = 0;
+    wrap.setPointerCapture?.(e.pointerId);
+    hideHint();
+  }
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    pivot.rotation.y += dx * ROTATE_SPEED;
+    targetTiltX = THREE.MathUtils.clamp(targetTiltX + dy * TILT_SPEED, -TILT_LIMIT, TILT_LIMIT);
+    velocityY = dx * ROTATE_SPEED;
+  }
+  function onPointerUp() {
+    if (!isDragging) return;
+    isDragging = false;
+    idleTimeout = setTimeout(() => {
+      autoRotateActive = true;
+    }, 1500);
+  }
+
+  wrap.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+
+  // auto-hide the drag hint after a while regardless of interaction
+  setTimeout(hideHint, 6000);
+
+  /* ============ render loop ============ */
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+
+    if (modelReady) {
+      if (isDragging) {
+        // handled in pointermove
+      } else if (autoRotateActive) {
+        pivot.rotation.y += autoRotateSpeed * dt;
+        velocityY *= 0.9;
+      } else if (Math.abs(velocityY) > 0.0002) {
+        pivot.rotation.y += velocityY;
+        velocityY *= 0.94;
+      }
+      pivot.rotation.x += (targetTiltX * 0.4 - pivot.rotation.x) * Math.min(1, dt * 4);
+    }
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
