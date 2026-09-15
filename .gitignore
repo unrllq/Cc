@@ -1,3 +1,9 @@
 .netlify/
 __pycache__/
 *.pyc
+
+node_modules/
+game/dist/
+*.zip
+game/game.js
+game/neo-street-rider.html

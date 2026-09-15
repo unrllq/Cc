@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Neo Street Rider</title>
+<meta name="description" content="Гонка на мотоцикле от третьего лица по ночному Нео-Токио: дрифт, нитро, чекпоинты.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #19f0ff;
+    --pink: #ff2d6f;
+    --amber: #ffc93d;
+    --violet: #8b5cff;
+    --ink: #05070d;
+    --panel: rgba(8, 12, 22, 0.82);
+    --line: rgba(120, 190, 255, 0.28);
+    --text: #dbe7ff;
+    --dim: #7e90b4;
+    --display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
+    --ui: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--text);
+    font-family: var(--ui); user-select: none; touch-action: none;
+  }
+  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ----------------------------------------------------------------- HUD */
+  #hud { position: fixed; inset: 0; pointer-events: none; transition: opacity .3s; }
+  #hud.hidden { opacity: 0; }
+  .hud-corner { position: absolute; padding: 16px; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+
+  /* speedo */
+  #speedoWrap { right: 18px; bottom: 16px; width: 190px; height: 190px; }
+  #speedo { width: 100%; height: 100%; display: block; filter: drop-shadow(0 0 12px rgba(25,240,255,.25)); }
+  #speedoText {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+  }
+  #kmhNum { font-family: var(--display); font-size: 42px; font-weight: 900; line-height: 1;
+            text-shadow: 0 0 18px rgba(25,240,255,.55); }
+  .kmh-unit { font-size: 12px; letter-spacing: .28em; color: var(--dim); margin-top: 2px; }
+  #gearBox { margin-top: 6px; font-family: var(--display); font-size: 15px; color: var(--amber);
+             letter-spacing: .1em; }
+
+  /* nitro */
+  #nitroWrap { right: 18px; bottom: 214px; width: 190px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: .24em;
+               color: var(--dim); margin-bottom: 5px; }
+  .bar { height: 10px; background: rgba(255,255,255,.08); border: 1px solid var(--line); overflow: hidden; }
+  #nitroFill { height: 100%; width: 60%;
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    box-shadow: 0 0 14px rgba(25,240,255,.6); transition: width .08s linear; }
+  #nitroFill.firing { background: linear-gradient(90deg, #fff, var(--cyan)); animation: pulse .25s infinite alternate; }
+  @keyframes pulse { to { filter: brightness(1.5); } }
+
+  /* score */
+  #scoreWrap { left: 18px; bottom: 18px; min-width: 190px; padding: 10px 14px; }
+  .cap { font-size: 11px; letter-spacing: .26em; color: var(--dim); }
+  #score { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1.05;
+           text-shadow: 0 0 16px rgba(255,45,111,.45); }
+  #combo { font-family: var(--display); font-size: 20px; color: var(--amber); min-height: 24px; }
+  #combo.hot { color: var(--pink); text-shadow: 0 0 14px rgba(255,45,111,.8); }
+
+  /* drift pops */
+  #driftPop { position: absolute; left: 50%; top: 58%; transform: translateX(-50%);
+              display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pop { font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--cyan);
+         text-shadow: 0 0 18px rgba(25,240,255,.8); animation: popUp 1.2s ease-out forwards; }
+  .pop.hot { color: var(--pink); text-shadow: 0 0 22px rgba(255,45,111,.9); font-size: 32px; }
+  .pop.bad { color: #ff5a3c; }
+  .pop.time { color: var(--amber); }
+  @keyframes popUp { 0% { opacity: 0; transform: translateY(14px) scale(.8); }
+                     18% { opacity: 1; transform: translateY(0) scale(1.06); }
+                     100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+
+  /* objective / timer */
+  #objective { left: 50%; top: 14px; transform: translateX(-50%); padding: 8px 18px;
+               display: flex; align-items: center; gap: 18px; }
+  #timeLeft { font-family: var(--display); font-size: 30px; font-weight: 700; min-width: 92px; text-align: center; }
+  #timeLeft.danger { color: var(--pink); animation: blink .5s infinite alternate; }
+  @keyframes blink { to { opacity: .45; } }
+  .obj-sub { font-size: 12px; letter-spacing: .2em; color: var(--dim); text-align: center; }
+  #cpCount { font-family: var(--display); font-size: 20px; color: var(--cyan); }
+
+  /* next checkpoint arrow */
+  #cpNav { left: 50%; top: 92px; transform: translateX(-50%); display: flex; flex-direction: column;
+           align-items: center; gap: 4px; }
+  #cpArrow { width: 42px; height: 42px; }
+  #cpArrow svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px rgba(25,240,255,.8)); }
+  #cpDist { font-family: var(--display); font-size: 14px; color: var(--cyan); letter-spacing: .1em; }
+
+  /* minimap */
+  #minimapWrap { right: 18px; top: 16px; width: 168px; height: 168px; padding: 6px; }
+  #minimap { width: 100%; height: 100%; display: block; }
+
+  /* big messages */
+  .big-msg {
+    position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) scale(.85);
+    font-family: var(--display); font-size: clamp(28px, 6vw, 62px); font-weight: 900;
+    letter-spacing: .06em; opacity: 0; transition: opacity .25s, transform .25s;
+    text-shadow: 0 0 30px rgba(25,240,255,.6); white-space: nowrap;
+  }
+  .big-msg.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .big-msg.go { color: var(--cyan); }
+
+  /* --------------------------------------------------------------- menus */
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+             background: radial-gradient(ellipse at 50% 40%, rgba(20,26,48,.72), rgba(3,4,9,.94));
+             backdrop-filter: blur(3px); z-index: 10; }
+  #overlay.hidden { display: none; }
+  .screen { display: none; width: min(760px, 92vw); max-height: 92vh; overflow: auto; }
+  .screen.active { display: block; animation: fade .35s ease-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(12px); } }
+
+  .logo { font-family: var(--display); font-weight: 900; line-height: .92; letter-spacing: .02em;
+          font-size: clamp(38px, 8vw, 76px); margin: 0 0 4px; }
+  .logo .a { color: #fff; text-shadow: 0 0 26px rgba(255,45,111,.7), 0 0 60px rgba(255,45,111,.35); }
+  .logo .b { color: var(--pink); }
+  .tag { font-size: 14px; letter-spacing: .42em; color: var(--dim); margin-bottom: 26px; text-transform: uppercase; }
+
+  .card { padding: 22px 24px; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    pointer-events: auto; cursor: pointer; font-family: var(--display); font-weight: 700;
+    font-size: 15px; letter-spacing: .12em; text-transform: uppercase;
+    padding: 14px 22px; color: var(--text); background: rgba(25,240,255,.07);
+    border: 1px solid var(--line); transition: .16s; flex: 1 1 200px;
+    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  }
+  .btn:hover, .btn:focus-visible { background: rgba(25,240,255,.18); border-color: var(--cyan);
+    box-shadow: 0 0 22px rgba(25,240,255,.25); transform: translateY(-1px); outline: none; }
+  .btn.primary { background: linear-gradient(135deg, rgba(255,45,111,.3), rgba(139,92,255,.25));
+    border-color: rgba(255,45,111,.6); }
+  .btn.primary:hover { background: linear-gradient(135deg, rgba(255,45,111,.5), rgba(139,92,255,.4));
+    box-shadow: 0 0 26px rgba(255,45,111,.35); }
+  .btn small { display: block; font-family: var(--ui); font-size: 12px; letter-spacing: .06em;
+               text-transform: none; color: var(--dim); margin-top: 4px; font-weight: 500; }
+
+  .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 18px;
+          margin-top: 20px; font-size: 14px; }
+  .keys div { display: flex; align-items: center; gap: 8px; color: var(--dim); }
+  kbd { font-family: var(--display); font-size: 11px; background: rgba(255,255,255,.08);
+        border: 1px solid var(--line); border-bottom-width: 2px; padding: 3px 7px; color: var(--text); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin: 18px 0 24px; }
+  .stat { padding: 12px 14px; }
+  .stat b { display: block; font-family: var(--display); font-size: 26px; font-weight: 700; color: var(--cyan); }
+  .stat.gold b { color: var(--amber); }
+  .stat span { font-size: 11px; letter-spacing: .2em; color: var(--dim); }
+
+  /* loading */
+  #loading .bar { height: 4px; margin-top: 20px; }
+  #loadFill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--pink)); transition: width .2s; }
+  #loadText { margin-top: 10px; font-size: 12px; letter-spacing: .24em; color: var(--dim); }
+  .spin { display: inline-block; width: 8px; height: 8px; background: var(--cyan); margin-right: 8px;
+          animation: sp 1s infinite steps(4); }
+  @keyframes sp { 50% { opacity: .2; } }
+
+  /* touch controls */
+  #touch { position: fixed; inset: 0; display: none; pointer-events: none; z-index: 5; }
+  #touch.on { display: block; }
+  .tbtn { position: absolute; pointer-events: auto; width: 86px; height: 86px; border-radius: 50%;
+          background: rgba(25,240,255,.1); border: 2px solid var(--line); display: flex;
+          align-items: center; justify-content: center; font-family: var(--display); font-size: 13px;
+          color: var(--text); }
+  .tbtn:active, .tbtn.down { background: rgba(25,240,255,.3); border-color: var(--cyan); }
+  #tGas { right: 22px; bottom: 120px; }
+  #tBrake { right: 118px; bottom: 44px; }
+  #tBoost { right: 22px; bottom: 222px; width: 72px; height: 72px; }
+  #tDrift { left: 22px; bottom: 44px; width: 74px; height: 74px; }
+  #tLeft { left: 22px; bottom: 140px; }
+  #tRight { left: 118px; bottom: 140px; }
+
+  #fps { position: fixed; left: 8px; top: 8px; font-size: 11px; color: var(--dim); z-index: 9;
+         font-family: var(--display); opacity: .55; }
+  #fps.hidden { display: none; }
+  .hide { display: none !important; }
+  @media (max-width: 620px) {
+    #speedoWrap { width: 132px; height: 132px; right: 10px; bottom: 10px; }
+    #kmhNum { font-size: 30px; }
+    #nitroWrap { width: 132px; right: 10px; bottom: 150px; }
+    #minimapWrap { width: 106px; height: 106px; right: 10px; top: 10px; }
+    #scoreWrap { min-width: 130px; left: 10px; bottom: 10px; padding: 8px 10px; }
+    #score { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="objective" class="hud-corner panel">
+    <div>
+      <div class="cap">ВРЕМЯ</div>
+      <div id="timeLeft">60.0</div>
+    </div>
+    <div>
+      <div class="cap">ЧЕКПОИНТЫ</div>
+      <div id="cpCount">0/14</div>
+    </div>
+  </div>
+
+  <div id="cpNav" class="hud-corner">
+    <div id="cpArrow">
+      <svg viewBox="0 0 24 24"><path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="#19f0ff"/></svg>
+    </div>
+    <div id="cpDist">—</div>
+  </div>
+
+  <div id="minimapWrap" class="hud-corner panel"><canvas id="minimap"></canvas></div>
+
+  <div id="scoreWrap" class="hud-corner panel">
+    <div class="cap">ОЧКИ</div>
+    <div id="score">0</div>
+    <div id="combo"></div>
+  </div>
+
+  <div id="nitroWrap" class="hud-corner">
+    <div class="bar-label"><span>НИТРО</span><span>SHIFT</span></div>
+    <div class="bar"><div id="nitroFill"></div></div>
+  </div>
+
+  <div id="speedoWrap" class="hud-corner">
+    <canvas id="speedo"></canvas>
+    <div id="speedoText">
+      <div id="kmhNum">0</div>
+      <div class="kmh-unit">KM/H</div>
+      <div id="gearBox">ПЕРЕДАЧА <span id="gearNum">1</span></div>
+    </div>
+  </div>
+
+  <div id="driftPop"></div>
+  <div id="bigMsg" class="big-msg"></div>
+</div>
+
+<div id="touch">
+  <div class="tbtn" id="tLeft">◀</div>
+  <div class="tbtn" id="tRight">▶</div>
+  <div class="tbtn" id="tGas">ГАЗ</div>
+  <div class="tbtn" id="tBrake">ТОРМОЗ</div>
+  <div class="tbtn" id="tBoost">NOS</div>
+  <div class="tbtn" id="tDrift">ДРИФТ</div>
+</div>
+
+<div id="fps" class="hidden">60 FPS</div>
+
+<div id="overlay">
+  <!-- LOADING -->
+  <section id="loading" class="screen active">
+    <h1 class="logo"><span class="a">NEO STREET</span><br><span class="b">RIDER</span></h1>
+    <div class="tag">Neo-Tokyo · Night Run</div>
+    <div class="card panel">
+      <div class="bar"><div id="loadFill"></div></div>
+      <div id="loadText"><span class="spin"></span>ЗАГРУЗКА МОДЕЛЕЙ…</div>
+    </div>
+  </section>
+
+  <!-- TITLE -->
+  <section id="title" class="screen">
+    <h1 class="logo"><span class="a">NEO STREET</span><br><span class="b">RIDER</span></h1>
+    <div class="tag">Neo-Tokyo · Night Run</div>
+    <div class="card panel">
+      <div class="row">
+        <button class="btn primary" id="btnTime">Заезд на время<small>14 чекпоинтов, таймер, очки за дрифт</small></button>
+        <button class="btn" id="btnFree">Свободная езда<small>Город твой. Дрифтуй сколько хочешь</small></button>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="btnQuality">Графика: Высокая<small>Переключить качество</small></button>
+        <button class="btn" id="btnSound">Звук: Вкл<small>Процедурный движок</small></button>
+      </div>
+      <div class="keys">
+        <div><kbd>W</kbd><kbd>S</kbd> газ / тормоз</div>
+        <div><kbd>A</kbd><kbd>D</kbd> поворот</div>
+        <div><kbd>SPACE</kbd> ручник — дрифт</div>
+        <div><kbd>SHIFT</kbd> нитро</div>
+        <div><kbd>C</kbd> камера</div>
+        <div><kbd>B</kbd> посмотреть назад</div>
+        <div><kbd>R</kbd> респаун</div>
+        <div><kbd>P</kbd> пауза</div>
+      </div>
+      <div id="bestLine" class="cap" style="margin-top:18px"></div>
+    </div>
+  </section>
+
+  <!-- PAUSE -->
+  <section id="pause" class="screen">
+    <h1 class="logo"><span class="a">ПАУЗА</span></h1>
+    <div class="card panel">
+      <div class="row">
+        <button class="btn primary" id="btnResume">Продолжить</button>
+        <button class="btn" id="btnRestart">Заново</button>
+        <button class="btn" id="btnQuit">В меню</button>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="btnQuality2">Графика</button>
+        <button class="btn" id="btnSound2">Звук</button>
+        <button class="btn" id="btnFps">FPS: выкл</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="screen">
+    <h1 class="logo"><span class="a" id="resTitle">ЗАЕЗД ОКОНЧЕН</span></h1>
+    <div class="tag" id="resSub"></div>
+    <div class="card panel">
+      <div class="stats">
+        <div class="stat panel"><b id="resScore">0</b><span>ОЧКИ</span></div>
+        <div class="stat panel"><b id="resTime">0.0</b><span>ВРЕМЯ, С</span></div>
+        <div class="stat panel"><b id="resSpeed">0</b><span>МАКС KM/H</span></div>
+        <div class="stat panel gold"><b id="resBest">0</b><span>РЕКОРД</span></div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnAgain">Ещё раз</button>
+        <button class="btn" id="btnMenu">В меню</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="./game.js"></script>
+</body>
+</html>
