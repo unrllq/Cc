@@ -36,6 +36,7 @@ export class Bike {
     this.root.add(this.pitchGroup);
     this.pitchGroup.add(this.leanGroup);
     this.model = gltf.scene;
+    this.model.scale.setScalar(B.modelScale);
     this.leanGroup.add(this.model);
 
     this.mixer = new THREE.AnimationMixer(this.model);
@@ -70,20 +71,20 @@ export class Bike {
 
     // headlight + tail light
     this.headlight = new THREE.SpotLight(0xfff4e2, 28, 45, 0.6, 0.85, 1.6);
-    this.headlight.position.set(0, 1.05, -0.9);
+    this.headlight.position.set(0, 0.85, -0.75);
     this.headlightTarget = new THREE.Object3D();
-    this.headlightTarget.position.set(0, -0.4, -24);
+    this.headlightTarget.position.set(0, -0.4, -20);
     this.leanGroup.add(this.headlight, this.headlightTarget);
     this.headlight.target = this.headlightTarget;
     this.headlight.castShadow = false;
 
     this.rearGlow = new THREE.PointLight(0xff2a2a, 0, 9, 2);
-    this.rearGlow.position.set(0, 0.9, 1.35);
+    this.rearGlow.position.set(0, 0.72, 1.1);
     this.leanGroup.add(this.rearGlow);
 
     // a soft bounce so the rider keeps some shape in building shadow
     this.keyLight = new THREE.PointLight(0xdfe9ff, 6, 12, 2.0);
-    this.keyLight.position.set(1.2, 3.4, 1.8);
+    this.keyLight.position.set(1.0, 2.8, 1.5);
     this.root.add(this.keyLight);
 
     // ---- state -----------------------------------------------------------
@@ -296,8 +297,8 @@ export class Bike {
     // ---- wall collision --------------------------------------------------
     // the body sphere sits above kerb height so low trim is driven over,
     // not bounced off; real walls still stop us dead
-    _v.set(this.pos.x, this.pos.y + 1.15, this.pos.z);
-    const corr = this.collision.resolveSphere(_v, 0.85, 3, this._corr);
+    _v.set(this.pos.x, this.pos.y + B.bodyHeight, this.pos.z);
+    const corr = this.collision.resolveSphere(_v, B.bodyRadius, 3, this._corr);
     this.impact = Math.max(0, this.impact - dt * 2.2);
     if (corr.lengthSq() > 1e-6) {
       this.pos.x = _v.x; this.pos.z = _v.z;

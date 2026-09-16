@@ -136,7 +136,8 @@ const ROUTE = [
 ];
 
 export function makeRoute(map, collision) {
-  const pts = ROUTE.map(([x, z]) => map.snap(x, z, 8));
+  const S = CFG.world.heroScale;
+  const pts = ROUTE.map(([x, z]) => map.snap(x * S, z * S, 10));
   return pts.map((p, i) => {
     const next = pts[(i + 1) % pts.length];
     const prev = pts[(i - 1 + pts.length) % pts.length];
@@ -144,7 +145,7 @@ export function makeRoute(map, collision) {
     const dx = next.x - prev.x, dz = next.z - prev.z;
     const rot = Math.atan2(dx, dz);
     const clear = freeWidth(map, p.x, p.z, rot);
-    const halfWidth = Math.min(5.2, Math.max(1.7, clear - 0.5));
+    const halfWidth = Math.min(6.0, Math.max(1.9, clear - 0.6));
     return { ...p, rot, halfWidth, radius: Math.max(4.2, Math.min(CFG.game.checkpointRadius, halfWidth + 2.2)) };
   });
 }
@@ -152,10 +153,10 @@ export function makeRoute(map, collision) {
 /** How much room is there either side of a gate, along its own axis? */
 function freeWidth(map, x, z, rot) {
   const ax = Math.cos(rot), az = -Math.sin(rot);
-  let best = 6;
+  let best = 7;
   for (const s of [-1, 1]) {
     let d = 0;
-    for (; d < 6; d += 0.5) {
+    for (; d < 7; d += 0.5) {
       if (!map.isDrivable(x + ax * (d + 0.5) * s, z + az * (d + 0.5) * s)) break;
     }
     best = Math.min(best, d);

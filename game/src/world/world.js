@@ -65,7 +65,7 @@ export function buildWorld({ scene, renderer, assets, quality }) {
  * whatever the model's geometry allows instead of being hard-coded.
  */
 export class DrivableMap {
-  constructor(collision, bounds, { step = 1.5, pad = 26, radius = 1.15 } = {}) {
+  constructor(collision, bounds, { step = 2, pad = 34, radius = 0.95 } = {}) {
     this.collision = collision;
     this.step = step;
     this.radius = radius;
@@ -95,9 +95,9 @@ export class DrivableMap {
         const x = this.toWorldX(ix), z = this.toWorldZ(iz);
         const i = this.idx(ix, iz);
         this.inside[i] = x >= b.min.x && x <= b.max.x && z >= b.min.z && z <= b.max.z ? 1 : 0;
-        const hit = this.collision.sampleGround(x, z, 1.2, 40, g);
+        const hit = this.collision.sampleGround(x, z, 1.4, 60, g);
         if (!hit || hit.normal.y < 0.85) continue;
-        if (!this.collision.isClear(x, hit.y + 1.15, z, this.radius)) continue;
+        if (!this.collision.isClear(x, hit.y + 1.0, z, this.radius)) continue;
         this.cells[i] = 1;
         this.height[i] = hit.y;
       }
@@ -124,7 +124,7 @@ export class DrivableMap {
         if (jx < 0 || jz < 0 || jx >= this.w || jz >= this.h) continue;
         const j = this.idx(jx, jz);
         if (out[j] || !this.cells[j]) continue;
-        if (Math.abs(this.height[j] - this.height[i]) > 0.45) continue;   // no hopping onto roofs
+        if (Math.abs(this.height[j] - this.height[i]) > 0.6) continue;   // no hopping onto roofs
         out[j] = 1;
         queue.push(j);
       }

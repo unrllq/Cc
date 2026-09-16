@@ -5,7 +5,7 @@ import * as THREE from 'three';
  * vertex carries a birth time and the shader fades it out.
  */
 export class SkidMarks {
-  constructor(scene, { max = 900, life = 14, width = 0.34 } = {}) {
+  constructor(scene, { max = 900, life = 14, width = 0.26 } = {}) {
     this.max = max; this.life = life; this.width = width;
     this.head = 0; this.time = 0;
     this.hasPrev = false;
@@ -44,7 +44,7 @@ export class SkidMarks {
         varying float vA;
         void main() {
           if (vA <= 0.001) discard;
-          gl_FragColor = vec4(0.02, 0.02, 0.025, vA * 0.85);
+          gl_FragColor = vec4(0.03, 0.03, 0.035, vA * 0.62);
         }`,
     });
     this.mesh = new THREE.Mesh(geo, this.material);
