@@ -6,8 +6,10 @@ export class Menus {
     this.h = handlers;
     this.overlay = $('overlay');
     this.screens = {
-      loading: $('loading'), title: $('title'), pause: $('pause'), results: $('results'),
+      loading: $('loading'), title: $('title'), pause: $('pause'),
+      results: $('results'), controls: $('controls'),
     };
+    this.returnTo = 'title';
     this.current = 'loading';
 
     const bind = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
@@ -23,6 +25,68 @@ export class Menus {
     bind('btnSound', () => this.h.toggleSound());
     bind('btnSound2', () => this.h.toggleSound());
     bind('btnFps', () => this.h.toggleFps());
+    bind('btnControls', () => this.openControls('title'));
+    bind('btnControls2', () => this.openControls('pause'));
+    bind('btnBack', () => this.show(this.returnTo));
+    bind('btnResetOpts', () => this.h.resetSettings());
+
+    // ---- controls screen wiring ----
+    this.sliders = [
+      ['optSens', 'outSens', 'steerSensitivity', (v) => `${Math.round(v * 100)}%`],
+      ['optSpeed', 'outSpeed', 'steerSpeed', (v) => `${v.toFixed(2)}x`],
+      ['optMouseSens', 'outMouseSens', 'mouseSensitivity', (v) => `${v.toFixed(2)}x`],
+      ['optCam', 'outCam', 'camDistance', (v) => `${v.toFixed(2)}x`],
+      ['optShake', 'outShake', 'shake', (v) => (v === 0 ? 'выкл' : `${v.toFixed(2)}x`)],
+    ];
+    for (const [id, outId, key, fmt] of this.sliders) {
+      const el = $(id);
+      if (!el) continue;
+      el.addEventListener('input', () => {
+        const v = parseFloat(el.value);
+        $(outId).textContent = fmt(v);
+        this.h.setSetting(key, v);
+      });
+    }
+    this.switches = [
+      ['optAssist', 'assist'], ['optCounter', 'autoCounterSteer'],
+      ['optMouse', 'mouseLook'], ['optInvert', 'invertMouse'], ['optRumble', 'rumble'],
+    ];
+    for (const [id, key] of this.switches) {
+      const el = $(id);
+      if (!el) continue;
+      el.addEventListener('click', () => {
+        const next = el.getAttribute('aria-pressed') !== 'true';
+        this._setSwitch(el, next);
+        this.h.setSetting(key, next);
+      });
+    }
+    this.syncSettings(this.h.settings);
+  }
+
+  _setSwitch(el, on) {
+    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    el.textContent = on ? 'ВКЛ' : 'ВЫКЛ';
+  }
+
+  openControls(from) {
+    this.returnTo = from;
+    this.syncSettings(this.h.settings);
+    this.show('controls');
+  }
+
+  /** Push the stored settings back into every widget. */
+  syncSettings(s) {
+    if (!s) return;
+    for (const [id, outId, key, fmt] of this.sliders || []) {
+      const el = $(id);
+      if (!el) continue;
+      el.value = s[key];
+      $(outId).textContent = fmt(s[key]);
+    }
+    for (const [id, key] of this.switches || []) {
+      const el = $(id);
+      if (el) this._setSwitch(el, !!s[key]);
+    }
   }
 
   show(name) {

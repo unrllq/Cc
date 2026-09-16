@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CFG } from '../config.js';
+import { settings } from '../settings.js';
 
 const B = CFG.bike;
 const _v = new THREE.Vector3();
@@ -68,7 +69,7 @@ export class Bike {
     this.spineAxis = this.spine ? localAxis(this.spine, new THREE.Vector3(0, 0, 1)) : new THREE.Vector3(0, 0, 1);
 
     // headlight + tail light
-    this.headlight = new THREE.SpotLight(0xfff0d8, 260, 70, 0.62, 0.75, 1.5);
+    this.headlight = new THREE.SpotLight(0xfff4e2, 28, 45, 0.6, 0.85, 1.6);
     this.headlight.position.set(0, 1.05, -0.9);
     this.headlightTarget = new THREE.Object3D();
     this.headlightTarget.position.set(0, -0.4, -24);
@@ -80,13 +81,10 @@ export class Bike {
     this.rearGlow.position.set(0, 0.9, 1.35);
     this.leanGroup.add(this.rearGlow);
 
-    // key + rim so the hero never sinks into the night
-    this.keyLight = new THREE.PointLight(0xc8d8ff, 85, 24, 2.0);
-    this.keyLight.position.set(1.6, 4.2, 2.4);
+    // a soft bounce so the rider keeps some shape in building shadow
+    this.keyLight = new THREE.PointLight(0xdfe9ff, 6, 12, 2.0);
+    this.keyLight.position.set(1.2, 3.4, 1.8);
     this.root.add(this.keyLight);
-    this.rimLight = new THREE.PointLight(0xff5a7a, 38, 16, 2.0);
-    this.rimLight.position.set(-1.8, 2.2, -2.6);
-    this.root.add(this.rimLight);
 
     // ---- state -----------------------------------------------------------
     this.pos = new THREE.Vector3();
@@ -163,11 +161,21 @@ export class Bike {
       if (throttle > 0) {
         accel += throttle * B.enginePower * curve;
         if (this.boosting) accel += B.boostPower;
+        // sideways, the tyres scrub hard; give the rider the drive to hold it
+        if (this.drifting) accel += throttle * B.driftThrust;
       }
       if (brake > 0) {
-        if (vF > 0.4) accel -= brake * B.brakeForce;
-        else accel -= brake * B.enginePower * 0.55; // reverse
-      }
+        if (vF > 0.4) {
+          accel -= brake * B.brakeForce;
+          this._reverseHold = 0;
+        } else {
+          // hold the brake a moment at a standstill before it becomes reverse,
+          // so a hard stop does not shunt you backwards
+          this._reverseHold = (this._reverseHold || 0) + dt;
+          if (this._reverseHold > 0.35) accel -= brake * B.enginePower * 0.5;
+          else if (vF > 0) accel -= brake * B.brakeForce;
+        }
+      } else this._reverseHold = 0;
       // engine braking + rolling resistance + aero drag
       if (throttle < 0.02 && brake < 0.02) accel -= Math.sign(vF) * B.engineBrake;
       accel -= Math.sign(vF) * B.rollResist;
@@ -184,10 +192,16 @@ export class Bike {
       // corners are wide and you have to brake for the tight ones
       const yawCap = Math.min(B.maxYawLow, B.lateralAccel / Math.max(absF, 3.2));
       const rolling = absF < 1.2 ? absF / 1.2 : 1;
-      let yawTarget = this.steer * yawCap * rolling * Math.sign(vF || 1);
+      // +yaw swings the nose to the left, so steering right is negative yaw
+      let yawTarget = -this.steer * yawCap * rolling * Math.sign(vF || 1);
       const handbrake = input.handbrake && absF > 4;
       if (handbrake) yawTarget *= 1.32;
       if (this.drifting) yawTarget *= B.driftYawBoost;
+      // auto counter-steer settles a slide at a holdable angle instead of a spin
+      if (settings.autoCounterSteer && this.drifting) {
+        const over = (Math.abs(this.slip) - B.driftTargetSlip) / 0.35;
+        if (over > 0) yawTarget += Math.sign(this.slip) * Math.min(1, over) * yawCap * 1.05;
+      }
       this.yawRate = damp(this.yawRate, yawTarget, 8.5, dt);
       this.yaw += this.yawRate * dt;
 
@@ -201,14 +215,34 @@ export class Bike {
         grip = Math.max(0.95, B.driftGrip - onPower * 1.25 - steerHold * 0.55 + (1 - steerHold) * 1.9);
       }
       if (throttle > 0.75 && absF > 8 && Math.abs(this.steer) > 0.35) grip *= 0.6;
-      vR *= Math.exp(-grip * dt);
+      // ramp between grip states: snapping straight back to full grip felt
+      // like hitting a wall when a slide ran out of speed
+      this._grip = damp(this._grip ?? grip, grip, 11, dt);
+      vR *= Math.exp(-this._grip * dt);
 
       // recompute basis after the yaw change, keep world velocity honest
       this.forward.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
       this.right.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
-      // yawing the chassis throws lateral velocity: that is the drift
-      const lateralKick = -this.yawRate * absF * 0.5;
-      vR += lateralKick * dt * (handbrake ? 2.3 : 1.0);
+      // Yawing the chassis does not change the world-space velocity, it only
+      // re-expresses it in the new body frame: forward bleeds into lateral.
+      // That rotation is what a drift is, and because it is an exact rotation
+      // it can never invent speed - only the grip term below removes it.
+      const dTheta = this.yawRate * dt;
+      const cs = Math.cos(dTheta), sn = Math.sin(dTheta);
+      const nvF = vF * cs - vR * sn;
+      const nvR = vR * cs + vF * sn;
+      vF = nvF;
+      vR = nvR;
+
+      // stability aid: catches a slide the rider did not ask for
+      if (settings.assist && !handbrake) {
+        const over = Math.abs(this.slip) - B.assistSlip;
+        if (over > 0) {
+          const k = Math.min(1, over / 0.45);
+          vR *= Math.exp(-B.assistGrip * k * dt);
+          this.yawRate *= Math.exp(-B.assistYaw * k * dt);
+        }
+      }
 
       this.vel.copy(this.forward).multiplyScalar(vF).addScaledVector(this.right, vR);
       this.vel.y = Math.min(0, this.vel.y);
@@ -218,7 +252,7 @@ export class Bike {
       const slipAbs = Math.abs(this.slip);
       const enter = slipAbs > B.slipAngleDrift || (handbrake && absF > 9);
       const stay = slipAbs > B.slipAngleExit || handbrake;
-      this.drifting = absF > 7 && (wasDrifting ? stay : enter);
+      this.drifting = absF > (wasDrifting ? 4.5 : 7) && (wasDrifting ? stay : enter);
       if (this.drifting) {
         this.driftTime += dt;
         this.driftDir = Math.sign(this.slip) || this.driftDir;
@@ -231,7 +265,7 @@ export class Bike {
       // ---- airborne --------------------------------------------------------
       this.airTime += dt;
       this.vel.y -= B.gravity * dt;
-      this.yawRate = damp(this.yawRate, this.steer * B.maxYawLow * 0.55, 2.2, dt);
+      this.yawRate = damp(this.yawRate, -this.steer * B.maxYawLow * 0.55, 2.2, dt);
       this.yaw += this.yawRate * dt * B.airControl;
       this.drifting = false;
       this.nitro = Math.min(B.nitro.max, this.nitro + B.nitro.airGain * dt);
@@ -293,10 +327,11 @@ export class Bike {
     this.forwardSpeed = vF;
     this.lateralSpeed = vR;
     // lean into the corner (tan θ = v·ω / g), plus counter-lean while sliding
+    // lean into the corner: +yaw is a left turn and a left lean is +roll
     let leanTarget = Math.atan2(this.yawRate * Math.max(spd, 1), B.leanGravity);
-    leanTarget = clamp(-leanTarget, -B.leanMax, B.leanMax);
+    leanTarget = clamp(leanTarget, -B.leanMax, B.leanMax);
     if (this.drifting) {
-      leanTarget = clamp(leanTarget + clamp(this.slip, -0.6, 0.6) * 0.5, -B.leanMaxDrift, B.leanMaxDrift);
+      leanTarget = clamp(leanTarget + clamp(this.slip, -0.6, 0.6) * 0.3, -B.leanMaxDrift, B.leanMaxDrift);
     }
     if (!this.onGround) leanTarget *= 0.35;
     this.lean = damp(this.lean, leanTarget, B.leanRate, dt);
@@ -352,16 +387,16 @@ export class Bike {
   _poseModel(dt) {
     const { front, rear } = this.wheelNodes;
     if (front) {
-      _q.setFromAxisAngle(this.steerAxis, this.steer * 0.22 * clamp(1 - this.speed / 40, 0.25, 1));
+      _q.setFromAxisAngle(this.steerAxis, -this.steer * 0.26 * clamp(1 - this.speed / 34, 0.28, 1));
       front.quaternion.copy(_q).multiply(_q.clone().setFromAxisAngle(this.spinAxis, this.wheelSpin));
     }
     if (rear) rear.quaternion.setFromAxisAngle(this.spinAxis, this.wheelSpin);
     if (this.spine) {
       // rider braces against the slide
-      _q.setFromAxisAngle(this.spineAxis, clamp(-this.lean * 0.35 + this.slip * 0.25, -0.35, 0.35));
+      _q.setFromAxisAngle(this.spineAxis, clamp(this.lean * 0.3 - this.slip * 0.22, -0.35, 0.35));
       this.spine.quaternion.multiply(_q);
     }
-    this.rearGlow.intensity = damp(this.rearGlow.intensity, this._brakeGlow ? 42 : 11, 12, dt);
+    this.rearGlow.intensity = damp(this.rearGlow.intensity, this._brakeGlow ? 9 : 1.2, 12, dt);
   }
 
   setBrakeLight(on) { this._brakeGlow = on; }

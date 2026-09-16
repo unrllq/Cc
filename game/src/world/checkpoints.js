@@ -1,13 +1,25 @@
 import * as THREE from 'three';
 import { CFG } from '../config.js';
-import { glowTexture, rng } from './textures.js';
 
 const _v = new THREE.Vector3();
 
-/** A neon torii-ish gate you ride through. */
+/** Orange-and-white race gate, sized to the gap it stands in. */
+function stripeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 128;
+  const g = c.getContext('2d');
+  for (let i = 0; i < 8; i++) {
+    g.fillStyle = i % 2 ? '#ffffff' : '#ff6a1a';
+    g.fillRect(0, i * 16, 32, 16);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
 export class Checkpoints {
   constructor(scene) {
-    this.scene = scene;
     this.group = new THREE.Group();
     this.group.userData.noCollide = true;
     scene.add(this.group);
@@ -15,18 +27,19 @@ export class Checkpoints {
     this.index = 0;
     this.t = 0;
 
-    const tube = new THREE.CylinderGeometry(0.16, 0.16, 7.4, 8);
-    this.pillarGeo = tube;
-    this.beamGeo = new THREE.BoxGeometry(11.2, 0.34, 0.34);
-    this.matA = new THREE.MeshBasicMaterial({ color: 0x19f0ff, toneMapped: false });
-    this.matB = new THREE.MeshBasicMaterial({ color: 0xff2d6f, toneMapped: false });
-    this.matDone = new THREE.MeshBasicMaterial({ color: 0x1d3a33, toneMapped: false });
-    this.curtainMat = new THREE.MeshBasicMaterial({
-      map: glowTexture('rgba(120,255,255,0.75)', 'rgba(40,120,255,0)'),
-      transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending,
-      depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
+    const stripes = stripeTexture();
+    this.pillarGeo = new THREE.CylinderGeometry(0.17, 0.2, 4.6, 10);
+    this.matPole = new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.6, metalness: 0.05 });
+    this.matNext = new THREE.MeshStandardMaterial({
+      color: 0x18e0ff, emissive: 0x0d6d80, emissiveIntensity: 1.6, roughness: 0.4, metalness: 0.1,
     });
-    this.curtainGeo = new THREE.PlaneGeometry(10.6, 7);
+    this.matDone = new THREE.MeshStandardMaterial({ color: 0x8b939e, roughness: 0.8 });
+    this.matNextPole = new THREE.MeshStandardMaterial({ color: 0xb7bec8, roughness: 0.7, transparent: true, opacity: 0.55 });
+    this.curtainMat = new THREE.MeshBasicMaterial({
+      color: 0x36e2ff, transparent: true, opacity: 0.16, side: THREE.DoubleSide,
+      depthWrite: false, toneMapped: false,
+    });
+    this.bannerMat = new THREE.MeshBasicMaterial({ color: 0x18e0ff, toneMapped: false });
   }
 
   build(points) {
@@ -35,19 +48,28 @@ export class Checkpoints {
       const g = new THREE.Group();
       g.position.set(p.x, p.y ?? 0, p.z);
       g.rotation.y = p.rot || 0;
-      const mat = i === 0 ? this.matA : this.matB;
+      const hw = p.halfWidth ?? 5.2;
+      const height = Math.min(4.6, Math.max(2.8, hw * 1.15));
+
       for (const s of [-1, 1]) {
-        const pil = new THREE.Mesh(this.pillarGeo, mat);
-        pil.position.set(s * 5.4, 3.7, 0);
+        const pil = new THREE.Mesh(this.pillarGeo, this.matPole);
+        pil.scale.y = height / 4.6;
+        pil.position.set(s * hw, (height / 2), 0);
+        pil.castShadow = true;
         g.add(pil);
       }
-      const beam = new THREE.Mesh(this.beamGeo, mat);
-      beam.position.y = 7.3;
-      g.add(beam);
-      const curtain = new THREE.Mesh(this.curtainGeo, this.curtainMat.clone());
-      curtain.position.y = 3.6;
+      const banner = new THREE.Mesh(new THREE.BoxGeometry(hw * 2, 0.5, 0.18), this.bannerMat);
+      banner.position.y = height - 0.1;
+      g.add(banner);
+
+      const curtain = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, height), this.curtainMat.clone());
+      curtain.position.y = height / 2;
       g.add(curtain);
-      g.userData = { curtain, mat, pillars: g.children.slice(0, 2), beam, index: i, done: false, pos: new THREE.Vector3(p.x, p.y ?? 0, p.z) };
+
+      g.userData = {
+        curtain, banner, pillars: [g.children[0], g.children[1]], index: i,
+        pos: new THREE.Vector3(p.x, p.y ?? 0, p.z), radius: p.radius ?? CFG.game.checkpointRadius,
+      };
       this.group.add(g);
       this.list.push(g);
     });
@@ -62,27 +84,27 @@ export class Checkpoints {
   }
 
   refresh() {
+    // only the gate you are going for and the one after it, otherwise the
+    // street turns into a forest of poles
     this.list.forEach((g, i) => {
       const active = i === this.index;
-      const done = i < this.index;
-      g.visible = !done;
-      const m = active ? this.matA : this.matB;
-      g.userData.pillars.forEach((p) => (p.material = done ? this.matDone : m));
-      g.userData.beam.material = done ? this.matDone : m;
+      const next = i === this.index + 1;
+      g.visible = active || next;
+      g.userData.banner.material = active ? this.bannerMat : this.matDone;
       g.userData.curtain.visible = active;
-      g.userData.curtain.material.opacity = active ? 0.34 : 0;
+      for (const p of g.userData.pillars) p.material = active ? this.matPole : this.matNextPole;
     });
   }
 
   get target() { return this.list[this.index] || null; }
 
-  /** @returns true when the bike passed through the active gate */
-  test(bike, radius = CFG.game.checkpointRadius) {
+  test(bike) {
     const t = this.target;
     if (!t) return false;
     const d = _v.copy(bike.pos).sub(t.userData.pos);
     d.y = 0;
-    if (d.lengthSq() <= radius * radius) {
+    const r = t.userData.radius;
+    if (d.lengthSq() <= r * r) {
       this.index++;
       this.refresh();
       return true;
@@ -94,42 +116,49 @@ export class Checkpoints {
     this.t += dt;
     const t = this.target;
     if (t) {
-      const pulse = 0.28 + Math.sin(this.t * 4.2) * 0.12;
-      t.userData.curtain.material.opacity = pulse;
-      t.userData.curtain.lookAt(camera.position.x, t.userData.curtain.getWorldPosition(_v).y, camera.position.z);
+      t.userData.curtain.material.opacity = 0.12 + Math.sin(this.t * 3.4) * 0.06;
+      t.scale.setScalar(1 + Math.sin(this.t * 3.4) * 0.012);
     }
   }
 }
 
-/** Lay out a route: a loop around the grid plus a detour into the alley. */
-export function makeRoute(collision, seed = 99) {
-  const r = rng(seed);
-  const { axes } = CFG.world;
-  const ring = [];
-  const outer = [axes[1], axes[4]];      // -120 / 120
-  const mid = [axes[2], axes[3]];        // -45 / 45
-  const corners = [
-    [mid[1], mid[1]], [outer[1], mid[1]], [outer[1], outer[1]], [mid[1], outer[1]],
-    [mid[0], outer[1]], [outer[0], outer[1]], [outer[0], mid[1]], [outer[0], mid[0]],
-    [outer[0], outer[0]], [mid[0], outer[0]], [mid[0], mid[0]], [mid[1], mid[0]],
-  ];
-  for (const [x, z] of corners) {
-    const jx = (r() - 0.5) * 22, jz = (r() - 0.5) * 22;
-    const alongZ = Math.abs(x) > Math.abs(z);
-    ring.push({
-      x: alongZ ? x : x + jx,
-      z: alongZ ? z + jz : z,
-      rot: alongZ ? 0 : Math.PI / 2,
-    });
-  }
-  // the hero alley: ride through the Japanese street
-  ring.splice(1, 0, { x: CFG.world.heroAlleyMouth[0], z: CFG.world.heroAlleyMouth[1] - 3, rot: 0, alley: true });
-  ring.splice(2, 0, { x: CFG.world.heroAlleyMouth[0] - 1.5, z: CFG.world.heroAlleyMouth[1] - 20, rot: 0, alley: true });
+/**
+ * The lap is authored against the street's real layout - the west straight,
+ * the north strip, the east pocket and the dead-end alley - then every gate
+ * is snapped onto drivable ground and sized to the gap it sits in.
+ */
+const ROUTE = [
+  [-6, 24], [-13, 14], [-14, 1], [-15, -10],     // into the alley and back out
+  [-8, 17], [4, 14], [13, 4],                    // east pocket
+  [32, -12], [24, -44],                          // out onto the apron, north east
+  [-18, -30], [-46, -22],                        // north strip, top of the west straight
+  [-46, 14], [-48, 33],                          // west straight, out to the south apron
+];
 
-  // settle each gate onto the ground
-  for (const p of ring) {
-    const hit = collision.sampleGround(p.x, p.z, 40, 120);
-    p.y = hit ? hit.y : 0;
+export function makeRoute(map, collision) {
+  const pts = ROUTE.map(([x, z]) => map.snap(x, z, 8));
+  return pts.map((p, i) => {
+    const next = pts[(i + 1) % pts.length];
+    const prev = pts[(i - 1 + pts.length) % pts.length];
+    // face the gate across the direction of travel
+    const dx = next.x - prev.x, dz = next.z - prev.z;
+    const rot = Math.atan2(dx, dz);
+    const clear = freeWidth(map, p.x, p.z, rot);
+    const halfWidth = Math.min(5.2, Math.max(1.7, clear - 0.5));
+    return { ...p, rot, halfWidth, radius: Math.max(4.2, Math.min(CFG.game.checkpointRadius, halfWidth + 2.2)) };
+  });
+}
+
+/** How much room is there either side of a gate, along its own axis? */
+function freeWidth(map, x, z, rot) {
+  const ax = Math.cos(rot), az = -Math.sin(rot);
+  let best = 6;
+  for (const s of [-1, 1]) {
+    let d = 0;
+    for (; d < 6; d += 0.5) {
+      if (!map.isDrivable(x + ax * (d + 0.5) * s, z + az * (d + 0.5) * s)) break;
+    }
+    best = Math.min(best, d);
   }
-  return ring;
+  return best;
 }

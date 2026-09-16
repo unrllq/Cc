@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Neo Street Rider</title>
-<meta name="description" content="Гонка на мотоцикле от третьего лица по ночному Нео-Токио: дрифт, нитро, чекпоинты.">
+<meta name="description" content="Гонка на мотоцикле от третьего лица по японской улице: дрифт, нитро, чекпоинты.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cyan: #19f0ff;
-    --pink: #ff2d6f;
-    --amber: #ffc93d;
-    --violet: #8b5cff;
-    --ink: #05070d;
-    --panel: rgba(8, 12, 22, 0.82);
-    --line: rgba(120, 190, 255, 0.28);
-    --text: #dbe7ff;
-    --dim: #7e90b4;
+    --cyan: #0aa8c8;
+    --pink: #ff5a1f;
+    --amber: #f2a33c;
+    --violet: #5b6ee8;
+    --ink: #0d1116;
+    --panel: rgba(14, 19, 26, 0.72);
+    --line: rgba(190, 210, 228, 0.34);
+    --text: #f2f6fa;
+    --dim: #aebac7;
     --display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
     --ui: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
   }
@@ -59,7 +59,7 @@
                color: var(--dim); margin-bottom: 5px; }
   .bar { height: 10px; background: rgba(255,255,255,.08); border: 1px solid var(--line); overflow: hidden; }
   #nitroFill { height: 100%; width: 60%;
-    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    background: linear-gradient(90deg, #17c8e8, #5b6ee8);
     box-shadow: 0 0 14px rgba(25,240,255,.6); transition: width .08s linear; }
   #nitroFill.firing { background: linear-gradient(90deg, #fff, var(--cyan)); animation: pulse .25s infinite alternate; }
   @keyframes pulse { to { filter: brightness(1.5); } }
@@ -116,12 +116,16 @@
 
   /* --------------------------------------------------------------- menus */
   #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-             background: radial-gradient(ellipse at 50% 40%, rgba(20,26,48,.72), rgba(3,4,9,.94));
+             background: radial-gradient(ellipse at 50% 35%, rgba(18,26,36,.62), rgba(6,9,13,.93));
              backdrop-filter: blur(3px); z-index: 10; }
   #overlay.hidden { display: none; }
   .screen { display: none; width: min(760px, 92vw); max-height: 92vh; overflow: auto; }
-  .screen.active { display: block; animation: fade .35s ease-out; }
-  @keyframes fade { from { opacity: 0; transform: translateY(12px); } }
+  .screen.active { display: block; opacity: 1; animation: fade .35s ease-out both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .screen.active { animation: none; }
+    .pop { animation-duration: .01ms; }
+  }
 
   .logo { font-family: var(--display); font-weight: 900; line-height: .92; letter-spacing: .02em;
           font-size: clamp(38px, 8vw, 76px); margin: 0 0 4px; }
@@ -182,6 +186,20 @@
   #tLeft { left: 22px; bottom: 140px; }
   #tRight { left: 118px; bottom: 140px; }
 
+  /* controls settings */
+  .opt { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px 16px;
+         padding: 11px 0; border-bottom: 1px solid rgba(190,210,228,.14); }
+  .opt:last-of-type { border-bottom: 0; }
+  .opt-name { font-size: 15px; font-weight: 600; }
+  .opt-hint { grid-column: 1 / -1; font-size: 12px; color: var(--dim); margin-top: -6px; }
+  .opt input[type=range] { width: 190px; accent-color: #17c8e8; }
+  .opt output { font-family: var(--display); font-size: 13px; color: var(--cyan);
+                min-width: 46px; text-align: right; display: inline-block; }
+  .switch { pointer-events: auto; cursor: pointer; font-family: var(--display); font-size: 12px;
+            letter-spacing: .1em; padding: 8px 16px; min-width: 92px; color: var(--text);
+            background: rgba(255,255,255,.07); border: 1px solid var(--line); }
+  .switch[aria-pressed="true"] { background: rgba(23,200,232,.26); border-color: #17c8e8; color: #fff; }
+  .opt-row { display: flex; align-items: center; gap: 12px; }
   #fps { position: fixed; left: 8px; top: 8px; font-size: 11px; color: var(--dim); z-index: 9;
          font-family: var(--display); opacity: .55; }
   #fps.hidden { display: none; }
@@ -203,11 +221,11 @@
   <div id="objective" class="hud-corner panel">
     <div>
       <div class="cap">ВРЕМЯ</div>
-      <div id="timeLeft">60.0</div>
+      <div id="timeLeft">35.0</div>
     </div>
     <div>
       <div class="cap">ЧЕКПОИНТЫ</div>
-      <div id="cpCount">0/14</div>
+      <div id="cpCount">0/13</div>
     </div>
   </div>
 
@@ -259,7 +277,7 @@
   <!-- LOADING -->
   <section id="loading" class="screen active">
     <h1 class="logo"><span class="a">NEO STREET</span><br><span class="b">RIDER</span></h1>
-    <div class="tag">Neo-Tokyo · Night Run</div>
+    <div class="tag">Japan Street · Day Run</div>
     <div class="card panel">
       <div class="bar"><div id="loadFill"></div></div>
       <div id="loadText"><span class="spin"></span>ЗАГРУЗКА МОДЕЛЕЙ…</div>
@@ -269,13 +287,14 @@
   <!-- TITLE -->
   <section id="title" class="screen">
     <h1 class="logo"><span class="a">NEO STREET</span><br><span class="b">RIDER</span></h1>
-    <div class="tag">Neo-Tokyo · Night Run</div>
+    <div class="tag">Japan Street · Day Run</div>
     <div class="card panel">
       <div class="row">
-        <button class="btn primary" id="btnTime">Заезд на время<small>14 чекпоинтов, таймер, очки за дрифт</small></button>
-        <button class="btn" id="btnFree">Свободная езда<small>Город твой. Дрифтуй сколько хочешь</small></button>
+        <button class="btn primary" id="btnTime">Заезд на время<small>13 ворот по улице, таймер, очки за дрифт</small></button>
+        <button class="btn" id="btnFree">Свободная езда<small>Улица твоя. Дрифтуй сколько хочешь</small></button>
       </div>
       <div class="row" style="margin-top:14px">
+        <button class="btn" id="btnControls">Управление<small>Руль, помощь, мышь, геймпад</small></button>
         <button class="btn" id="btnQuality">Графика: Высокая<small>Переключить качество</small></button>
         <button class="btn" id="btnSound">Звук: Вкл<small>Процедурный движок</small></button>
       </div>
@@ -285,7 +304,9 @@
         <div><kbd>SPACE</kbd> ручник — дрифт</div>
         <div><kbd>SHIFT</kbd> нитро</div>
         <div><kbd>C</kbd> камера</div>
-        <div><kbd>B</kbd> посмотреть назад</div>
+        <div><kbd>B</kbd> назад · <kbd>Q</kbd><kbd>E</kbd> вбок</div>
+        <div><kbd>ПКМ</kbd> обзор мышью</div>
+        <div><kbd>Колесо</kbd> отдалить камеру</div>
         <div><kbd>R</kbd> респаун</div>
         <div><kbd>P</kbd> пауза</div>
       </div>
@@ -303,9 +324,67 @@
         <button class="btn" id="btnQuit">В меню</button>
       </div>
       <div class="row" style="margin-top:14px">
+        <button class="btn" id="btnControls2">Управление</button>
         <button class="btn" id="btnQuality2">Графика</button>
         <button class="btn" id="btnSound2">Звук</button>
         <button class="btn" id="btnFps">FPS: выкл</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTROLS -->
+  <section id="controls" class="screen">
+    <h1 class="logo"><span class="a">УПРАВЛЕНИЕ</span></h1>
+    <div class="tag">Настройки под себя</div>
+    <div class="card panel">
+      <div class="opt">
+        <span class="opt-name">Чувствительность руля</span>
+        <span class="opt-row"><input id="optSens" type="range" min="0.6" max="1.6" step="0.05"><output id="outSens"></output></span>
+        <span class="opt-hint">Насколько сильно отклоняется руль при полном нажатии.</span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Скорость поворота руля</span>
+        <span class="opt-row"><input id="optSpeed" type="range" min="0.5" max="2" step="0.05"><output id="outSpeed"></output></span>
+        <span class="opt-hint">Быстрее — резче реакция на клавиши, медленнее — плавнее в поворотах.</span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Помощь в управлении</span>
+        <button class="switch" id="optAssist" aria-pressed="true">ВКЛ</button>
+        <span class="opt-hint">Ловит незапланированный занос. Ручник всё равно работает.</span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Автоконтрруль в дрифте</span>
+        <button class="switch" id="optCounter" aria-pressed="true">ВКЛ</button>
+        <span class="opt-hint">Держит занос под ровным углом, не даёт закрутиться.</span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Обзор мышью</span>
+        <button class="switch" id="optMouse" aria-pressed="true">ВКЛ</button>
+        <span class="opt-hint">Зажми правую кнопку и веди мышь. Колесо — отдалить камеру.</span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Чувствительность мыши</span>
+        <span class="opt-row"><input id="optMouseSens" type="range" min="0.3" max="2.5" step="0.05"><output id="outMouseSens"></output></span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Инверсия мыши</span>
+        <button class="switch" id="optInvert" aria-pressed="false">ВЫКЛ</button>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Вибрация геймпада</span>
+        <button class="switch" id="optRumble" aria-pressed="true">ВКЛ</button>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Дистанция камеры</span>
+        <span class="opt-row"><input id="optCam" type="range" min="0.7" max="1.5" step="0.05"><output id="outCam"></output></span>
+      </div>
+      <div class="opt">
+        <span class="opt-name">Тряска камеры</span>
+        <span class="opt-row"><input id="optShake" type="range" min="0" max="1.6" step="0.05"><output id="outShake"></output></span>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn primary" id="btnBack">Назад</button>
+        <button class="btn" id="btnResetOpts">Сбросить</button>
       </div>
     </div>
   </section>

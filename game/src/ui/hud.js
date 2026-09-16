@@ -5,6 +5,7 @@ const $ = (id) => document.getElementById(id);
 /** Speedo, nitro, score, timer, minimap and floating call-outs. */
 export class HUD {
   constructor(world) {
+    this.map = world && world.map;
     this.root = $('hud');
     this.speedCanvas = $('speedo');
     this.sctx = this.speedCanvas.getContext('2d');
@@ -141,35 +142,31 @@ export class HUD {
 
   drawMap(bike, game) {
     const c = this.mctx, W = this.mapCanvas.width, H = this.mapCanvas.height;
-    const L = CFG.world.limit;
-    const s = W / (L * 2);
-    const toX = (x) => (x + L) * s;
-    const toY = (z) => (z + L) * s;
+    const m = this.map;
     c.clearRect(0, 0, W, H);
-    c.fillStyle = 'rgba(6,10,20,0.72)';
+    c.fillStyle = 'rgba(8,14,24,0.55)';
     c.fillRect(0, 0, W, H);
+    if (!m) return;
+    if (!this._mapImg) this._mapImg = m.toCanvas(3);
 
-    // roads
-    c.strokeStyle = 'rgba(120,160,220,0.5)';
-    c.lineWidth = Math.max(2, CFG.world.roadWidth * s);
-    for (const a of CFG.world.axes) {
-      c.beginPath(); c.moveTo(toX(a), 0); c.lineTo(toX(a), H); c.stroke();
-      c.beginPath(); c.moveTo(0, toY(a)); c.lineTo(W, toY(a)); c.stroke();
-    }
-    // hero district
-    c.fillStyle = 'rgba(255,90,60,0.22)';
-    c.fillRect(toX(-36), toY(-36), 72 * s, 72 * s);
-    c.strokeStyle = 'rgba(255,120,80,0.6)';
-    c.lineWidth = 1.5;
-    c.strokeRect(toX(-36), toY(-36), 72 * s, 72 * s);
+    // world -> minimap pixels
+    const spanX = (m.maxX - m.minX), spanZ = (m.maxZ - m.minZ);
+    const span = Math.max(spanX, spanZ);
+    const s = W / span;
+    const ox = (W - spanX * s) / 2, oy = (H - spanZ * s) / 2;
+    const toX = (x) => ox + (x - m.minX) * s;
+    const toY = (z) => oy + (z - m.minZ) * s;
+    c.globalAlpha = 0.85;
+    c.drawImage(this._mapImg, ox, oy, spanX * s, spanZ * s);
+    c.globalAlpha = 1;
 
     // checkpoints
     game.cp.list.forEach((g, i) => {
       if (i < game.cp.index) return;
       const p = g.userData.pos;
       c.beginPath();
-      c.arc(toX(p.x), toY(p.z), i === game.cp.index ? 4.5 : 2.6, 0, 6.29);
-      c.fillStyle = i === game.cp.index ? '#19f0ff' : 'rgba(255,45,111,0.75)';
+      c.arc(toX(p.x), toY(p.z), i === game.cp.index ? 4.5 : 2.4, 0, 6.29);
+      c.fillStyle = i === game.cp.index ? '#18e0ff' : 'rgba(255,106,26,0.8)';
       c.fill();
     });
 

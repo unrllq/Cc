@@ -128,29 +128,29 @@ export function signTexture(seed = 3, color = '#ff2d6f', vertical = true) {
 }
 
 /** Asphalt: dark, slightly wet, tiling. */
-export function asphaltTexture(seed = 11) {
+export function asphaltTexture(seed = 11, base = '#212329', grain = 30, crack = '10,10,12') {
   const S = 512;
   const [c, g] = canvas(S, S);
   const r = rng(seed);
-  g.fillStyle = '#212329';
+  g.fillStyle = base;
   g.fillRect(0, 0, S, S);
   for (let i = 0; i < 26000; i++) {
-    const v = 30 + r() * 58 | 0;
+    const v = grain + r() * 58 | 0;
     g.fillStyle = `rgba(${v},${v + 2},${v + 6},${0.25 + r() * 0.5})`;
     g.fillRect(r() * S, r() * S, 1 + r() * 2, 1 + r() * 2);
   }
   // patches & cracks
   for (let i = 0; i < 26; i++) {
-    g.strokeStyle = `rgba(10,10,12,${0.3 + r() * 0.4})`;
-    g.lineWidth = 1 + r() * 2;
+    g.strokeStyle = `rgba(${crack},${0.18 + r() * 0.22})`;
+    g.lineWidth = 0.6 + r() * 1.2;
     g.beginPath();
     let x = r() * S, y = r() * S;
     g.moveTo(x, y);
-    for (let k = 0; k < 7; k++) { x += (r() - 0.5) * 90; y += (r() - 0.5) * 90; g.lineTo(x, y); }
+    for (let k = 0; k < 7; k++) { x += (r() - 0.5) * 40; y += (r() - 0.5) * 40; g.lineTo(x, y); }
     g.stroke();
   }
   for (let i = 0; i < 9; i++) {
-    g.fillStyle = `rgba(40,42,50,${0.05 + r() * 0.08})`;
+    g.fillStyle = `rgba(${crack},${0.03 + r() * 0.05})`;
     g.beginPath();
     g.ellipse(r() * S, r() * S, 40 + r() * 90, 30 + r() * 70, r() * 3.14, 0, 6.29);
     g.fill();

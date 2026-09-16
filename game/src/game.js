@@ -12,15 +12,16 @@ const store = {
 
 /** Run rules: checkpoints, clock, drift scoring, records. */
 export class Game {
-  constructor({ scene, bike, collision, audio, hud, fx, camera }) {
+  constructor({ scene, bike, collision, map, audio, hud, fx, camera }) {
     this.bike = bike;
     this.collision = collision;
+    this.map = map;
     this.audio = audio;
     this.hud = hud;
     this.fx = fx;
     this.camera = camera;
     this.cp = new Checkpoints(scene);
-    this.route = makeRoute(collision);
+    this.route = makeRoute(map, collision);
     this.mode = 'freeride';
     this.state = 'menu';
     this.score = 0;
@@ -44,10 +45,8 @@ export class Game {
     this.topSpeed = 0;
     this.time = G.startTime;
     this.cp.build(mode === 'timeattack' ? this.route : []);
-    const spawn = mode === 'timeattack'
-      ? { x: CFG.world.heroAlleyMouth[0], z: 44, yaw: 0 }   // on the south avenue, nose pointed at the alley
-      : { x: 45, z: 60, yaw: 0 };
-    this.bike.reset(spawn.x, spawn.z, spawn.yaw);
+    const [sx, sz, syaw] = CFG.world.spawn;
+    this.bike.reset(sx, sz, syaw);
     this.fx.skid.clear();
     this.fx.particles.clear();
     if (this.mode === 'timeattack') {
@@ -126,19 +125,14 @@ export class Game {
     return this.result;
   }
 
-  /** Put the bike back on the nearest sensible piece of road. */
+  /** Put the bike back on the nearest drivable spot, pointed at the next gate. */
   respawn() {
     const bike = this.bike;
     const t = this.cp.target;
-    let x = bike.pos.x, z = bike.pos.z, yaw = bike.yaw;
-    if (t) {
-      x = t.userData.pos.x; z = t.userData.pos.z;
-      yaw = Math.atan2(-(t.userData.pos.x - bike.pos.x), -(t.userData.pos.z - bike.pos.z));
-    } else {
-      const a = CFG.world.axes.reduce((p, c) => (Math.abs(c - x) < Math.abs(p - x) ? c : p), 999);
-      x = a;
-    }
-    bike.reset(x, z, yaw);
+    const spot = this.map.nearestDrivable(bike.pos.x, bike.pos.z) || { x: CFG.world.spawn[0], z: CFG.world.spawn[1] };
+    let yaw = bike.yaw;
+    if (t) yaw = Math.atan2(-(t.userData.pos.x - spot.x), -(t.userData.pos.z - spot.z));
+    bike.reset(spot.x, spot.z, yaw);
     this.fx.skid.break();
     this.combo = 1;
     this.driftBank = 0;

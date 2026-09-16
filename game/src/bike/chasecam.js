@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CFG } from '../config.js';
+import { settings } from '../settings.js';
 
 const C = CFG.camera;
 const _v = new THREE.Vector3();
@@ -62,8 +63,8 @@ export class ChaseCamera {
       height = 2.2 + Math.sin(this.cineT * 0.17) * 1.5;
       this.yaw = bike.yaw + Math.sin(this.cineT * 0.13) * 1.15;
     }
-    dist += speed01 * 2.1;
-    height += speed01 * 0.35 + bike.pitch * -1.1;
+    dist = (dist + speed01 * 2.1) * settings.camDistance * (1 + (input.zoom || 0));
+    height += speed01 * 0.35 + bike.pitch * -1.1 + (input.zoom || 0) * 0.9;
 
     const dir = _v.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     _desired.copy(base).addScaledVector(dir, -dist);
@@ -89,7 +90,7 @@ export class ChaseCamera {
 
     // shake from speed, impacts and landings
     this.shake = Math.max(this.shake * Math.exp(-4.5 * dt), bike.impact * 1.4);
-    const amp = C.shake * (speed01 * speed01) + this.shake * 0.55;
+    const amp = (C.shake * (speed01 * speed01) + this.shake * 0.55) * settings.shake;
     const t = performance.now() * 0.001;
     this.camera.position.copy(this.pos);
     if (amp > 1e-4) {
@@ -101,7 +102,7 @@ export class ChaseCamera {
     // roll the camera slightly with the bike for weight
     this.camera.rotateZ(bike.lean * 0.18 + (bike.drifting ? bike.slip * 0.05 : 0));
 
-    const targetFov = THREE.MathUtils.lerp(C.fov, C.fovBoost, Math.pow(speed01, 1.35) * (bike.boosting ? 1 : 0.78));
+    const targetFov = THREE.MathUtils.lerp(C.fov, C.fovBoost, Math.pow(speed01, 1.35) * (bike.boosting ? 1 : 0.78) * settings.fovShift);
     this.camera.fov = damp(this.camera.fov, mode === 'hood' ? targetFov + 6 : targetFov, 4.5, dt);
     this.camera.updateProjectionMatrix();
   }

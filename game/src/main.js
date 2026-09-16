@@ -11,6 +11,7 @@ import { SkidMarks } from './fx/skidmarks.js';
 import { Particles } from './fx/particles.js';
 import { HUD } from './ui/hud.js';
 import { Menus, setupTouch } from './ui/menus.js';
+import { settings, setSetting, resetSettings } from './settings.js';
 import { Game } from './game.js';
 
 const QUALITIES = ['high', 'medium', 'low'];
@@ -42,6 +43,9 @@ class App {
       cycleQuality: () => this.cycleQuality(),
       toggleSound: () => this.toggleSound(),
       toggleFps: () => this.toggleFps(),
+      setSetting: (k, v) => setSetting(k, v),
+      resetSettings: () => { resetSettings(); this.menus.syncSettings(settings); },
+      settings,
     });
     this.menus.setQualityLabel(this.quality);
     this.menus.setSoundLabel(true);
@@ -76,11 +80,11 @@ class App {
 
     this.hud = new HUD(world);
     this.game = new Game({
-      scene: this.scene, bike: this.bike, collision: world.collision,
+      scene: this.scene, bike: this.bike, collision: world.collision, map: world.map,
       audio: this.audio, hud: this.hud, fx: this.fx, camera: this.camera,
     });
 
-    this.bike.reset(CFG.world.heroAlleyMouth[0], 44, 0);
+    this.bike.reset(CFG.world.spawn[0], CFG.world.spawn[1], CFG.world.spawn[2]);
     this.chase.snap(this.bike);
     this.menus.setBest(this.game.records);
     this.menus.show('title');
@@ -172,8 +176,13 @@ class App {
       const ctrl = playing ? input : IDLE;
       this.bike.update(dt, ctrl);
       this.bike.setBrakeLight(ctrl.brake > 0.1 || ctrl.handbrake);
+      if (playing && this.bike.impact > 0.25 && !this._rumbled) {
+        this.input.rumble(Math.min(1, this.bike.impact), 180);
+        this._rumbled = true;
+      } else if (this.bike.impact < 0.05) this._rumbled = false;
       if (this.bike.needsRespawn) { this.bike.needsRespawn = false; this.game.respawn(); }
       this.chase.update(dt, this.bike, ctrl);
+      if (this.world.sky.follow) this.world.sky.follow(this.bike.pos);
       this.emitFx(dt, ctrl);
       if (playing) {
         this.game.update(dt);
