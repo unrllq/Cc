@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>NEON MILE — Cyber Rider over London</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<!-- ============ LOADING ============ -->
+<div class="screen" id="loading">
+  <div class="logo">
+    <span class="logo__top">CYBER RIDER</span>
+    <h1 class="logo__main">NEON<span>MILE</span></h1>
+    <span class="logo__sub">LONDON FINANCIAL DISTRICT // 20XX</span>
+  </div>
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="loadmsg" id="loadMsg">booting engine…</div>
+</div>
+
+<!-- ============ MENU ============ -->
+<div class="screen hidden" id="menu">
+  <div class="logo">
+    <span class="logo__top">CYBER RIDER</span>
+    <h1 class="logo__main">NEON<span>MILE</span></h1>
+    <span class="logo__sub">LONDON FINANCIAL DISTRICT // 20XX</span>
+  </div>
+
+  <div class="panel">
+    <div class="keys">
+      <div><b>W / S</b><span>тяга (throttle)</span></div>
+      <div><b>МЫШЬ</b><span>тангаж и рыскание</span></div>
+      <div><b>A / D</b><span>крен, вираж</span></div>
+      <div><b>SHIFT</b><span>форсаж</span></div>
+      <div><b>SPACE / CTRL</b><span>вверх / вниз</span></div>
+      <div><b>C</b><span>камера: chase / close / cockpit</span></div>
+      <div><b>R</b><span>респавн</span></div>
+      <div><b>ESC</b><span>пауза</span></div>
+    </div>
+    <p class="hint">Геймпад поддерживается. На телефоне — джойстик слева, тяга справа.</p>
+  </div>
+
+  <button class="play" id="playBtn">НАЧАТЬ ЗАЕЗД</button>
+  <div class="mode" id="modeLine">режим: <b>RING RUN</b> — пройди 12 неоновых колец над Сити</div>
+</div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div class="hud__corner hud__tl">
+    <div class="ring">КОЛЬЦО <b><span id="ringNow">0</span>/<span id="ringAll">12</span></b></div>
+    <div class="timer" id="timer">00:00.0</div>
+    <div class="combo" id="combo"></div>
+  </div>
+
+  <div class="hud__corner hud__tr">
+    <canvas id="minimap" width="220" height="220"></canvas>
+  </div>
+
+  <div class="hud__corner hud__bl">
+    <div class="gauge">
+      <div class="gauge__label">ALT</div>
+      <div class="gauge__val"><span id="alt">0</span><i>m</i></div>
+    </div>
+    <div class="boost">
+      <div class="boost__label">BOOST</div>
+      <div class="boost__bar"><i id="boostBar"></i></div>
+    </div>
+  </div>
+
+  <div class="hud__corner hud__br">
+    <div class="speedo">
+      <div class="speedo__val" id="speed">000</div>
+      <div class="speedo__unit">KM/H</div>
+    </div>
+  </div>
+
+  <div class="reticle" id="reticle"></div>
+  <div class="navcue" id="navcue"><i></i></div>
+  <div class="toast" id="toast"></div>
+  <div class="vignette"></div>
+  <div class="scan"></div>
+  <div class="damage" id="damage"></div>
+</div>
+
+<!-- ============ TOUCH ============ -->
+<div id="touch" class="hidden">
+  <div class="stick" id="stickL"><i></i></div>
+  <div class="tbtns">
+    <button id="tBoost">BOOST</button>
+    <button id="tUp">▲</button>
+    <button id="tDown">▼</button>
+  </div>
+</div>
+
+<!-- ============ PAUSE ============ -->
+<div class="screen hidden" id="pause">
+  <h2>ПАУЗА</h2>
+  <button class="play" id="resumeBtn">ПРОДОЛЖИТЬ</button>
+  <button class="play play--ghost" id="restartBtn">ЗАНОВО</button>
+  <div class="settings">
+    <label><input type="checkbox" id="optBloom" checked /> Bloom / неон</label>
+    <label><input type="checkbox" id="optInvert" /> Инверсия оси Y</label>
+    <label><input type="checkbox" id="optSound" checked /> Звук</label>
+    <label>Чувствительность <input type="range" id="optSens" min="20" max="300" value="100" /></label>
+    <label>Качество
+      <select id="optQuality">
+        <option value="high" selected>высокое</option>
+        <option value="mid">среднее</option>
+        <option value="low">низкое (слабые GPU)</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<!-- ============ RESULTS ============ -->
+<div class="screen hidden" id="results">
+  <span class="logo__top">ЗАЕЗД ЗАВЕРШЁН</span>
+  <h2 id="resTime">00:00.0</h2>
+  <div class="resrow">
+    <div><b id="resBest">—</b><span>лучшее время</span></div>
+    <div><b id="resTop">0</b><span>макс. скорость</span></div>
+    <div><b id="resCrash">0</b><span>столкновений</span></div>
+  </div>
+  <button class="play" id="againBtn">ЕЩЁ ЗАЕЗД</button>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
