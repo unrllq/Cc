@@ -1,0 +1,266 @@
+/* Tokens — sampled from img/lounge-interior.jpeg.
+   Roles: --go (rug green) = primary CTA + "open" status + footer checker only.
+          --rust = menu board surface only. --clock = flip-clock body only. */
+:root {
+  --paper: #ebe8e1;       /* concrete-light canvas */
+  --ink: #2a140b;         /* leather-dark text */
+  --ink-2: rgba(42, 20, 11, 0.68);
+  --line: rgba(42, 20, 11, 0.18);
+  --rust: #6e3a22;
+  --rust-ink: #f3e7d7;
+  --rust-line: rgba(243, 231, 215, 0.22);
+  --go: #17823a;
+  --go-hover: #106a2e;
+  --clock: #e0662c;
+
+  --f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --f-body: 'Onest', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --gutter: clamp(16px, 4vw, 56px);
+  --radius: 2px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1rem/1.55 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--go); outline-offset: 3px; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.nowrap { white-space: nowrap; }
+
+.section-title {
+  margin: 0;
+  font: 700 clamp(2.5rem, 7vw, 5.5rem)/0.95 var(--f-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 0 22px;
+  font: 600 0.95rem/1 var(--f-body);
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: background-color .15s ease, color .15s ease;
+}
+.btn--go { background: var(--go); color: #fff; }
+.btn--go:hover { background: var(--go-hover); }
+.btn--line { box-shadow: inset 0 0 0 1.5px currentColor; }
+.btn--line:hover { background: var(--ink); color: var(--paper); }
+
+/* Header */
+.top {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 32px;
+  padding: 14px var(--gutter);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.logo { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+.logo__time { font: 700 1.25rem/1 var(--f-mono); letter-spacing: -0.02em; }
+.logo__word { font: 500 0.8rem/1 var(--f-body); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-2); }
+.top__nav { display: flex; gap: 24px; margin-left: auto; }
+.top__nav a { text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+.top__nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.status {
+  display: flex; align-items: center; gap: 8px; margin: 0;
+  font: 500 0.8rem/1 var(--f-mono); white-space: nowrap;
+}
+.status__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-2); }
+.status.is-open .status__dot { background: var(--go); box-shadow: 0 0 0 4px rgba(23, 130, 58, .18); }
+
+/* Hero */
+.hero { padding: clamp(28px, 5vw, 64px) var(--gutter) 0; }
+.hero__title {
+  margin: 0;
+  font: 700 clamp(4rem, 17vw, 15rem)/0.86 var(--f-display);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+.hero__title span { display: block; }
+.hero__title span:last-child { text-align: right; }
+.hero__row {
+  display: grid; grid-template-columns: minmax(0, 34rem) auto; justify-content: space-between;
+  align-items: end; gap: 24px 48px;
+  margin: clamp(24px, 4vw, 48px) 0 clamp(28px, 4vw, 48px);
+}
+.hero__lead { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.25rem); text-wrap: pretty; }
+.hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.hero__media {
+  position: relative; margin: 0 calc(var(--gutter) * -1);
+  height: clamp(420px, 78vh, 860px); overflow: hidden;
+}
+.hero__media img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; }
+
+/* Flip clock — echoes the orange clock on the coffee table in the photo */
+.clock {
+  position: absolute; left: var(--gutter); bottom: var(--gutter);
+  display: flex; gap: 10px; padding: 12px;
+  background: var(--clock); border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(20, 8, 2, .35);
+}
+.clock__pair { display: flex; gap: 4px; }
+.flip {
+  position: relative; display: grid; place-items: center;
+  width: clamp(40px, 6vw, 72px); height: clamp(58px, 8.6vw, 104px);
+  background: #fbf6ee; color: var(--ink); border-radius: 4px;
+  font: 700 clamp(2.2rem, 5.4vw, 4.4rem)/1 var(--f-mono);
+}
+.flip::after { /* hinge line */
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+  background: rgba(42, 20, 11, .22);
+}
+.flip.is-flipping { animation: flip .5s cubic-bezier(.3, .7, .4, 1); }
+@keyframes flip {
+  0% { transform: perspective(300px) rotateX(0); }
+  45% { transform: perspective(300px) rotateX(-88deg); }
+  55% { transform: perspective(300px) rotateX(88deg); }
+  100% { transform: perspective(300px) rotateX(0); }
+}
+
+/* Menu board */
+.menu { padding: clamp(72px, 10vw, 140px) var(--gutter); }
+.menu__head {
+  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 48px;
+  margin-bottom: clamp(24px, 4vw, 40px);
+}
+.menu__note { margin: 0; max-width: 26rem; color: var(--ink-2); text-wrap: pretty; }
+.board {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(32px, 6vw, 96px);
+  padding: clamp(24px, 5vw, 64px);
+  background: var(--rust); color: var(--rust-ink);
+  border-radius: var(--radius);
+  font-family: var(--f-mono);
+}
+.board__table { width: 100%; border-collapse: collapse; margin-bottom: 40px; font-size: clamp(0.85rem, 1.2vw, 1rem); }
+.board__table caption {
+  text-align: left; padding-bottom: 10px;
+  font: 700 0.8rem/1 var(--f-mono); text-transform: uppercase; letter-spacing: 0.14em;
+  opacity: .75;
+}
+.board__table thead th {
+  font-weight: 400; font-size: 0.75rem; opacity: .6; text-align: right;
+  padding: 0 0 6px; border-bottom: 1px solid var(--rust-line);
+}
+.board__table tbody th { text-align: left; font-weight: 400; padding: 9px 12px 9px 0; }
+.board__table td { text-align: right; width: 4.5ch; padding: 9px 0 9px 12px; font-variant-numeric: tabular-nums; }
+.board__table tbody tr + tr > * { border-top: 1px dashed var(--rust-line); }
+.board__foot { margin: 0; font-size: 0.8rem; opacity: .65; }
+
+/* Day timeline */
+.day { padding: 0 var(--gutter) clamp(72px, 10vw, 140px); }
+.day__list { list-style: none; margin: clamp(24px, 4vw, 48px) 0 0; padding: 0; }
+.day__item {
+  display: grid; grid-template-columns: minmax(7ch, 14rem) minmax(0, 38rem); gap: 8px 48px;
+  align-items: center;
+  padding: 22px 0; border-top: 1px solid var(--line);
+}
+.day__item:last-child { border-bottom: 1px solid var(--line); }
+.day__item time { font: 700 clamp(1.8rem, 4vw, 3rem)/1 var(--f-mono); letter-spacing: -0.03em; color: var(--ink-2); }
+.day__item p { margin: 0; text-wrap: pretty; }
+.day__item.is-now time { color: var(--ink); }
+.day__item.is-now time::after {
+  content: 'сейчас'; margin-left: 12px; vertical-align: middle;
+  font: 500 0.75rem/1 var(--f-mono); letter-spacing: 0; color: var(--go);
+}
+
+/* Space — perforated panel, like the porthole screens in the hall */
+.space {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 40px clamp(32px, 6vw, 96px);
+  align-items: center;
+  padding: 0 var(--gutter) clamp(72px, 10vw, 140px);
+}
+.facts { margin: 32px 0; display: grid; gap: 0; }
+.facts div { display: grid; grid-template-columns: 6.5rem 1fr; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--line); }
+.facts dt { font: 700 1.6rem/1 var(--f-display); }
+.facts dd { margin: 0; color: var(--ink-2); }
+.space__note { margin: 0; max-width: 28rem; text-wrap: pretty; }
+
+.porthole {
+  --hole: clamp(34px, 4.6vw, 58px);
+  --cell: calc(var(--hole) * 2.6);
+  aspect-ratio: 4 / 3;
+  padding: calc(var(--hole) * 0.35);
+  background: var(--rust);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.porthole__img {
+  width: 100%; height: 100%;
+  background-size: cover; background-position: 50% 45%;
+  -webkit-mask: radial-gradient(circle, #000 var(--hole), transparent calc(var(--hole) + 1px)) center / var(--cell) var(--cell) space;
+          mask: radial-gradient(circle, #000 var(--hole), transparent calc(var(--hole) + 1px)) center / var(--cell) var(--cell) space;
+  transition: -webkit-mask-size .6s ease, mask-size .6s ease;
+}
+.porthole:hover .porthole__img { -webkit-mask-size: calc(var(--cell) * .82) calc(var(--cell) * .82); mask-size: calc(var(--cell) * .82) calc(var(--cell) * .82); }
+
+/* Visit */
+.visit { padding: 0 var(--gutter) clamp(72px, 10vw, 140px); }
+.visit__grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px clamp(32px, 6vw, 96px);
+  margin-top: clamp(24px, 4vw, 48px);
+}
+.visit__addr { font-style: normal; }
+.visit__addr p { margin: 0 0 16px; }
+.visit__big { font: 700 clamp(1.8rem, 3.6vw, 2.8rem)/1 var(--f-display); text-transform: uppercase; }
+.visit__links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px !important; }
+.visit__phone a { font: 700 1.1rem/1 var(--f-mono); text-decoration: none; }
+.visit__phone a:hover { text-decoration: underline; }
+
+.hours { width: 100%; border-collapse: collapse; font-size: 1rem; align-self: start; }
+.hours th, .hours td { padding: 12px 0; border-top: 1px solid var(--line); }
+.hours tr:last-child > * { border-bottom: 1px solid var(--line); }
+.hours th { text-align: left; font-weight: 400; }
+.hours td { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.hours tr.is-today th { font-weight: 600; }
+.hours tr.is-today th::after { content: ' — сегодня'; color: var(--ink-2); font-weight: 400; }
+
+/* Footer — checkerboard strip from the rug */
+.checker {
+  height: 48px;
+  background: repeating-conic-gradient(var(--go) 0 25%, var(--paper) 0 50%) 0 0 / 24px 24px;
+}
+.foot { background: var(--ink); color: var(--paper); }
+.foot__row {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 28px var(--gutter); font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .top { gap: 16px; }
+  .top__nav { display: none; }
+  .status { margin-left: auto; }
+  .hero__row { grid-template-columns: 1fr; }
+  .board { grid-template-columns: 1fr; }
+  .space { grid-template-columns: 1fr; }
+  .visit__grid { grid-template-columns: 1fr; }
+  .day__item { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .hero__title span:last-child { text-align: left; }
+  .hero__actions .btn { flex: 1 1 auto; }
+  .clock { gap: 6px; padding: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .flip.is-flipping { animation: none; }
+  .porthole__img { transition: none; }
+}
