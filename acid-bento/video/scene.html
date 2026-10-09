@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acid Bento — Video Scene</title>
+  <!--
+    Анимированная сцена для рендера в видео (render.mjs) или записи экрана.
+    Тексты через URL: scene.html?title=BIG%20NEWS&sub=drop%2012.12&cta=Get%20it&chips=%2B1M%20users|★%205.0&handle=@brand
+    Таймлайн 6 секунд. Всё на CSS-анимациях с задержками — render.mjs перематывает их покадрово.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Rubik+Mono+One&family=Silkscreen&family=Space+Grotesk:wght@400;500;700&family=Space+Mono&family=Unbounded:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../tokens.css" />
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    /* unit = 1% of the shorter side → same look in 9:16, 1:1 and 16:9 */
+    .stage { --u: min(1vw, 1vh); position: relative; width: 100vw; height: 100vh; overflow: hidden; background: var(--ab-black); }
+
+    @keyframes pop0 {
+      0% { opacity: 0; transform: scale(.4); }
+      60% { opacity: 1; transform: scale(1.06); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* 0.0–0.5s  color wipes */
+    .wipe { position: absolute; inset: 0; animation: ab-wipe .5s var(--ab-ease-out) both; }
+    .wipe--pink { background: var(--ab-pink); animation-delay: 0s; }
+    .wipe--black { background: var(--ab-black); animation-delay: .18s; }
+
+    /* bento frame */
+    .grid {
+      position: absolute; inset: calc(var(--u) * 5) calc(var(--u) * 5) calc(var(--u) * 8);
+      display: grid; gap: calc(var(--u) * 2);
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1.4fr 1fr 0.32fr 1fr;
+    }
+    .landscape .grid { grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: 1fr 1fr 0.3fr; }
+    .t { position: relative; border-radius: calc(var(--u) * 4); overflow: visible; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: calc(var(--u) * 4); }
+
+    .t-title { grid-column: 1 / -1; background: var(--ab-blue); animation: pop0 .55s var(--ab-ease-snap) .45s both; }
+    .landscape .t-title { grid-column: 1; grid-row: 1 / 3; }
+    .t-title .ab-sticker { font-size: calc(var(--u) * 15); line-height: .92; }
+
+    .t-chips { grid-column: 1 / -1; background: var(--ab-black); border: calc(var(--u) * .5) solid var(--ab-lime); gap: calc(var(--u) * 1.6); }
+    .landscape .t-chips { grid-column: 2 / 4; grid-row: 1; }
+    .chip { font-size: calc(var(--u) * 6.4); opacity: 0; animation: pop0 .45s var(--ab-ease-snap) both; transform-origin: 0 50%; }
+    .chip:nth-child(1) { animation-delay: 1.4s; }
+    .chip:nth-child(2) { animation-delay: 1.75s; }
+    .chip:nth-child(3) { animation-delay: 2.1s; }
+    .chip:nth-child(4) { animation-delay: 2.45s; }
+
+    .t-tick { grid-column: 1 / -1; padding: 0; border-radius: calc(var(--u) * 2.5); background: var(--ab-lime); overflow: hidden; animation: ab-rise .5s var(--ab-ease-out) 1.1s both; }
+    .landscape .t-tick { grid-row: 3; }
+    .t-tick .ab-ticker__track { font-size: calc(var(--u) * 5.6); animation-duration: 8s; color: var(--ab-ink); }
+
+    .t-icon { background: var(--ab-pink); animation: ab-rise .5s var(--ab-ease-out) 2.8s both; }
+    .t-icon img { width: 60%; animation: ab-float 2.4s ease-in-out infinite; }
+    .t-cta { background: var(--ab-violet); animation: ab-rise .5s var(--ab-ease-out) 3.0s both; gap: calc(var(--u) * 3); }
+    .landscape .t-icon { grid-column: 2; grid-row: 2; }
+    .landscape .t-cta { grid-column: 3; grid-row: 2; }
+
+    .sub { font-family: var(--ab-font-condensed); font-size: calc(var(--u) * 8); line-height: .9; text-transform: uppercase; color: var(--ab-lime); }
+    .cta { font-size: calc(var(--u) * 3.6); min-height: 0; padding: .55em 1.2em; border-width: calc(var(--u) * .4); box-shadow: calc(var(--u)*1) calc(var(--u)*1) 0 #000; animation: pop0 .5s var(--ab-ease-snap) 3.6s both; }
+    .cta, .cta:hover { transform: none; }
+
+    .meta { position: absolute; font-family: var(--ab-font-mono); font-size: calc(var(--u) * 2.4); letter-spacing: .12em; text-transform: uppercase; color: var(--ab-white); z-index: 3; }
+    .meta--tl { top: calc(var(--u) * 3); left: calc(var(--u) * 4); }
+    .meta--br { bottom: calc(var(--u) * 3); right: calc(var(--u) * 4); }
+
+    .float { position: absolute; z-index: 10; filter: drop-shadow(0 calc(var(--u)*1.2) calc(var(--u)*1.6) rgba(0,0,0,.5)); }
+    .float--cursor { width: calc(var(--u) * 20); right: calc(var(--u) * 6); top: calc(var(--u) * 30); animation: ab-pop .5s var(--ab-ease-snap) 3.9s both, ab-float 2s ease-in-out 4.4s infinite; }
+    .float--spark { width: calc(var(--u) * 12); right: calc(var(--u) * 3); top: calc(var(--u) * 2); animation: ab-pop .5s var(--ab-ease-snap) .9s both, ab-float 3s ease-in-out 1.4s infinite; }
+    .landscape .float--cursor { right: auto; top: auto; left: calc(var(--u) * 60); bottom: calc(var(--u) * 18); }
+
+    /* 5.3–6.0s outro flash */
+    .outro { position: absolute; inset: 0; background: var(--ab-lime); z-index: 20; display: grid; place-items: center; animation: ab-wipe .45s var(--ab-ease-out) 5.3s both; }
+    .outro .ab-sticker { font-size: calc(var(--u) * 14); color: var(--ab-pink); }
+  </style>
+</head>
+<body class="ab-root">
+  <div class="stage" id="stage">
+    <div class="wipe wipe--pink"></div>
+    <div class="wipe wipe--black"></div>
+
+    <div class="grid">
+      <div class="t t-title">
+        <span class="meta meta--tl">001</span>
+        <h1 class="ab-sticker" id="title"></h1>
+      </div>
+
+      <div class="t t-chips ab-chip-row" id="chips" style="flex-direction:column; align-items:flex-start; justify-content:center"></div>
+
+      <div class="t t-tick"><div class="ab-ticker__track" id="tick"></div></div>
+
+      <div class="t t-icon"><img src="../assets/smiley.svg" alt="" /></div>
+      <div class="t t-cta">
+        <div class="sub" id="sub"></div>
+        <span class="ab-btn cta" id="cta"></span>
+      </div>
+    </div>
+
+    <img class="float float--spark" src="../assets/sparkle.svg" alt="" />
+    <img class="float float--cursor" src="../assets/cursor.svg" alt="" />
+    <span class="meta meta--br" id="handle"></span>
+
+    <div class="outro"><span class="ab-sticker" id="outro"></span></div>
+  </div>
+
+  <script>
+    const q = new URLSearchParams(location.search);
+    const title = q.get('title') || 'Big news';
+    const sub = q.get('sub') || 'Coming soon';
+    const cta = q.get('cta') || "Let's go";
+    const handle = q.get('handle') || '@brandname';
+    const chips = (q.get('chips') || '+1M users|★ 5.0|New drop').split('|').slice(0, 4);
+    const chipClass = ['', 'ab-chip--outline', 'ab-chip--blue', 'ab-chip--red'];
+    const wordColors = ['c-lime', 'c-pink', 'c-yellow', 'c-white'];
+
+    const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    document.getElementById('title').innerHTML = title.split(/\s+/)
+      .map((w, i) => `<span class="${wordColors[i % wordColors.length]}">${esc(w)}</span>`).join('<br>');
+    document.getElementById('sub').textContent = sub;
+    document.getElementById('cta').textContent = cta;
+    document.getElementById('handle').textContent = handle;
+    document.getElementById('outro').innerHTML = `<span class="c-pink">${esc(handle)}</span>`;
+    document.getElementById('chips').innerHTML = chips
+      .map((c, i) => `<span class="ab-chip chip ${chipClass[i]}">${esc(c)}</span>`).join('');
+    const t = `<span>${esc(title)}</span><span class="c-pink">✶</span><span>${esc(sub)}</span><span class="c-pink">☺</span>`;
+    document.getElementById('tick').innerHTML = t.repeat(6);
+
+    if (innerWidth > innerHeight) document.getElementById('stage').classList.add('landscape');
+
+    // auto-fit the title so long words never overflow the tile
+    function fit(id, kw, kh) {
+      const el = document.getElementById(id);
+      const box = el.parentElement;
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while ((el.scrollWidth > box.clientWidth * kw || el.scrollHeight > box.clientHeight * kh) && size > 12) {
+        size -= 2; el.style.fontSize = size + 'px';
+      }
+    }
+    window.__ready = document.fonts.ready.then(() => { fit('title', 0.86, 0.8); fit('outro', 0.82, 0.5); });
+  </script>
+</body>
+</html>

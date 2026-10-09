@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brand Name — Acid Bento Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Rubik+Mono+One&family=Silkscreen&family=Space+Grotesk:wght@400;500;700&family=Space+Mono&family=Unbounded:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../tokens.css" />
+  <style>
+    /* page-specific layout only — everything else comes from tokens.css */
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
+    .nav__logo { font-size: 22px; }
+    .nav__links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav__links a { color: inherit; text-decoration: none; }
+    @media (max-width: 640px) { .nav__links { display: none; } }
+
+    .hero-logo { line-height: .9; }
+    .hero-logo > span { display: block; }
+    .hero-logo > span:nth-child(2) { margin-left: .6em; }
+    .tile-title { margin-top: auto; }
+    .def p { font-family: var(--ab-font-mono); font-size: 13px; line-height: 1.5; margin: 14px 0 0; max-width: 46ch; }
+    .credits { gap: 14px; justify-content: center; }
+    .credits__row { display: flex; align-items: center; gap: 14px; }
+    .poster { text-align: left; }
+    .poster .ab-mega { font-family: var(--ab-font-wide); font-weight: 900; text-transform: none; letter-spacing: -.06em; }
+    .poster__stack { display: grid; gap: .18em; margin: .25em 0; font-size: clamp(36px, 6vw, 88px); }
+    .cta-tile { min-height: 360px; }
+    .footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-block: 32px; border-top: 1px solid rgba(255,255,255,.12); }
+  </style>
+</head>
+<body class="ab-root">
+
+  <!-- NAV -->
+  <header class="ab-container nav">
+    <a href="#" class="ab-sticker ab-sticker--flat nav__logo" style="text-decoration:none">Brand<span class="c-pink">.</span></a>
+    <nav class="nav__links">
+      <a class="ab-pill" href="#about">About</a>
+      <a class="ab-pill" href="#features">Features</a>
+      <a class="ab-pill" href="#facts">Facts</a>
+    </nav>
+    <a class="ab-btn" href="#cta">Let's connect</a>
+  </header>
+
+  <!-- HERO BENTO -->
+  <section class="ab-container" style="padding-top: 24px">
+    <div class="ab-bento">
+
+      <div class="ab-tile ab-tile--lg ab-tile--blue ab-tile--center c-8 r-2 ab-reveal" style="min-height: 420px">
+        <span class="ab-meta ab-corner ab-corner--tr">001 — Launch</span>
+        <span class="ab-pill ab-corner ab-corner--br">@brandname</span>
+        <h1 class="hero-logo ab-sticker">
+          <span class="c-lime">Brand</span>
+          <span><span class="c-pink" style="display:inline">Na</span><span class="c-peri" style="display:inline">me</span></span>
+        </h1>
+        <img class="ab-float" src="../assets/cursor.svg" alt="" style="width:110px; left:-28px; top:-30px" />
+      </div>
+
+      <div class="ab-tile ab-tile--violet ab-tile--lg c-4 r-2 ab-reveal" style="--d:70ms">
+        <h2 class="ab-h1">That you need<br>(to grow)<br>(to play)</h2>
+        <svg class="tile-title" viewBox="0 0 220 24" width="220" height="24" aria-hidden="true"><path d="M0 12H200M188 2l12 10-12 10" stroke="#c6ff1a" stroke-width="6" fill="none"/></svg>
+        <img class="ab-float" src="../assets/flower-pixel.svg" alt="" style="width:96px; right:18px; top:38%" />
+      </div>
+
+      <div class="ab-tile ab-tile--photo c-5 r-2 ab-reveal" style="--d:140ms; min-height: 300px">
+        <div class="ab-ph">Photo · 4:3</div>
+      </div>
+
+      <div class="ab-tile ab-tile--cream ab-tile--sm ab-tile--center c-3 ab-reveal" style="--d:210ms">
+        <img src="../assets/sparkle.svg" alt="" width="72" height="72" />
+      </div>
+      <div class="ab-tile ab-tile--pink ab-tile--sm ab-tile--center c-4 m-1 ab-reveal" style="--d:280ms">
+        <img class="ab-hover-wiggle" src="../assets/smiley.svg" alt="" width="88" height="88" style="pointer-events:auto" />
+      </div>
+
+      <div class="ab-tile ab-tile--black credits c-7 ab-reveal" style="--d:350ms">
+        <img class="ab-float" src="../assets/plane.svg" alt="" style="width:100px; right:-18px; top:-30px" />
+        <div class="credits__row c-lime">
+          <img src="../assets/globe.svg" alt="" width="64" />
+          <svg viewBox="0 0 140 20" width="140" height="20" aria-hidden="true"><path d="M0 10H128M118 2l10 8-10 8" stroke="#7b2cf5" stroke-width="4" fill="none"/></svg>
+          <span class="ab-pixel c-lime">✦ ✦ ✦</span>
+        </div>
+        <div class="ab-pixel c-pink" style="font-size:clamp(28px,4vw,48px); line-height:1">Your Name</div>
+        <div class="ab-pixel c-lime" style="font-size:clamp(28px,4vw,48px); line-height:1">↖↖↖ Partner</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TICKER -->
+  <section class="ab-container" style="padding-top: var(--ab-gap)">
+    <div class="ab-ticker" aria-label="More or less">
+      <div class="ab-ticker__track">
+        <span>More ✶ or ☺ less</span><span class="c-pink">◆</span><span>Bold ideas only</span><span class="c-pink">◆</span><span>More ✶ or ☺ less</span><span class="c-pink">◆</span><span>Bold ideas only</span><span class="c-pink">◆</span>
+        <span>More ✶ or ☺ less</span><span class="c-pink">◆</span><span>Bold ideas only</span><span class="c-pink">◆</span><span>More ✶ or ☺ less</span><span class="c-pink">◆</span><span>Bold ideas only</span><span class="c-pink">◆</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT / FEATURES BENTO -->
+  <section id="about" class="ab-container ab-section">
+    <div class="ab-bento" id="features">
+
+      <div class="ab-tile ab-tile--cream ab-tile--lg c-5 r-2 ab-reveal">
+        <h2 class="ab-h1 c-ink" style="font-family:var(--ab-font-condensed)">
+          N<img class="ab-inline" src="../assets/smiley.svg" alt="o" /><br>
+          <span class="ab-outline" style="-webkit-text-stroke-color:#000">boring</span><br>
+          stuff
+        </h2>
+        <span class="ab-meta ab-corner ab-corner--br c-ink">brand ©2026</span>
+      </div>
+
+      <div class="ab-tile ab-tile--black def c-7 ab-reveal" style="--d:70ms">
+        <span class="ab-pill ab-pill--solid" style="align-self:flex-start">noun</span>
+        <p>A product that does one thing so well, people talk about it at parties. Short, loud, impossible to ignore.</p>
+      </div>
+
+      <div class="ab-tile ab-tile--lime c-7 ab-reveal" style="--d:140ms">
+        <span class="ab-meta">006</span>
+        <h3 class="ab-h2" style="margin-top:8px">
+          how <img class="ab-inline" src="../assets/sparkle.svg" alt="" /> bold<br>[are] → we?
+        </h3>
+        <div class="ab-tile__foot" style="display:flex; justify-content:space-between; margin-top:auto; padding-top:16px">
+          <span class="ab-pill">@brandname</span><span class="ab-meta">partner</span>
+        </div>
+      </div>
+
+      <div class="ab-tile ab-tile--orange ab-tile--lg c-4 r-2 ab-reveal" style="--d:70ms">
+        <span class="ab-meta">Feature 01</span>
+        <h3 class="ab-h2 tile-title">Fast<br>as hell</h3>
+      </div>
+
+      <div class="ab-tile ab-tile--pattern ab-pattern ab-tile--lg c-8 r-2 ab-reveal" style="--d:140ms; min-height:300px">
+        <div class="ab-pattern__inner" aria-hidden="true" id="pattern"></div>
+      </div>
+
+      <div class="ab-tile ab-tile--green ab-tile--center c-6 ab-reveal">
+        <h3 class="ab-h2">Grow with<br><span class="ab-outline" style="-webkit-text-stroke-color:#000">the flow</span></h3>
+      </div>
+      <div class="ab-tile ab-tile--photo c-6 ab-reveal" style="--d:70ms; min-height:220px">
+        <div class="ab-ph">Photo · 16:9</div>
+      </div>
+
+      <div class="c-12" style="padding:0">
+        <div class="ab-checker" style="border-radius: var(--ab-radius-sm)"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- "WE SAY" POSTER -->
+  <section id="facts" class="ab-container ab-section poster">
+    <div class="ab-mega ab-grad-text">We say</div>
+    <div class="poster__stack">
+      <div class="ab-chip-row">
+        <span class="ab-chip">Successful</span>
+        <img class="ab-chip-icon" src="../assets/smiley.svg" alt="" style="background:var(--ab-violet)" />
+      </div>
+      <div class="ab-chip-row">
+        <img class="ab-chip-icon" src="../assets/sparkle.svg" alt="" style="background:var(--ab-yellow)" />
+        <span class="ab-chip ab-chip--dark">+1M <small>happy users<br>per year</small></span>
+      </div>
+      <div class="ab-chip-row">
+        <span class="ab-chip ab-chip--blue">Mobile</span>
+        <span class="ab-chip ab-chip--red">Hybrid</span>
+      </div>
+      <div class="ab-chip-row">
+        <span class="ab-chip ab-chip--outline">★ 5.0</span>
+        <span class="ab-chip ab-chip--white"><span class="c-green" style="-webkit-text-stroke:2px #0a7d3e">+3</span> <small>new drops<br>every month</small></span>
+      </div>
+    </div>
+    <div class="ab-mega ab-grad-text">things</div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta" class="ab-container ab-section" style="padding-top:0">
+    <div class="ab-bento">
+      <div class="ab-tile ab-tile--pink ab-tile--lg ab-tile--center cta-tile c-8 ab-reveal">
+        <h2 class="ab-sticker" style="font-size:clamp(36px,6vw,80px)"><span class="c-lime">Let's make</span><br><span class="c-white">it great</span></h2>
+        <a class="ab-btn ab-btn--blue" href="#" style="margin-top:40px">Get started</a>
+        <img class="ab-float" src="../assets/cursor.svg" alt="" style="width:96px; right:14%; bottom:22px" />
+      </div>
+      <div class="ab-tile ab-tile--blue ab-tile--lg c-4 ab-reveal" style="--d:70ms">
+        <span class="ab-meta">Newsletter</span>
+        <h3 class="ab-h2 c-lime" style="margin-top:12px">Stay<br>in the loop</h3>
+        <p style="margin:12px 0 0; opacity:.85">No spam. Just good stuff.</p>
+        <a class="ab-btn" href="#" style="margin-top:auto; align-self:flex-start">Subscribe</a>
+        <img class="ab-float" src="../assets/plane.svg" alt="" style="width:90px; right:-18px; top:-24px" />
+      </div>
+    </div>
+  </section>
+
+  <footer class="ab-container footer">
+    <span class="ab-meta">© 2026 Brand Name</span>
+    <span class="ab-meta">Built with Acid Bento</span>
+  </footer>
+
+  <script>
+    // monogram pattern
+    const p = document.getElementById('pattern');
+    const cls = ['c-lime', 'c-pink', 'c-peri'];
+    for (let i = 0; i < 90; i++) {
+      const s = document.createElement('span');
+      s.className = 'ab-sticker ' + cls[i % 3];
+      s.textContent = 'BN';
+      p.appendChild(s);
+    }
+    // scroll reveal
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.ab-reveal').forEach((el) => io.observe(el));
+  </script>
+</body>
+</html>
