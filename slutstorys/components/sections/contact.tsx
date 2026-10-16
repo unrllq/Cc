@@ -9,12 +9,12 @@ export function Contact() {
         <div className="absolute inset-0 bg-ink/25" />
       </div>
       <div className="relative z-10 flex min-h-[80svh] flex-col justify-between gap-12 p-6 md:p-12">
-        <p className="font-mono text-xs uppercase tracking-[0.25em] text-bone">/ 06 — твой ход</p>
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-bone">/ 06 — du bist dran</p>
         <div>
           <h2 className="font-display text-[15vw] uppercase leading-[0.85] tracking-[-0.03em] md:text-[10vw]">
-            Расскажи
+            Erzähl
             <br />
-            нам <span className="serif-i normal-case">всё</span>
+            uns <span className="serif-i normal-case">alles</span>
           </h2>
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <a
@@ -25,15 +25,15 @@ export function Contact() {
               <ArrowUpRight className="h-5 w-5 transition group-hover:rotate-45" />
             </a>
             <a
-              href="https://t.me/"
+              href="https://instagram.com/"
               className="inline-flex items-center rounded-full border border-bone/60 px-7 py-4 text-base font-medium text-bone backdrop-blur transition hover:bg-bone/10 md:text-lg"
             >
-              Telegram
+              Instagram
             </a>
           </div>
         </div>
         <p className="max-w-md text-bone/85">
-          Ответим в течение дня. Первая встреча — бесплатно и без NDA, если вы не против, что мы будем задавать неудобные вопросы.
+          Wir antworten innerhalb eines Tages. Das erste Treffen ist kostenlos — sofern du nichts gegen unbequeme Fragen hast.
         </p>
       </div>
     </section>
@@ -44,18 +44,18 @@ export function Footer() {
   return (
     <footer className="mx-auto max-w-[1600px] overflow-hidden px-4 pb-8 pt-10 md:px-8">
       <div className="grid gap-8 border-t border-bone/10 pt-10 text-sm text-bone/60 md:grid-cols-4">
-        <p className="text-bone">SLUTSTORYS* — маркетинговая студия дерзкого сторителлинга.</p>
+        <p className="text-bone">SLUTSTORYS* — Marketingstudio für freches Storytelling.</p>
         <ul className="space-y-2">
-          <li><a className="hover:text-bone" href="#services">Услуги</a></li>
-          <li><a className="hover:text-bone" href="#cases">Кейсы</a></li>
-          <li><a className="hover:text-bone" href="#process">Процесс</a></li>
+          <li><a className="hover:text-bone" href="#services">Leistungen</a></li>
+          <li><a className="hover:text-bone" href="#cases">Cases</a></li>
+          <li><a className="hover:text-bone" href="#process">Prozess</a></li>
         </ul>
         <ul className="space-y-2">
           <li><a className="hover:text-bone" href="https://instagram.com/">Instagram</a></li>
-          <li><a className="hover:text-bone" href="https://t.me/">Telegram</a></li>
+          <li><a className="hover:text-bone" href="https://tiktok.com/">TikTok</a></li>
           <li><a className="hover:text-bone" href="https://behance.net/">Behance</a></li>
         </ul>
-        <p className="font-mono text-xs uppercase tracking-wider">© 2026 · *истории, а не то, что вы подумали</p>
+        <p className="font-mono text-xs uppercase tracking-wider">© 2026 · *Geschichten. Nicht das, was du denkst.</p>
       </div>
       <p aria-hidden className="stroke-text mt-10 select-none whitespace-nowrap text-center font-display text-[12.6vw] uppercase leading-none opacity-40">
         Slutstorys

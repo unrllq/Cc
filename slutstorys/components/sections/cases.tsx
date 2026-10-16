@@ -3,37 +3,37 @@ import { cn } from "@/lib/utils";
 
 const cases = [
   {
-    client: "Velvet Lab · косметика",
-    title: "Помада, из-за которой расстались",
-    text: "Сериал из 12 reels о паре, которая ссорится из-за оттенка. Финал серии решали подписчики голосованием.",
-    metrics: [["38 млн", "просмотров"], ["+412%", "продаж оттенка"], ["6 недель", "sold out"]],
+    client: "Velvet Lab · Kosmetik",
+    title: "Der Lippenstift, an dem eine Beziehung zerbrach",
+    text: "Eine Serie aus 12 Reels über ein Paar, das sich über einen Farbton streitet. Das Finale haben die Follower per Voting entschieden.",
+    metrics: [["38 Mio.", "Views"], ["+412 %", "Sales des Farbtons"], ["6 Wochen", "ausverkauft"]],
     card: "bg-pink text-ink",
     art: "radial-gradient(circle at 30% 30%,#ffd66b,transparent 45%),radial-gradient(circle at 70% 70%,#3f3cbb,transparent 50%),#0b0a0d",
     big: "01",
   },
   {
-    client: "Ночной Бургер · фудтех",
-    title: "Бургер, который нельзя показывать маме",
-    text: "Анти-реклама: запрещённое меню после полуночи, секретный пароль в сторис и очередь из 900 человек.",
-    metrics: [["×5.1", "ROMI"], ["900", "человек в очереди"], ["2.4 млн", "UGC-охват"]],
+    client: "Nachtburger · Foodtech",
+    title: "Der Burger, den du Mama nicht zeigen darfst",
+    text: "Anti-Werbung: ein verbotenes Menü nach Mitternacht, ein geheimes Passwort in den Stories und eine Schlange von 900 Leuten.",
+    metrics: [["×5,1", "ROMI"], ["900", "Leute in der Schlange"], ["2,4 Mio.", "UGC-Reichweite"]],
     card: "bg-butter text-ink",
     art: "conic-gradient(from 90deg,#ff3b2f,#ff2e88,#0b0a0d,#ff3b2f)",
     big: "02",
   },
   {
-    client: "Orbita Bank · финтех",
-    title: "Банк, который признался в чувствах",
-    text: "Ребрендинг через серию «исповедей» сотрудников. Скучный банк стал самым обсуждаемым в Telegram за месяц.",
-    metrics: [["+68%", "узнаваемость"], ["−31%", "CPA"], ["#1", "по упоминаниям"]],
+    client: "Orbita Bank · Fintech",
+    title: "Die Bank, die ihre Gefühle gestand",
+    text: "Rebranding über eine Serie von Mitarbeiter-„Beichten“. Aus der langweiligsten Bank wurde in einem Monat die meistdiskutierte.",
+    metrics: [["+68 %", "Bekanntheit"], ["−31 %", "CPA"], ["#1", "bei Erwähnungen"]],
     card: "bg-indigo text-bone",
     art: "radial-gradient(circle at 50% 40%,#ff2e88,transparent 55%),linear-gradient(200deg,#ffd66b,#3f3cbb)",
     big: "03",
   },
   {
-    client: "Saint Sin · одежда",
-    title: "Дроп, о котором все шептались",
-    text: "Тизерная кампания без логотипа и продукта — только слухи, утечки и закрытый чат на 10 000 человек.",
-    metrics: [["11 мин", "до sold out"], ["10 000", "в закрытом чате"], ["0 ₽", "на посевы"]],
+    client: "Saint Sin · Fashion",
+    title: "Der Drop, über den alle flüsterten",
+    text: "Teaser-Kampagne ohne Logo und ohne Produkt — nur Gerüchte, Leaks und ein geschlossener Chat mit 10.000 Leuten.",
+    metrics: [["11 Min.", "bis ausverkauft"], ["10.000", "im geheimen Chat"], ["0 €", "fürs Seeding"]],
     card: "bg-bone text-ink",
     art: "radial-gradient(circle at 40% 60%,#ff3b2f,transparent 50%),radial-gradient(circle at 80% 20%,#ff2e88,transparent 45%),#0b0a0d",
     big: "04",
@@ -44,11 +44,11 @@ export function Cases() {
   return (
     <section id="cases" className="relative scroll-mt-10 pt-24">
       <div className="mx-auto max-w-[1600px] px-4 md:px-8">
-        <p className="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-pink">/ 03 — кейсы</p>
+        <p className="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-pink">/ 03 — Cases</p>
         <h2 className="font-display text-[12vw] uppercase leading-[0.9] md:text-[6vw]">
-          Истории, <span className="stroke-text">которые</span>
+          Stories, <span className="stroke-text">die</span>
           <br />
-          случились
+          passiert sind
         </h2>
       </div>
 

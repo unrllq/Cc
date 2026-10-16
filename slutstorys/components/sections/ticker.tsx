@@ -12,7 +12,7 @@ export function Ticker({ tilt = -2.5 }: { tilt?: number }) {
           rowClassName={["bg-pink text-ink py-1", "stroke-text py-1"]}
           text={
             <>
-              Дерзко<Star />Честно<Star />Вирусно<Star />
+              Frech<Star />Ehrlich<Star />Viral<Star />
             </>
           }
           secondText={

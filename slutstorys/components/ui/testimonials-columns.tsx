@@ -29,7 +29,7 @@ export const TestimonialsColumn = (props: {
                 key={i}
                 aria-hidden={index === 1}
               >
-                <blockquote className="text-[15px] leading-relaxed text-bone/85">«{text}»</blockquote>
+                <blockquote className="text-[15px] leading-relaxed text-bone/85">„{text}“</blockquote>
                 <figcaption className="mt-6 flex items-center gap-3">
                   <span
                     className={cn("grid h-10 w-10 place-items-center rounded-full font-display text-lg text-ink", tint)}

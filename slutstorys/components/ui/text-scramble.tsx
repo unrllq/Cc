@@ -5,7 +5,7 @@
 import { type MotionProps, motion } from "motion/react";
 import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 
-const DEFAULT_CHARS = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ0123456789#%&*!?";
+const DEFAULT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ0123456789#%&*!?";
 
 export type TextScrambleProps = {
   children: string;

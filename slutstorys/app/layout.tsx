@@ -2,16 +2,16 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SLUTSTORYS — маркетинговая студия",
+  title: "SLUTSTORYS — Marketingstudio",
   description:
-    "SLUTSTORYS — маркетинговая студия дерзкого сторителлинга: контент, SMM, брендинг, reels и performance для брендов, о которых говорят.",
+    "SLUTSTORYS — Marketingstudio für freches Storytelling: Content, Social Media, Branding, Reels und Performance für Marken, über die man spricht.",
 };
 
 export const viewport: Viewport = { themeColor: "#0b0a0d" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    <html lang="de">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

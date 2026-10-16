@@ -40,8 +40,8 @@ export function Hero() {
           transition={{ duration: 0.8, ease }}
           className="mb-6 font-mono text-[11px] uppercase tracking-[0.25em] text-bone/80 md:text-xs"
         >
-          [ маркетинговая студия ] <span className="text-butter">✶</span> Москва / Тбилиси / онлайн{" "}
-          <span className="blink text-pink">●</span> берём 3 проекта в квартал
+          [ Marketingstudio ] <span className="text-butter">✶</span> Berlin / Hamburg / online{" "}
+          <span className="blink text-pink">●</span> nur 3 Projekte pro Quartal
         </motion.p>
 
         <h1 className="relative select-none font-display uppercase leading-[0.82] tracking-[-0.03em] text-bone">
@@ -69,7 +69,7 @@ export function Hero() {
             transition={{ duration: 0.9, ease, delay: 0.5 }}
             className="serif-i absolute right-[2%] top-[34%] text-[8vw] normal-case leading-none text-butter md:right-[6%] md:text-[5.5vw]"
           >
-            истории без цензуры
+            Geschichten ohne Zensur
           </motion.span>
         </h1>
 
@@ -80,25 +80,25 @@ export function Hero() {
             speed={0.03}
             className="max-w-xl font-display text-2xl uppercase leading-[1.05] text-bone md:text-[2.1rem]"
           >
-            Делаем бренды, о которых сплетничают
+            Wir machen Marken, über die man tratscht
           </TextScramble>
           <div className="flex flex-col gap-5">
             <p className="max-w-sm text-[15px] leading-relaxed text-bone/80">
-              Сторителлинг, контент и performance для смелых. Мы не продаём охваты — мы продаём разговоры, которые
-              конвертируются в деньги.
+              Storytelling, Content und Performance für Mutige. Wir verkaufen keine Reichweite — wir verkaufen
+              Gespräche, die zu Umsatz werden.
             </p>
             <div className="flex flex-wrap gap-3">
               <a
                 href="#contact"
                 className="inline-flex items-center gap-2 rounded-full bg-bone px-5 py-3 text-sm font-semibold text-ink transition hover:bg-pink"
               >
-                Рассказать свою историю <ArrowDownRight className="h-4 w-4" />
+                Erzähl uns deine Story <ArrowDownRight className="h-4 w-4" />
               </a>
               <a
                 href="#cases"
                 className="inline-flex items-center rounded-full border border-bone/30 px-5 py-3 text-sm font-medium text-bone backdrop-blur transition hover:border-bone"
               >
-                Смотреть кейсы
+                Cases ansehen
               </a>
             </div>
           </div>

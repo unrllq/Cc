@@ -63,7 +63,7 @@ const HoverExpand = ({ items, expandedFlex = 4, collapsedFlex = 1, className }: 
 
   return (
     <div
-      aria-label="Услуги"
+      aria-label="Leistungen"
       className={cn("flex w-full gap-2", isHorizontal ? "h-[560px] flex-row" : "h-[820px] flex-col", className)}
       role="group"
     >

@@ -1,10 +1,10 @@
 import { ArrowUpRight } from "lucide-react";
 
 const links = [
-  ["Услуги", "#services"],
-  ["Кейсы", "#cases"],
-  ["Процесс", "#process"],
-  ["Отзывы", "#voices"],
+  ["Leistungen", "#services"],
+  ["Cases", "#cases"],
+  ["Prozess", "#process"],
+  ["Stimmen", "#voices"],
 ];
 
 export function Nav() {
@@ -29,7 +29,7 @@ export function Nav() {
           href="#contact"
           className="group inline-flex items-center gap-2 rounded-full bg-pink px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-butter"
         >
-          Обсудить проект
+          Projekt anfragen
           <ArrowUpRight className="h-4 w-4 transition group-hover:rotate-45" />
         </a>
       </nav>
