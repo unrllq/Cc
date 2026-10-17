@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0c0c0b;
+  --color-foreground: #ece6da;
+  --color-muted: #1b1a18;
+  --color-muted-foreground: #8f8a80;
+  --color-border: #2a2825;
+  --color-accent: #ff5a1f;
+  --color-cobalt: #4a63ff;
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html {
+  overflow-x: clip;
+  background: var(--color-background);
+}
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+::selection {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
+/* ── gallery → timeline hand-off ───────────────────────────────────
+   The timeline section is pulled up over the last screen of the gallery.
+   Until its top reaches the viewport top it stays invisible and lets the
+   gallery show through; from then on its sticky frame (same image, same
+   place) takes over and the track fades in. */
+.tl-handoff {
+  margin-top: -100vh;
+  z-index: 2;
+  pointer-events: none;
+}
+.tl-handoff [data-tl-sticky] {
+  background: var(--color-background);
+  opacity: 0;
+}
+.tl-handoff [data-tl-track] {
+  opacity: 0;
+  transition: opacity 0.6s ease 0.05s;
+}
+.tl-handoff.is-live {
+  pointer-events: auto;
+}
+.tl-handoff.is-live [data-tl-sticky],
+.tl-handoff.is-live [data-tl-track] {
+  opacity: 1;
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee { animation: marquee 38s linear infinite; }
+.marquee-rev { animation-direction: reverse; animation-duration: 44s; }
+
+@keyframes pulse-dot {
+  50% { opacity: 0.35; }
+}
+.pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .pulse-dot { animation: none; }
+}
