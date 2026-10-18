@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* ── Junkies design tokens ──────────────────────────────────────────
+   Soft neomorphic base (#e0e5ec) + the four keycap colours of the hero
+   keypad. Every section reuses them: raised plates (shadow-neo), pressed
+   wells (shadow-neo-inner*), and CSS keycaps (.keycap) with an LED dot. */
+@theme {
+  --color-neo-bg: #e0e5ec;
+  --color-neo-text: #3b4454;
+  --color-ink: #121820;
+  --color-muted: #5f6b7d;
+
+  --color-cap-rose: #fecdd3;
+  --color-led-rose: #fb7185;
+  --color-cap-blue: #bfdbfe;
+  --color-led-blue: #60a5fa;
+  --color-cap-green: #bbf7d0;
+  --color-led-green: #4ade80;
+  --color-cap-amber: #fde68a;
+  --color-led-amber: #fbbf24;
+
+  --shadow-neo: 9px 9px 16px rgba(163, 177, 198, 0.6), -9px -9px 16px rgba(255, 255, 255, 0.5);
+  --shadow-neo-sm: 5px 5px 10px rgba(163, 177, 198, 0.55), -5px -5px 10px rgba(255, 255, 255, 0.6);
+  --shadow-neo-lg: 18px 18px 36px rgba(163, 177, 198, 0.6), -18px -18px 36px rgba(255, 255, 255, 0.6);
+  --shadow-neo-inner: inset 6px 6px 12px rgba(163, 177, 198, 0.7), inset -6px -6px 12px rgba(255, 255, 255, 0.8);
+  --shadow-neo-inner-sm: inset 3px 3px 6px 0 rgba(163, 177, 198, 0.7), inset -3px -3px 6px 0 rgba(255, 255, 255, 0.8);
+
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html {
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  background: var(--color-neo-bg);
+}
+body {
+  background: var(--color-neo-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+::selection {
+  background: var(--color-cap-amber);
+  color: var(--color-ink);
+}
+section[id] { scroll-margin-top: 6rem; }
+
+@layer components {
+/* ── CSS keycap — the hero key, flattened for use anywhere ───────── */
+.keycap {
+  --cap: #f1f0eb;
+  --led: #67e8f9;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  background:
+    radial-gradient(120% 90% at 50% 18%, rgba(255, 255, 255, 0.55), transparent 60%),
+    var(--cap);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 -5px 0 color-mix(in oklab, var(--cap), #000 14%),
+    inset 0 2px 1px rgba(255, 255, 255, 0.7),
+    0 6px 0 color-mix(in oklab, var(--cap), #000 26%),
+    0 10px 18px rgba(18, 24, 32, 0.18);
+  transform: translateY(0);
+  transition: transform 0.16s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.16s ease;
+}
+.keycap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  width: 22%;
+  max-width: 1.4rem;
+  height: 3px;
+  border-radius: 9px;
+  transform: translateX(-50%);
+  background: var(--led);
+  box-shadow: 0 0 8px var(--led);
+  opacity: 0.7;
+}
+.keycap-press:hover .keycap,
+.keycap.is-pressable:hover,
+.keycap.is-on {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 -3px 0 color-mix(in oklab, var(--cap), #000 14%),
+    inset 0 2px 1px rgba(255, 255, 255, 0.7),
+    0 3px 0 color-mix(in oklab, var(--cap), #000 26%),
+    0 5px 10px rgba(18, 24, 32, 0.16),
+    0 0 22px color-mix(in oklab, var(--led), transparent 55%);
+}
+.keycap.is-pressable:active { transform: translateY(6px); box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--cap), #000 14%), 0 0 0 color-mix(in oklab, var(--cap), #000 26%); }
+.keycap.is-on::after, .keycap-press:hover .keycap::after { opacity: 1; }
+
+.cap-rose  { --cap: var(--color-cap-rose);  --led: var(--color-led-rose); }
+.cap-blue  { --cap: var(--color-cap-blue);  --led: var(--color-led-blue); }
+.cap-green { --cap: var(--color-cap-green); --led: var(--color-led-green); }
+.cap-amber { --cap: var(--color-cap-amber); --led: var(--color-led-amber); }
+.cap-plain { --cap: #f1f0eb; --led: #22d3ee; }
+
+/* LED dot */
+.led {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--led, #4ade80);
+  box-shadow: 0 0 10px var(--led, #4ade80);
+}
+}
+
+/* LCD-style display used under the hero pad */
+.lcd {
+  background:
+    repeating-linear-gradient(0deg, rgba(18, 24, 32, 0.035) 0 1px, transparent 1px 3px),
+    #d7dde5;
+}
+.caret { animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee { animation: marquee 40s linear infinite; }
+.marquee-rev { animation-direction: reverse; animation-duration: 46s; }
+.marquee-wrap:hover .marquee { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .marquee, .caret { animation: none; }
+  .keycap { transition: none; }
+}

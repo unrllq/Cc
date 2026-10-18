@@ -1,0 +1,9 @@
+"use client"
+
+/*
+ * R3F Macro Keypad — integrated from the provided prompt.
+ * Changes vs. original:
+ *  - "use client" (Next.js App Router; Canvas is browser-only)
+ *  - root className merged with cn() so callers can resize the pad
+ *    (the hero makes it larger on desktop, narrower on phones)
+ */
