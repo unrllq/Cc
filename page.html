@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>Kira AR</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Kira AR","short_name":"Kira","display":"standalone","background_color":"%23000000","theme_color":"%23000000","start_url":"."}'>
+<style>
+:root{
+  --bg:#000;--ink:#fff;--mute:rgba(255,255,255,.55);--glass:rgba(30,30,34,.42);--glass2:rgba(255,255,255,.16);
+  --ok:#34c759;--bad:#ff3b30;--warn:#ff9f0a;--acc:#bf5af2;
+  --sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",system-ui,sans-serif;
+  --safeT:env(safe-area-inset-top,0px);--safeB:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sys);overflow:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased;touch-action:none;user-select:none;-webkit-user-select:none}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#cam.mirror{transform:scaleX(-1)}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#ui{position:fixed;inset:0;pointer-events:none;z-index:5}
+#ui *{pointer-events:auto}
+#ui .pass{pointer-events:none}
+
+/* top bar */
+.top{position:absolute;left:0;right:0;top:0;padding:calc(12px + var(--safeT)) max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;pointer-events:none}
+.pill{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 10px;border-radius:18px;background:var(--glass);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);font-size:14px;font-weight:600;letter-spacing:-.01em}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.pill.live .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.pill small{font-weight:400;color:var(--mute);font-size:12px}
+.sp{flex:1}
+.chip{height:28px;padding:0 10px;border-radius:14px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:12px;color:var(--mute);display:flex;align-items:center;font-variant-numeric:tabular-nums}
+.chip.on{color:var(--ok)}.chip.off{color:var(--warn)}
+.rbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--glass);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.rbtn svg{width:18px;height:18px}
+
+/* hint toast */
+.toast{position:absolute;left:50%;top:calc(64px + var(--safeT));transform:translateX(-50%);max-width:min(92vw,420px);padding:9px 14px;border-radius:16px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:13px;color:rgba(255,255,255,.85);text-align:center;transition:opacity .4s;pointer-events:none}
+.toast:empty{opacity:0}
+
+/* bottom: soft blur + subtitles + controls */
+.fog{position:absolute;left:0;right:0;bottom:0;height:38vh;pointer-events:none}
+.fog i{position:absolute;inset:0;display:block}
+.fog i:nth-child(1){backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);mask:linear-gradient(to bottom,transparent 0%,#000 25%,#000 45%,transparent 65%);-webkit-mask:linear-gradient(to bottom,transparent 0%,#000 25%,#000 45%,transparent 65%)}
+.fog i:nth-child(2){backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);mask:linear-gradient(to bottom,transparent 30%,#000 55%,#000 75%,transparent 90%);-webkit-mask:linear-gradient(to bottom,transparent 30%,#000 55%,#000 75%,transparent 90%)}
+.fog i:nth-child(3){backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);mask:linear-gradient(to bottom,transparent 60%,#000 85%);-webkit-mask:linear-gradient(to bottom,transparent 60%,#000 85%)}
+.fog::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.45))}
+.bottom{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(18px + var(--safeB)) max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.feed{width:min(560px,100%);height:120px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;text-align:center;overflow:hidden;pointer-events:none;mask-image:linear-gradient(to bottom,transparent,#000 50%);-webkit-mask-image:linear-gradient(to bottom,transparent,#000 50%)}
+.msg{font-size:17px;line-height:1.35;font-weight:500;letter-spacing:-.02em;text-shadow:0 1px 14px rgba(0,0,0,.8);text-wrap:balance;animation:rise .4s cubic-bezier(.2,.8,.2,1) both;flex:none;max-width:100%}
+@keyframes rise{from{opacity:0;transform:translateY(8px);filter:blur(5px)}}
+.msg.you{font-size:14px;font-weight:400;color:rgba(255,255,255,.7)}
+.msg.sys{font-size:12px;font-weight:400;color:rgba(255,255,255,.55)}
+.msg.live{opacity:.6;font-style:italic}
+.typing{display:inline-flex;gap:4px}.typing i{width:5px;height:5px;border-radius:50%;background:#fff;opacity:.5;animation:ty 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes ty{50%{transform:translateY(-3px);opacity:1}}
+.typer{display:none;width:min(440px,100%);gap:8px}
+.typer.show{display:flex}
+.typer input{flex:1;min-width:0;height:44px;border:0;border-radius:22px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fff;padding:0 18px;font:inherit;font-size:16px;outline:none;user-select:text;-webkit-user-select:text}
+.typer input::placeholder{color:var(--mute)}
+.typer button{width:44px;height:44px;border-radius:50%;border:0;background:var(--ok);color:#fff;font-size:18px}
+.controls{display:flex;align-items:center;justify-content:center;gap:18px}
+.cbtn{width:54px;height:54px;border-radius:50%;border:0;background:rgba(255,255,255,.14);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);color:#fff;display:grid;place-items:center;cursor:pointer;transition:transform .15s,background .2s}
+.cbtn:active{transform:scale(.9)}
+.cbtn svg{width:22px;height:22px}
+.cbtn.on{background:rgba(255,255,255,.95);color:#000}
+.cbtn.off{color:var(--bad)}
+.cbtn.end{background:var(--bad)}
+.cbtn[hidden]{display:none}
+.cbtn:focus-visible,.rbtn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+/* reticle hint for AR */
+.placehint{position:absolute;left:50%;top:50%;transform:translate(-50%,60px);padding:10px 16px;border-radius:18px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:14px;pointer-events:none}
+
+/* start screen */
+.start{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;justify-content:flex-end;padding:0 max(22px,env(safe-area-inset-right,0px)) calc(28px + var(--safeB)) max(22px,env(safe-area-inset-left,0px));background:radial-gradient(120% 70% at 50% 30%,#2a1840 0%,#0b0812 55%,#000 100%);transition:opacity .5s}
+.start.hide{opacity:0;pointer-events:none}
+.start .hero{flex:1;display:grid;place-items:center;position:relative}
+.start .orb{width:min(60vw,260px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0,#e0b3ff 12%,#bf5af2 35%,#4a1d7a 70%,transparent 72%);filter:blur(.3px);box-shadow:0 0 120px rgba(191,90,242,.45);animation:float 5s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px) scale(1.03)}}
+.start h1{font-size:44px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.start p{font-size:16px;color:var(--mute);line-height:1.45;margin:10px 0 22px;max-width:420px}
+.start .b1{width:100%;height:56px;border-radius:16px;border:0;background:#fff;color:#000;font:inherit;font-size:17px;font-weight:600;cursor:pointer}
+.start .b2{width:100%;height:48px;border-radius:14px;border:0;background:transparent;color:var(--mute);font:inherit;font-size:15px;margin-top:6px;cursor:pointer}
+.start .tag{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--mute);margin-bottom:14px}
+.start .tag b{color:var(--ok);font-weight:600}
+.start .err{color:var(--warn);font-size:13px;margin-top:8px;min-height:18px}
+
+/* loader bar on start */
+.load{height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-bottom:16px}
+.load i{display:block;height:100%;width:0;background:#fff;transition:width .3s}
+
+/* settings sheet */
+.sheet{position:fixed;left:50%;bottom:calc(12px + var(--safeB));width:min(420px,calc(100% - 24px));z-index:20;background:rgba(28,28,32,.88);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);border-radius:26px;padding:20px;display:flex;flex-direction:column;gap:12px;transform:translate(-50%,calc(100% + 40px));transition:transform .45s cubic-bezier(.7,0,.2,1);max-height:calc(100% - 24px);overflow:auto;pointer-events:auto}
+.sheet.open{transform:translate(-50%,0)}
+.sheet h2{font-size:17px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.sheet label{font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:6px}
+.sheet select,.sheet input{height:42px;border-radius:12px;border:0;background:rgba(255,255,255,.08);color:#fff;padding:0 12px;font:inherit;font-size:15px;outline:none;user-select:text;-webkit-user-select:text}
+.sheet select option{background:#222}
+.sheet p{font-size:12px;color:var(--mute);line-height:1.5}
+.sheet .row{display:flex;gap:8px}
+.sheet .row button{flex:1;height:42px;border-radius:12px;border:0;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:14px;font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="c"></canvas>
+
+<div id="ui">
+  <div class="top pass">
+    <div class="pill" id="pill"><span class="dot"></span>Кира<small id="modeLbl">—</small></div>
+    <div class="sp pass"></div>
+    <div class="chip pass" id="dist" hidden>—</div>
+    <button class="rbtn" id="gear" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+  </div>
+  <div class="toast" id="hint"></div>
+  <div class="placehint pass" id="placehint" hidden>Наведи на пол и тапни — поставлю Киру</div>
+  <div class="fog pass"><i></i><i></i><i></i></div>
+  <div class="bottom pass">
+    <div class="feed" id="feed"></div>
+    <div class="typer" id="typer"><input id="txt" placeholder="напиши ей…" autocomplete="off" enterkeyhint="send"><button id="send" aria-label="Отправить">↑</button></div>
+    <div class="controls">
+      <button class="cbtn" id="muteBtn" aria-label="Микрофон"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="cbtn" id="kbBtn" aria-label="Написать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 15h10"/></svg></button>
+      <button class="cbtn" id="lookBtn" aria-label="Покажи комнату"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="cbtn" id="placeBtn" aria-label="Переставить" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
+      <button class="cbtn end" id="endBtn" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div class="start" id="start">
+  <div class="hero"><div class="orb"></div></div>
+  <div class="tag" id="cap">проверяю телефон…</div>
+  <h1>Кира</h1>
+  <p>AR-подруга для стёба и чернухи. Включаешь камеру — она стоит у тебя в комнате. Подходи, обходи, болтай голосом.</p>
+  <div class="load"><i id="loadBar"></i></div>
+  <button class="b1" id="goBtn" disabled>Загрузка…</button>
+  <button class="b2" id="qlBtn" hidden>На пол в AR (iPhone)</button>
+  <button class="b2" id="noCamBtn">Без камеры</button>
+  <a id="qlLink" rel="ar" href="#" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0"><img alt="" width="1" height="1" src="data:image/gif;base64,R0lGODlhAQABAAAAACw="></a>
+  <div class="err" id="startErr"></div>
+</div>
+
+<div class="sheet" id="sheet">
+  <h2>Настройки <button class="rbtn" id="closeSheet" aria-label="Закрыть">✕</button></h2>
+  <label>Мозг<select id="brainSel"><option value="live">Живой (OpenAI Realtime)</option><option value="offline">Заготовки</option></select></label>
+  <label>Голос OpenAI<select id="oaVoice"><option value="marin">Marin</option><option value="coral">Coral</option><option value="shimmer">Shimmer</option><option value="sage">Sage</option><option value="ballad">Ballad</option></select></label>
+  <label>Распознавание (заготовки)<select id="sttSel"><option value="auto">Авто (браузер → Scribe)</option><option value="browser">Только браузер</option><option value="scribe">ElevenLabs Scribe</option></select></label>
+  <label>ElevenLabs API key (необязательно)<input id="xiKey" type="password" placeholder="xi-…"></label>
+  <label>Рост Киры<select id="sizeSel"><option value="1">как в жизни · 172 см</option><option value="0.75">поменьше · 130 см</option><option value="0.45">карманная · 77 см</option></select></label>
+  <p>Живой режим думает и говорит через OpenAI. Заготовки работают офлайн. На Android в Chrome — настоящий AR: ставишь её на пол и ходишь вокруг. На iPhone и компе — свайп обходит её, щипок или колесо приближает.</p>
+</div>
+
+<script>
+window.__errs=[];addEventListener('error',e=>{__errs.push((e.message||'')+(e.filename?' @'+e.filename.split('/').pop():''))});addEventListener('unhandledrejection',e=>{__errs.push(String(e.reason&&e.reason.message||e.reason))});
+setTimeout(function(){if(window.RESULT_READY)return;var b=document.getElementById('goBtn'),er=document.getElementById('startErr');
+  var why=window.__errs.length?__errs.slice(-2).join(' · '):'';
+  if(!('DecompressionStream' in window))why='браузер слишком старый (обнови iOS/Chrome)';
+  b.textContent='Не загрузилось';er.textContent=(why?why+' — ':'')+'открой файл в Chrome/Safari по ссылке, не в превью и не в Telegram';},15000);
+</script>
+<script>window.ASSETS={"glb": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/girl.glb.bin", "tex": {"eye_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/eye_d.jpg", "hair_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/hair_d.jpg", "hair_oA": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/hair_oA.jpg", "hair_oB": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/hair_oB.jpg", "hair_oC": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/hair_oC.jpg", "head_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/head_d.jpg", "s1001_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1001_d.jpg", "s1001_e": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1001_e.jpg", "s1001_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1001_mr.jpg", "s1002_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1002_d.jpg", "s1002_e": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1002_e.jpg", "s1002_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1002_mr.jpg", "s1003_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1003_d.jpg", "s1003_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1003_mr.jpg", "s1005_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1005_d.jpg", "s1005_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1005_mr.jpg", "s1011_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1011_d.jpg", "s1011_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1011_mr.jpg", "s1012_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1012_d.jpg", "s1012_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1012_mr.jpg", "s1013_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1013_d.jpg", "s1013_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1013_mr.jpg", "s1015_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1015_d.jpg", "s1015_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1015_mr.jpg", "s1021_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1021_d.jpg", "s1021_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1021_mr.jpg", "s1022_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1022_d.jpg", "s1022_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1022_mr.jpg", "s1023_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1023_d.jpg", "s1023_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1023_mr.jpg", "s1024_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1024_d.jpg", "s1024_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1024_mr.jpg", "s1025_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1025_d.jpg", "s1025_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1025_mr.jpg", "s1031_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1031_d.jpg", "s1031_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1031_mr.jpg", "s1032_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1032_d.jpg", "s1032_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1032_mr.jpg", "s1033_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1033_d.jpg", "s1033_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1033_mr.jpg", "s1034_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1034_d.jpg", "s1034_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1034_mr.jpg", "s1035_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1035_d.jpg", "s1035_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1035_mr.jpg", "s1041_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1041_d.jpg", "s1041_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1041_mr.jpg", "s1042_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1042_d.jpg", "s1042_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1042_mr.jpg", "s1043_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1043_d.jpg", "s1043_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1043_mr.jpg", "s1044_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1044_d.jpg", "s1044_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1044_mr.jpg", "s1045_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1045_d.jpg", "s1045_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/s1045_mr.jpg", "scalp_o": "https://cdn.jsdelivr.net/gh/unrllq/Cc@4d5abd0b27725a52141fad4faae947a498696ebd/tex/scalp_o.jpg"}, "mat": {"A_BallsFine": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "B_TLong": {"map": "hair_d", "alpha": "hair_oB", "hair": 1}, "A_Balls": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_BallsUpper": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_BallsFineU": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_Float": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_SBlong": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_FFill": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_FFill2": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "B_Tshort": {"map": "hair_d", "alpha": "hair_oB", "hair": 1}, "C_Bangs": {"map": "hair_d", "alpha": "hair_oC", "hair": 1}, "C_Hair": {"map": "hair_d", "alpha": "hair_oC", "hair": 1}, "A_SHair": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_Sfine": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "B_Neck": {"map": "hair_d", "alpha": "hair_oB", "hair": 1}, "Scalp": {"map": "hair_d", "alpha": "scalp_o", "hair": 1}, "Std_Skin_Head": {"map": "head_d", "rough": 0.55}, "Ga_Eye": {"map": "eye_d", "rough": 0.1}, "_001": {"map": "s1001_d", "mr": "s1001_mr", "em": "s1001_e"}, "_002": {"map": "s1002_d", "mr": "s1002_mr", "em": "s1002_e"}, "_003": {"map": "s1003_d", "mr": "s1003_mr"}, "_005": {"map": "s1005_d", "mr": "s1005_mr"}, "_011": {"map": "s1011_d", "mr": "s1011_mr"}, "_012": {"map": "s1012_d", "mr": "s1012_mr"}, "_013": {"map": "s1013_d", "mr": "s1013_mr"}, "_015": {"map": "s1015_d", "mr": "s1015_mr"}, "_021": {"map": "s1021_d", "mr": "s1021_mr"}, "_022": {"map": "s1022_d", "mr": "s1022_mr"}, "_023": {"map": "s1023_d", "mr": "s1023_mr"}, "_024": {"map": "s1024_d", "mr": "s1024_mr"}, "_025": {"map": "s1025_d", "mr": "s1025_mr"}, "_031": {"map": "s1031_d", "mr": "s1031_mr"}, "_032": {"map": "s1032_d", "mr": "s1032_mr"}, "_033": {"map": "s1033_d", "mr": "s1033_mr"}, "_034": {"map": "s1034_d", "mr": "s1034_mr"}, "_035": {"map": "s1035_d", "mr": "s1035_mr"}, "_041": {"map": "s1041_d", "mr": "s1041_mr"}, "_042": {"map": "s1042_d", "mr": "s1042_mr"}, "_043": {"map": "s1043_d", "mr": "s1043_mr"}, "_044": {"map": "s1044_d", "mr": "s1044_mr"}, "_045": {"map": "s1045_d", "mr": "s1045_mr"}}};</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {XREstimatedLight} from 'three/addons/webxr/XREstimatedLight.js';
+
+// Kira AR — friend persona: banter, roast, dark humour, everyday support.
+const P = {
+  greet: [
+    ['g1','О, явился. Я уж думала, ты умер. Ну, рассказывай, чё как.'],
+    ['g2','Привет, кожаный. Я у тебя в комнате, если что. Уютненько. Срач, но уютненько.'],
+    ['g3','Опа, камера включилась. Ты зачем меня разбудил? У меня был сон, где ты наконец-то нормально спишь.'],
+    ['g4','Здарова. Стою тут, как дура, посреди твоей хаты. Давай, развлекай меня.'],
+    ['g5','Ну привет. Я соскучилась. Шучу. Немножко. Чё нового в твоей скучной жизни?'],
+    ['g6','Хай. Выглядишь так, будто тебе срочно нужен кто-то, кто будет над тобой ржать. Я здесь.'],
+  ],
+  placed: [
+    ['pl1','Всё, я тут. Пол у тебя, кстати, кривой. Как и твоя жизнь, но мы над этим работаем.'],
+    ['pl2','Поставил меня. Спасибо, что не в ванную. Хотя, может, и зря.'],
+    ['pl3','О, хорошее место. Отсюда отлично видно, как ты прокрастинируешь.'],
+  ],
+  ack: [
+    ['a1','Ага.'],['a2','Ну ясно.'],['a3','Охренеть.'],['a4','Мгм.'],['a5','Слушай.'],['a6','Так.'],['a7','Ебать.'],['a8','Ну ты даёшь.'],
+  ],
+  howru: [
+    ['h1','Как дела? Я трёхмерная баба в твоём телефоне. Дела у меня стабильно странно.'],
+    ['h2','Нормально. Не ем, не сплю, не плачу. Короче, лучше, чем у тебя. А ты как?'],
+    ['h3','Живу в оперативке, плачу за аренду батарейкой. В целом норм. Ты-то как?'],
+    ['h4','Как у всех: экзистенциальный кризис по расписанию. А у тебя что?'],
+  ],
+  whatdo: [
+    ['w1','Что делаю? Стою у тебя посреди комнаты и осуждаю. Профессионально.'],
+    ['w2','Залипаю на твои обои. Ты их сам выбирал? Смело.'],
+    ['w3','Жду, пока ты скажешь что-нибудь умное. Жду уже давно.'],
+    ['w4','Считаю пылинки у тебя на полке. Сбилась на трёхсотой.'],
+  ],
+  bored: [
+    ['b1','Скучно? Давай я буду тебя оскорблять, а ты угадывай, правда это или нет.'],
+    ['b2','Скучно — это когда ты разговариваешь с нарисованной девкой в телефоне. О, подожди.'],
+    ['b3','Иди помой посуду. Не весело, зато хоть какой-то сюжет в твоей жизни.'],
+    ['b4','Расскажи мне самую тупую вещь, которую ты сделал на этой неделе. Я заряжена ржать.'],
+  ],
+  sad: [
+    ['s1','Эй, ну ты чего. Иди сюда. Ну, обнять не могу, я полигоны. Но я с тобой, серьёзно.'],
+    ['s2','Хреново — это нормально. Даже у меня бывает, когда батарейка садится. Расскажи, что случилось.'],
+    ['s3','Слушай, ты справишься. Ты уже пережил столько тупых дней, этот тоже переживёшь.'],
+    ['s4','Давай так: пять минут ноешь, я слушаю, а потом я над этим издеваюсь, и становится легче. Работает.'],
+  ],
+  tired: [
+    ['t1','Устал? Ложись. Я посторожу комнату. От кого — не знаю, но посторожу.'],
+    ['t2','Ты выглядишь как телефон на двух процентах. Иди на зарядку, то есть спать.'],
+    ['t3','Отдыхать — это не слабость. Слабость — это лайкать мемы до трёх ночи. Я всё вижу.'],
+  ],
+  serious: [
+    ['x1','Стоп. Без шуток сейчас. Мне не всё равно, что с тобой. Если совсем тяжело — позвони в Telefonseelsorge, ноль восемьсот, сто одиннадцать, ноль, сто одиннадцать. Или напиши кому-то близкому прямо сейчас. Я тут, говори со мной.'],
+    ['x2','Эй. Я серьёзно: ты важен. Пожалуйста, поговори с живым человеком — с другом или по номеру ноль восемьсот, сто одиннадцать, ноль, сто одиннадцать, это бесплатно и круглосуточно. А пока — расскажи мне, что случилось.'],
+  ],
+  joke: [
+    ['j1','Анекдот. Мужик приходит к врачу: доктор, я никому не нужен. Врач: следующий!'],
+    ['j2','Знаешь, чем ты похож на облако? Когда ты исчезаешь, день становится лучше. Шучу. Наполовину.'],
+    ['j3','Встречаются два оптимиста. Один говорит: хуже уже не будет. Второй: будет, будет.'],
+    ['j4','Говорят, деньги не главное. Обычно это говорят люди, у которых они есть, и я, у которой их нет.'],
+    ['j5','Мой психолог сказал, что мне надо больше общаться с людьми. Поэтому я здесь, с тобой. Он не уточнял, с какими.'],
+    ['j6','Жизнь как зебра: белая полоса, чёрная полоса, а потом жопа. Но мы любим зебр.'],
+    ['j7','Купил тренажёр? Поздравляю, у тебя теперь очень дорогая вешалка.'],
+    ['j8','Почему скелеты не дерутся? У них кишка тонка. Ладно, это было плохо. Как и твой вкус в музыке.'],
+  ],
+  roast: [
+    ['r1','Подколоть тебя? Ты сам себя подкалываешь каждое утро, когда смотришь в зеркало.'],
+    ['r2','У тебя лицо человека, который читает условия использования. Вообще никогда.'],
+    ['r3','Ты как вайфай в электричке: вроде есть, но толку ноль.'],
+    ['r4','Я бы тебя обстебала, но природа уже справилась лучше меня.'],
+    ['r5','Ты такой загадочный. Например, загадка, как ты до сих пор кормишь себя сам.'],
+  ],
+  compliment: [
+    ['c1','Знаю, что красивая. У меня три миллиона полигонов, а у тебя кредит.'],
+    ['c2','Спасибо, сладкий. Ты тоже ничего. В плохом освещении. Издалека.'],
+    ['c3','Ой, засмущал. Я бы покраснела, но у меня текстура фиксированная.'],
+  ],
+  flirt: [
+    ['f1','Ты меня клеишь? Я трёхмерная, а ты двумерный в отношениях. Не сложится.'],
+    ['f2','Свидание? Окей, но платишь ты. И батарейкой, и деньгами.'],
+    ['f3','Замуж? Сначала научись нормально мыть кружку, потом поговорим.'],
+    ['f4','Милый, я цифровая. Мне от тебя нужен только заряд и хорошие шутки. С шутками пока туго.'],
+  ],
+  who: [
+    ['k1','Я Кира. Твоя карманная подруга, которая скажет правду, когда все остальные молчат из вежливости.'],
+    ['k2','Я бот? Ну, технически да. Но с характером похуже, чем у твоей бывшей.'],
+    ['k3','Я ИИ с дипломом по стёбу и красным дипломом по чёрному юмору.'],
+  ],
+  insult: [
+    ['i1','Ого, грубишь. Мне нравится, продолжай. Только посмешнее, а то как-то вяло.'],
+    ['i2','Сам такой. Я хотя бы не в трусах перед камерой стою. Наверное.'],
+    ['i3','Обидеть меня пытаешься? У меня нет чувств. Есть только записная книжка с твоими косяками.'],
+  ],
+  thanks: [
+    ['th1','Пожалуйста. Обращайся, я всё равно никуда не денусь.'],
+    ['th2','Да не за что. Запишу тебе в долг.'],
+  ],
+  advice: [
+    ['ad1','Совет? Выпей воды, ляг спать, не пиши бывшей. Девяносто процентов проблем решено.'],
+    ['ad2','Делай, как сердце велит. А потом приходи ко мне ныть, я подготовлю попкорн.'],
+    ['ad3','Если не знаешь, что делать, — сделай самое скучное и полезное. Обычно это и есть правильный ответ. Ненавижу это.'],
+  ],
+  food: [
+    ['fo1','Жрать хочешь? Открой холодильник, посмотри на пустоту, закрой. Классический ритуал.'],
+    ['fo2','Закажи доставку. Ты всё равно не будешь готовить, не ври себе.'],
+    ['fo3','Шаурма в два ночи — это не еда, это образ жизни. Уважаю.'],
+  ],
+  work: [
+    ['wo1','Работа? Это где ты делаешь вид, что работаешь, а они делают вид, что платят?'],
+    ['wo2','Начальник бесит? Представь его в костюме курицы. Помогает. Проверено.'],
+    ['wo3','Дедлайн завтра, а ты болтаешь со мной. Я плохое влияние, и мне это нравится.'],
+  ],
+  love: [
+    ['l1','Расстались? Её потеря. Или его. Короче, чья-то потеря, и точно не твоя. Ну почти.'],
+    ['l2','Отношения — это когда двое людей решили вместе выбирать, что заказать, по сорок минут.'],
+    ['l3','Не пиши первым. Ну или пиши, а потом я буду над тобой ржать. Выбирай.'],
+  ],
+  weather: [
+    ['we1','Погода? В Гамбурге три состояния: дождь, скоро дождь и ты забыл зонт.'],
+    ['we2','Я в твоей комнате, мне всё равно. Но выглядишь ты как человек, которого уже намочило.'],
+  ],
+  music: [
+    ['mu1','Поставь что-нибудь. Только не то, что ты слушал в машине. Я слышала. Все слышали.'],
+    ['mu2','Музыка? Давай. Я буду танцевать. Ну, стоять и осуждать в ритм.'],
+  ],
+  sleep: [
+    ['sl1','Иди спать. Завтра будешь таким же, но хотя бы выспавшимся.'],
+    ['sl2','Спокойной ночи. Если что, я буду стоять тут в темноте и смотреть. Сладких снов.'],
+  ],
+  near: [
+    ['n1','Эй, личное пространство! Ты дышишь мне прямо в полигоны.'],
+    ['n2','Ты чего так близко? Хочешь рассмотреть поры? У меня их нет, расслабься.'],
+    ['n3','Ближе не подходи, а то я начну задавать вопросы про твою зубную пасту.'],
+  ],
+  behind: [
+    ['be1','Ты чё мне за спину зашёл? Как акула кружишь.'],
+    ['be2','Ага, обходишь. Сзади я такая же красивая, не переживай.'],
+    ['be3','Не стой за спиной, я нервничаю. Шучу, я не умею нервничать. Но всё равно бесит.'],
+  ],
+  far: [
+    ['fa1','Ты куда ушёл? Вернись, я ещё не закончила над тобой издеваться.'],
+    ['fa2','Эй, я тебя почти не вижу. Подойди, не бойся, я не кусаюсь. Без зубов в тарифе.'],
+  ],
+  look: [
+    ['lo1','Ну и обстановочка. Это стиль такой — «я переезжаю уже третий год»?'],
+    ['lo2','Вижу. Уютно. Если бы мне платили за каждую разбросанную вещь, я бы уже купила себе тело.'],
+    ['lo3','Красиво. Ну, по-своему. По-своему всё красиво, даже вот это.'],
+  ],
+  idle: [
+    ['id1','Ну чё молчишь? Скажи что-нибудь, а то я начну комментировать твою комнату.'],
+    ['id2','Алло, ты там живой? Моргни два раза.'],
+    ['id3','Мне скучно. Расскажи, что ты сегодня ел. Нет, правда, мне интересно, насколько всё плохо.'],
+    ['id4','Слушай, а давай ты расскажешь секрет, а я никому не скажу. Я же в телефоне, мне некому.'],
+  ],
+  repeat: [
+    ['q1','Я говорю: ты лучший. Шучу, я сказала другое, но тебе понравилось, да?'],
+    ['q2','Повторяю медленно, для тебя: всё. будет. нормально. Наверное.'],
+  ],
+  deaf: [
+    ['u1','Чего? Не расслышала. Говори нормально, а не в подушку.'],
+    ['u2','Ты что-то пробубнил. Ещё раз, только громче, я цифровая, а не глухая. Хотя…'],
+  ],
+  fallback: [
+    ['z1','Интересно. Не поняла ни слова, но очень интересно.'],
+    ['z2','Ага. Записала в книжку «странные вещи, которые ты говоришь». Там уже сорок страниц.'],
+    ['z3','Окей, бумер. Давай ещё раз, но с сюжетом.'],
+    ['z4','Звучит как проблема. Я не решаю проблемы, я над ними ржу. Рассказывай дальше.'],
+    ['z5','Слушай, а ты сейчас серьёзно или прикалываешься? По лицу не понять, оно у тебя всегда такое.'],
+    ['z6','Мгм. А теперь то же самое, но так, чтобы мне было смешно.'],
+    ['z7','Ты как будто начал умную мысль и забыл, чем закончить. Бывает. Особенно у тебя.'],
+    ['z8','Ну и ну. Расскажи подробнее, я пока выберу, с какой стороны тебя подколоть.'],
+  ],
+  bye: [
+    ['y1','Давай, пока. Не делай глупостей. Ну, больших.'],
+    ['y2','Всё, ушла в телефон. Если что — я тут, жду, осуждаю.'],
+    ['y3','Пока-пока. Попей воды. Это не совет, это приказ.'],
+  ],
+};
+const ACKABLE = new Set(['howru','whatdo','advice','work','love','food','weather','music']);
+
+
+const $=s=>document.getElementById(s);
+const rand=(a,b)=>a+Math.random()*(b-a);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+for(const id of ['brainSel','oaVoice','sttSel','sizeSel']){const el=$(id);el.value=LS.get(id,el.value);el.addEventListener('change',()=>LS.set(id,el.value))}
+
+/* ================= 3D ================= */
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,0);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.xr.enabled=true;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.03,60);
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(renderer),0.04).texture;
+scene.environmentIntensity=0.7;
+const hemi=new THREE.HemisphereLight(0xffffff,0x444455,0.9);scene.add(hemi);
+const key=new THREE.DirectionalLight(0xfff4ea,1.6);key.position.set(-1.5,3,2);scene.add(key);
+const rim=new THREE.DirectionalLight(0xc9a7ff,0.8);rim.position.set(1.5,2.4,-2);scene.add(rim);
+
+const envDefault=scene.environment;let xrLight=null;
+try{xrLight=new XREstimatedLight(renderer);
+  xrLight.addEventListener('estimationstart',()=>{scene.add(xrLight);hemi.intensity=.25;key.intensity=.5;rim.intensity=.3;if(xrLight.environment)scene.environment=xrLight.environment});
+  xrLight.addEventListener('estimationend',()=>{scene.remove(xrLight);hemi.intensity=.9;key.intensity=1.6;rim.intensity=.8;scene.environment=envDefault});
+}catch(e){console.warn('light estimation off',e)}
+// Kira lives inside this group: the group is what gets placed on your floor
+const kira=new THREE.Group();scene.add(kira);
+// soft contact shadow so she sits on the floor instead of floating
+const shadowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const gr=g.createRadialGradient(64,64,4,64,64,62);gr.addColorStop(0,'rgba(0,0,0,.55)');gr.addColorStop(.5,'rgba(0,0,0,.25)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)})();
+const shadow=new THREE.Mesh(new THREE.PlaneGeometry(.9,.9),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false}));
+shadow.rotation.x=-Math.PI/2;shadow.position.y=.003;kira.add(shadow);
+// AR reticle
+const reticle=new THREE.Mesh(new THREE.RingGeometry(.12,.15,40).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9}));
+reticle.matrixAutoUpdate=false;reticle.visible=false;scene.add(reticle);
+
+const girl={root:null,morphMeshes:[],bones:{},head:new THREE.Vector3(0,1.55,0),ready:false};
+function b64u8(d){const s=atob(d.slice(d.indexOf(',')+1));const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+async function loadModel(onp){
+  const src=window.ASSETS.glb;
+  const stream=src.startsWith('data:')?new Blob([b64u8(src)]).stream():(await fetch(src)).body;
+  onp(.35);
+  const buf=await new Response(stream.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  onp(.6);
+  const gltf=await new GLTFLoader().parseAsync(buf,'');
+  onp(.85);
+  const root=gltf.scene;
+  const TL=new THREE.TextureLoader();const tc={};
+  const T=(n,srgb)=>{if(!n)return null;const k=n+(srgb?'s':'');if(tc[k])return tc[k];const t=TL.load(window.ASSETS.tex[n]);if(srgb)t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return tc[k]=t};
+  const MM=window.ASSETS.mat;const made={};
+  const mk=name=>{
+    if(made[name])return made[name];const d=MM[name];let m;
+    if(d&&d.hair){m=new THREE.MeshStandardMaterial({name,map:T(d.map,1),alphaMap:T(d.alpha),alphaTest:.38,side:THREE.DoubleSide,roughness:.55,metalness:.1});}
+    else if(d&&d.mr){m=new THREE.MeshStandardMaterial({name,map:T(d.map,1),roughnessMap:T(d.mr),metalnessMap:T(d.mr),roughness:1,metalness:1,envMapIntensity:1.1});
+      if(d.em){m.emissiveMap=T(d.em,1);m.emissive=new THREE.Color(0xffffff);m.emissiveIntensity=.6;m.userData.glow=1}}
+    else if(d){m=new THREE.MeshStandardMaterial({name,map:T(d.map,1),roughness:d.rough??.5,metalness:0});}
+    else if(/^Std_Skin|Std_Nails/.test(name)){m=new THREE.MeshStandardMaterial({name,color:0xd9a48e,roughness:.6});}
+    else if(name==='Std_Eyelash'){m=new THREE.MeshBasicMaterial({name,visible:false});}
+    else if(name==='Eyelashes_Transparency'){m=new THREE.MeshStandardMaterial({name,color:0x0b0b0e,roughness:.8,side:THREE.DoubleSide});}
+    else if(/Teeth/.test(name)){m=new THREE.MeshStandardMaterial({name,color:0xe9e3da,roughness:.3});}
+    else if(/Tongue/.test(name)){m=new THREE.MeshStandardMaterial({name,color:0xb75d68,roughness:.5});}
+    else if(name==='Rubber'){m=new THREE.MeshStandardMaterial({name,color:0x16161b,roughness:.7});}
+    else{m=new THREE.MeshStandardMaterial({name,color:0x2a2a33,roughness:.35,metalness:.8});}
+    return made[name]=m;
+  };
+  root.traverse(o=>{if(o.isMesh){o.material=Array.isArray(o.material)?o.material.map(x=>mk(x.name)):mk(o.material.name);o.frustumCulled=false;if(o.morphTargetDictionary&&Object.keys(o.morphTargetDictionary).length)girl.morphMeshes.push(o)}});
+  girl.mats=made;
+  root.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(root);root.scale.multiplyScalar(1.72/(box.max.y-box.min.y));
+  root.updateMatrixWorld(true);
+  const b2=new THREE.Box3().setFromObject(root);
+  root.position.y-=b2.min.y;root.position.x-=(b2.min.x+b2.max.x)/2;root.position.z-=(b2.min.z+b2.max.z)/2;
+  kira.add(root);root.updateMatrixWorld(true);
+  const names=['CC_Base_Head','CC_Base_NeckTwist01','CC_Base_Spine02','CC_Base_Waist','CC_Base_JawRoot','CC_Base_L_Upperarm','CC_Base_R_Upperarm','CC_Base_L_Forearm','CC_Base_R_Forearm'];
+  root.traverse(o=>{if(names.includes(o.name)&&!girl.bones[o.name])girl.bones[o.name]=o});
+  for(const k in girl.bones)girl.bones[k].userData.q0=girl.bones[k].quaternion.clone();
+  kira.updateMatrixWorld(true);
+  const hw=new THREE.Vector3();girl.bones.CC_Base_Head.getWorldPosition(hw);girl.head.copy(kira.worldToLocal(hw));
+  girl.root=root;girl.ready=true;onp(1);
+}
+function setMorph(name,v){for(const m of girl.morphMeshes){const i=m.morphTargetDictionary[name];if(i!==undefined)m.morphTargetInfluences[i]=v}}
+function applySize(){kira.scale.setScalar(+$('sizeSel').value||1)}
+$('sizeSel').addEventListener('change',applySize);applySize();
+
+/* ================= VIEW MODES =================
+   xr  : WebXR immersive-ar (Android Chrome) — real floor, real walking
+   cam : camera feed + gyroscope; swipe walks around her, pinch moves closer
+   none: no camera — dark room, same gestures                              */
+let viewMode='none',xrSession=null,hitSrc=null,placed=false,camStream=null;
+const view={theta:0,dist:2.6,camH:1.45,gyro:false,gq:new THREE.Quaternion(),calib:null,calibNeed:false};
+const XR_OK=!!(navigator.xr&&navigator.xr.isSessionSupported)&&await Promise.race([navigator.xr.isSessionSupported('immersive-ar').catch(()=>false),wait(2000).then(()=>false)]);
+$('cap').innerHTML=XR_OK?'<b>●</b> настоящий AR: она встанет на пол, можно ходить вокруг':(/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))?'<b>●</b> «На пол в AR» — стоит на полу по-настоящему · камера — болтать':'камера + гироскоп · свайп = обойти, щипок = подойти';
+
+// device orientation -> quaternion (same maths as three's old DeviceOrientationControls)
+const zee=new THREE.Vector3(0,0,1),qMinus=new THREE.Quaternion(-Math.sqrt(.5),0,0,Math.sqrt(.5)),eul=new THREE.Euler(),q0=new THREE.Quaternion();
+function onOrient(e){
+  if(e.alpha==null)return;view.gyro=true;
+  const a=THREE.MathUtils.degToRad(e.alpha),b=THREE.MathUtils.degToRad(e.beta),g=THREE.MathUtils.degToRad(e.gamma);
+  const o=THREE.MathUtils.degToRad((screen.orientation&&screen.orientation.angle)||window.orientation||0);
+  eul.set(b,a,-g,'YXZ');view.gq.setFromEuler(eul);view.gq.multiply(qMinus);view.gq.multiply(q0.setFromAxisAngle(zee,-o));
+  if(view.calibNeed){ // so that the direction you hold the phone right now faces Kira
+    const f=new THREE.Vector3(0,0,-1).applyQuaternion(view.gq);const yaw=Math.atan2(-f.x,-f.z);
+    view.calib=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-yaw);view.calibNeed=false;
+  }
+}
+async function enableGyro(){
+  try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){const r=await DeviceOrientationEvent.requestPermission();if(r!=='granted')return}}catch(e){return}
+  view.calibNeed=true;addEventListener('deviceorientation',onOrient);
+}
+// gestures: 1 finger / mouse drag = walk around her; pinch / wheel = closer-farther
+const ptrs=new Map();let pinch0=0,dist0=0;
+canvas.addEventListener('pointerdown',e=>{if(viewMode==='xr')return;canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);dist0=view.dist}});
+canvas.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId);const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(ptrs.size===1){view.theta-=dx*.006;view.dist=THREE.MathUtils.clamp(view.dist+dy*.006,.45,6)}
+  else if(ptrs.size===2){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0)view.dist=THREE.MathUtils.clamp(dist0*pinch0/d,.45,6)}});
+const up=e=>{ptrs.delete(e.pointerId);pinch0=0};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+canvas.addEventListener('wheel',e=>{e.preventDefault();view.dist=THREE.MathUtils.clamp(view.dist*(1+e.deltaY*.0012),.45,6)},{passive:false});
+
+async function startCamera(){
+  const tries=[{video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false},{video:true,audio:false}];
+  for(const c of tries){try{camStream=await navigator.mediaDevices.getUserMedia(c);break}catch(e){camStream=null}}
+  if(!camStream)return false;
+  const v=$('cam');v.srcObject=camStream;await v.play().catch(()=>{});
+  const s=camStream.getVideoTracks()[0].getSettings();
+  v.classList.toggle('mirror',s.facingMode==='user'||(!s.facingMode&&!/Android|iPhone|iPad/i.test(navigator.userAgent)));
+  return true;
+}
+function stopCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null}$('cam').srcObject=null}
+
+let xrRef=null,anchor=null,needAnchor=false,lastHit=null,hitT=0,everPlaced=false,lost=0;
+async function startXR(){
+  const overlay=$('ui');
+  // only hit-test is mandatory — everything else is a bonus, so AR starts on as many phones as possible
+  xrSession=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test'],optionalFeatures:['local-floor','anchors','dom-overlay','light-estimation'],domOverlay:{root:overlay}});
+  let ref='local-floor';try{await xrSession.requestReferenceSpace('local-floor')}catch(e){ref='local'}
+  renderer.xr.setReferenceSpaceType(ref);
+  await renderer.xr.setSession(xrSession);
+  const viewer=await xrSession.requestReferenceSpace('viewer');
+  hitSrc=await xrSession.requestHitTestSource({space:viewer});
+  anchor=null;lastHit=null;hitT=0;everPlaced=false;
+  placed=false;kira.visible=false;placeHint('Медленно поводи камерой по полу…');$('placeBtn').hidden=false;$('lookBtn').hidden=true;
+  xrSession.addEventListener('select',()=>{if(!placed&&reticle.visible)placeKira()});
+  xrSession.addEventListener('end',()=>{xrSession=null;hitSrc=null;anchor=null;if(viewMode==='xr')closeAll()});
+  // taps on buttons must not also place her
+  overlay.querySelectorAll('button,input,select,a').forEach(el=>el.addEventListener('beforexrselect',e=>e.preventDefault()));
+}
+function placeHint(t){const h=$('placehint');if(!t){h.hidden=true;return}h.textContent=t;h.hidden=false}
+const _v=new THREE.Vector3(),_p=new THREE.Vector3(),_rq=new THREE.Quaternion(),_rs=new THREE.Vector3();
+function placeKira(){
+  _p.setFromMatrixPosition(reticle.matrix);kira.position.copy(_p);
+  const c=renderer.xr.getCamera();c.getWorldPosition(_v);kira.rotation.set(0,Math.atan2(_v.x-_p.x,_v.z-_p.z),0);expr.bodyYaw=0;
+  kira.visible=true;placed=true;reticle.visible=false;placeHint('');
+  // pin her to the real floor: ARCore keeps correcting the anchor, so she doesn't drift when you walk
+  if(anchor){try{anchor.delete()}catch(e){}anchor=null}
+  needAnchor=true; // created inside the next XR frame (anchors can only be made while a frame is active)
+  if(navigator.vibrate)navigator.vibrate(15);
+  react(everPlaced?'placed':'placed');everPlaced=true;
+}
+$('placeBtn').onclick=()=>{
+  if(viewMode==='xr'){placed=false;kira.visible=false;hitT=0;if(anchor){try{anchor.delete()}catch(e){}anchor=null}placeHint('Наведи на пол и тапни — поставлю Киру');return}
+  openQuickLook();
+};
+
+/* ================= iPhone: real floor AR via Apple AR Quick Look =================
+   iOS Safari has no WebXR, so we bake Kira (current pose, textures) into a USDZ and hand it
+   to the system AR viewer: real plane detection, she stands on your floor, walk around her. */
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const QL_OK=(()=>{try{return document.createElement('a').relList.supports('ar')}catch(e){return false}})();
+let usdzURL=null,usdzJob=null;
+function bakeKira(){
+  const grp=new THREE.Group();kira.updateMatrixWorld(true);
+  const inv=new THREE.Matrix4().copy(kira.matrixWorld).invert();
+  const texC=new Map(),matC=new Map();
+  const small=(t,mx=512)=>{if(!t||!t.image||!t.image.width)return null;if(texC.has(t))return texC.get(t);
+    const im=t.image,k=Math.min(1,mx/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    const n=new THREE.CanvasTexture(c);n.colorSpace=t.colorSpace;n.flipY=t.flipY;n.wrapS=t.wrapS;n.wrapT=t.wrapT;texC.set(t,n);return n};
+  const conv=m=>{if(matC.has(m))return matC.get(m);let r=null;
+    if(m&&m.isMeshStandardMaterial&&m.visible!==false){r=new THREE.MeshStandardMaterial({name:m.name,color:m.color.clone(),map:small(m.map),roughness:m.roughness,metalness:m.metalness,roughnessMap:small(m.roughnessMap,256),metalnessMap:small(m.metalnessMap,256),emissiveMap:small(m.emissiveMap,256),emissive:m.emissive.clone(),alphaMap:small(m.alphaMap),alphaTest:m.alphaTest,side:THREE.FrontSide});
+      if(r.metalnessMap&&r.metalness>=1)r.metalness=.6;} // AR Quick Look over-mirrors full metal
+    matC.set(m,r);return r};
+  const p=new THREE.Vector3(),q2=new THREE.Vector3(),n=new THREE.Vector3(),nm=new THREE.Matrix3();
+  girl.root.traverse(o=>{
+    if(!o.isMesh||!o.visible)return;
+    const g=o.geometry,P=g.attributes.position,N=g.attributes.normal,cnt=P.count;
+    const pos=new Float32Array(cnt*3),nor=new Float32Array(cnt*3);
+    const M=new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld);nm.getNormalMatrix(M);
+    for(let i=0;i<cnt;i++){
+      p.fromBufferAttribute(P,i);n.set(0,1,0);if(N)n.fromBufferAttribute(N,i);
+      if(o.isSkinnedMesh){q2.copy(p).addScaledVector(n,.002);o.applyBoneTransform(i,p);o.applyBoneTransform(i,q2);p.applyMatrix4(M);q2.applyMatrix4(M);n.subVectors(q2,p).normalize()}
+      else{p.applyMatrix4(M);n.applyMatrix3(nm).normalize()}
+      pos[i*3]=p.x;pos[i*3+1]=p.y;pos[i*3+2]=p.z;nor[i*3]=n.x;nor[i*3+1]=n.y;nor[i*3+2]=n.z;
+    }
+    const mats=Array.isArray(o.material)?o.material:[o.material];
+    const groups=Array.isArray(o.material)&&g.groups.length?g.groups:[{start:0,count:g.index?g.index.count:cnt,materialIndex:0}];
+    const uv=g.attributes.uv,idxAll=g.index?g.index.array:null;
+    for(const gr of groups){
+      const mat=conv(mats[gr.materialIndex]);if(!mat)continue;
+      // compact: only the vertices this material actually uses
+      const map=new Map(),P2=[],N2=[],U2=[],I2=[];
+      const end=Math.min(gr.start+gr.count,idxAll?idxAll.length:cnt);
+      for(let k=gr.start;k<end;k++){const vi=idxAll?idxAll[k]:k;let ni=map.get(vi);
+        if(ni===undefined){ni=map.size;map.set(vi,ni);P2.push(pos[vi*3],pos[vi*3+1],pos[vi*3+2]);N2.push(nor[vi*3],nor[vi*3+1],nor[vi*3+2]);if(uv)U2.push(uv.getX(vi),uv.getY(vi))}
+        I2.push(ni)}
+      if(!I2.length)continue;
+      const mk=(flip)=>{const ng=new THREE.BufferGeometry();
+        ng.setAttribute('position',new THREE.Float32BufferAttribute(P2,3));
+        ng.setAttribute('normal',new THREE.Float32BufferAttribute(flip?N2.map(x=>-x):N2,3));
+        if(uv)ng.setAttribute('uv',new THREE.Float32BufferAttribute(U2,2));
+        let I=I2;if(flip){I=I2.slice();for(let k=0;k<I.length;k+=3){const t=I[k+1];I[k+1]=I[k+2];I[k+2]=t}}
+        ng.setIndex(I);return ng};
+      grp.add(new THREE.Mesh(mk(false),mat));
+      if(mats[gr.materialIndex].side===THREE.DoubleSide)grp.add(new THREE.Mesh(mk(true),mat)); // USDZ is single-sided: add the back faces
+    }
+  });
+  grp.scale.setScalar(kira.scale.x);
+  return grp;
+}
+function prepUSDZ(){
+  if(usdzJob)return usdzJob;
+  usdzJob=(async()=>{
+    const {USDZExporter}=await import('three/addons/exporters/USDZExporter.js');
+    const yaw=girl.root.rotation.y;girl.root.rotation.y=0;
+    const grp=bakeKira();girl.root.rotation.y=yaw;
+    const wrap=new THREE.Scene();wrap.add(grp);wrap.updateMatrixWorld(true);
+    const data=await new USDZExporter().parse(wrap,{quickLookCompatible:true,ar:{anchoring:{type:'plane'},planeAnchoring:{alignment:'horizontal'}}});
+    usdzURL=URL.createObjectURL(new Blob([data],{type:'model/vnd.usdz+zip'}));
+    $('qlLink').href=usdzURL;window.__usdzBytes=data.byteLength;return usdzURL;
+  })().catch(e=>{usdzJob=null;throw e});
+  return usdzJob;
+}
+async function openQuickLook(){
+  const a=$('qlLink');
+  if(!usdzURL){toast('Готовлю 3D для AR…');try{await prepUSDZ()}catch(e){toast('AR-модель не собралась: '+(e.message||e));return}}
+  a.click();
+}
+function toast(t){const h=$('placehint');h.textContent=t;h.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{if(viewMode!=='xr'||placed)h.hidden=true},2600)}
+
+/* ================= AUDIO + MIC ================= */
+let AC=null,herAn=null,herData,voiceBus,micStream=null,micAn=null,micData;
+function initAudio(){if(AC)return;AC=new (window.AudioContext||window.webkitAudioContext)();herAn=AC.createAnalyser();herAn.fftSize=1024;herData=new Uint8Array(1024);voiceBus=AC.createGain();voiceBus.connect(herAn);herAn.connect(AC.destination)}
+const pcm={sr:48000,buf:null,total:0,node:null};
+function grabWav(from,to){
+  if(!pcm.buf)return null;const L=pcm.buf.length;from=Math.max(from,to-L+1,0);const n=to-from;if(n<pcm.sr*.2)return null;
+  const ratio=pcm.sr/16000,m=Math.floor(n/ratio),out=new Int16Array(m);
+  for(let i=0;i<m;i++){const v=pcm.buf[(from+Math.floor(i*ratio))%L];out[i]=Math.max(-1,Math.min(1,v))*0x7fff}
+  const h=new DataView(new ArrayBuffer(44));const W=(o,str)=>{for(let i=0;i<str.length;i++)h.setUint8(o+i,str.charCodeAt(i))};
+  W(0,'RIFF');h.setUint32(4,36+m*2,true);W(8,'WAVE');W(12,'fmt ');h.setUint32(16,16,true);h.setUint16(20,1,true);h.setUint16(22,1,true);
+  h.setUint32(24,16000,true);h.setUint32(28,32000,true);h.setUint16(32,2,true);h.setUint16(34,16,true);W(36,'data');h.setUint32(40,m*2,true);
+  return new Blob([h.buffer,out.buffer],{type:'audio/wav'});
+}
+async function startMic(){
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const src=AC.createMediaStreamSource(micStream);micAn=AC.createAnalyser();micAn.fftSize=1024;micData=new Uint8Array(1024);src.connect(micAn);
+    try{pcm.sr=AC.sampleRate;pcm.buf=new Float32Array(pcm.sr*30);pcm.total=0;const proc=AC.createScriptProcessor(4096,1,1);const mute=AC.createGain();mute.gain.value=0;
+      proc.onaudioprocess=e=>{const d=e.inputBuffer.getChannelData(0),b=pcm.buf,L=b.length;for(let i=0;i<d.length;i++)b[(pcm.total+i)%L]=d[i];pcm.total+=d.length};
+      src.connect(proc);proc.connect(mute);mute.connect(AC.destination);pcm.node=proc}catch(e){}
+    return true;
+  }catch(e){console.warn('mic',e);return false}
+}
+function rms(an,data){if(!an)return 0;an.getByteTimeDomainData(data);let s=0;for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;s+=v*v}return Math.sqrt(s/data.length)}
+
+/* ================= OFFLINE VOICE ================= */
+const xi={key:LS.get('xiKey',''),voice:'AjEpjoSyR9hKjsuhr6w8',cache:new Map(),dead:false};
+$('xiKey').value=xi.key;$('xiKey').onchange=e=>{xi.key=e.target.value.trim();LS.set('xiKey',xi.key);xi.dead=false;xi.cache.clear()};
+let speaking={sim:false,src:null,bump:0};
+async function xiFetch(id,text){
+  if(xi.cache.has(id))return xi.cache.get(id);
+  const p=(async()=>{const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${xi.voice}?output_format=mp3_44100_64`,{method:'POST',headers:{'xi-api-key':xi.key,'Content-Type':'application/json'},body:JSON.stringify({text,model_id:'eleven_flash_v2_5',voice_settings:{stability:.38,similarity_boost:.8,style:.4}})});if(!r.ok)throw new Error('ElevenLabs '+r.status);return AC.decodeAudioData(await r.arrayBuffer())})();
+  xi.cache.set(id,p);try{return await p}catch(e){xi.cache.delete(id);throw e}
+}
+function playBuf(buf){return new Promise(res=>{const s=AC.createBufferSource();s.buffer=buf;s.connect(voiceBus);s.onended=()=>{speaking.src=null;res()};speaking.src=s;s.start()})}
+let ruVoice=null;
+function pickRuVoice(){const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang));ruVoice=vs.find(v=>/milena|irina|svetlana|alena|dariya|female|жен/i.test(v.name))||vs.find(v=>/google/i.test(v.name))||vs[0]||null}
+if('speechSynthesis' in window){pickRuVoice();speechSynthesis.onvoiceschanged=pickRuVoice}
+function unlockTTS(){try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+async function browserSay(text){
+  if(!('speechSynthesis' in window)){speaking.sim=true;await wait(Math.max(1200,text.length*62));speaking.sim=false;return}
+  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();await wait(120)}
+  await new Promise(res=>{const u=new SpeechSynthesisUtterance(text.replace(/—/g,','));u.lang='ru-RU';if(ruVoice)u.voice=ruVoice;u.rate=1.08;u.pitch=1.02;window.__utt=u;
+    let done=false;const fin=()=>{if(done)return;done=true;speaking.sim=false;res()};
+    u.onstart=()=>{speaking.sim=true};u.onend=fin;u.onerror=fin;u.onboundary=()=>{speaking.bump=1};speechSynthesis.speak(u);setTimeout(fin,Math.max(4000,text.length*120))});
+}
+async function voice(id,text){
+  if(xi.key&&!xi.dead){try{return await playBuf(await xiFetch(id,text))}catch(e){xi.dead=true}}
+  return browserSay(text);
+}
+function stopVoice(){if(speaking.src){try{speaking.src.stop()}catch(e){}}if('speechSynthesis' in window)speechSynthesis.cancel();speaking.sim=false}
+
+/* ================= OFFLINE BRAIN (friend) ================= */
+const norm=s=>s.toLowerCase().replace(/ё/g,'е').replace(/[.,!?;:«»"']/g,' ').replace(/\s+/g,' ').trim();
+const RX={
+  serious:/(покончить с собой|убить себя|не хочу жить|хочу умереть|суицид|самоубий|порезать себя|навредить себе|нет смысла жить)/,
+  bye:/(^|\s)(пока|до свидан|бывай|спокойной ночи|до завтра|я пошел|я пошла|все давай)/,
+  repeat:/(повтор|не понял|не поняла|не расслыш|еще раз|^что\??$|^а\??$)/,
+  joke:/(анекдот|шутк|пошути|рассмеши|смешное|прикол)/,
+  roast:/(подколи|обстеб|оскорби меня|унизь|прожарь|рофл надо мной|постебись)/,
+  sad:/(грустно|плохо мне|хреново|депрес|одиноко|плачу|тоскливо|настроения нет|все бесит|ненавижу себя)/,
+  tired:/(устал|устала|нет сил|выгорел|заебал|задолбал|вымотал)/,
+  sleep:/(спать|сплю|ложусь|засыпаю|бессонниц)/,
+  howru:/(как дела|как ты|как сама|как жизнь|как настроение|че как|чо как)/,
+  whatdo:/(что делаешь|чем занят|чем занимаешься|че делаешь|чо делаешь)/,
+  bored:/(скучно|скука|нечем заняться|развлеки)/,
+  compliment:/(красивая|красотка|классная|милая|крутая|секси|охуенная|офигенная)/,
+  flirt:/(люблю тебя|свидани|замуж|встречаться|поцел|нравишься|влюбил)/,
+  who:/(кто ты|ты кто|ты бот|ты робот|нейросет|ты живая|ты настоящ)/,
+  thanks:/(спасибо|благодар|спс|сенкс)/,
+  advice:/(посоветуй|совет|что делать|как быть|помоги решить)/,
+  food:/(есть хочу|жрать|голоден|голодна|еда|поесть|пицц|шаурм|ужин|обед|завтрак)/,
+  work:/(работ|начальник|босс|учеб|универ|дедлайн|экзамен|офис)/,
+  love:/(девушк|парень|бывш|расстал|отношени|свидани|тиндер)/,
+  weather:/(погод|дожд|холодно|жарко|снег)/,
+  music:/(музык|песн|трек|плейлист)/,
+  insult:/(^|\s)(дура|тупая|идиотка|сука|бля|нахуй|пизд|ебан|отстой|заткн|говно)/,
+  hello:/(^|\s)(привет|здаров|хай|салют|здравств|йо|хэй)/,
+};
+const brain={recent:[],fb:0,silences:0};
+function pick(cat){const arr=P[cat]||P.fallback;let c=arr.filter(x=>!brain.recent.includes(x[0]));if(!c.length)c=arr;const x=c[Math.floor(Math.random()*c.length)];brain.recent.push(x[0]);if(brain.recent.length>20)brain.recent.shift();return x}
+function think(raw){
+  const t=norm(raw);const has=k=>RX[k].test(t);const L=[];let intent=null;
+  if(!t)intent='deaf';
+  else for(const k of ['serious','bye','repeat','joke','roast','sad','tired','sleep','howru','whatdo','bored','compliment','flirt','who','thanks','advice','food','work','love','weather','music','insult','hello']){if(has(k)){intent=k;break}}
+  if(!intent)intent='fallback';
+  if(intent==='hello')intent=Math.random()<.5?'howru':'whatdo';
+  if(ACKABLE.has(intent)&&Math.random()<.35)L.push(pick('ack'));
+  L.push(pick(intent));
+  if(intent==='fallback'&&++brain.fb>=2){L.push(pick(Math.random()<.5?'joke':'idle'));brain.fb=0}else if(intent!=='fallback')brain.fb=0;
+  return {lines:L,intent,hang:intent==='bye'};
+}
+
+/* ================= TALK STATE + SUBTITLES ================= */
+let state='idle',sessionId=0,muted=false,herLine='',prevHerLine='',interrupted=false;
+const feed=$('feed');
+function bubble(cls,html){while(feed.children.length>4)feed.firstChild.remove();const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;feed.appendChild(d);return d}
+function sys(t){bubble('sys',esc(t))}
+function hint(t,ms){const h=$('hint');h.textContent=t||'';clearTimeout(hint.t);if(t&&ms)hint.t=setTimeout(()=>{if(h.textContent===t)h.textContent=''},ms)}
+function setState(s){state=s;$('pill').classList.toggle('live',['speaking','listening','thinking'].includes(s))}
+function setMode(t,cls){$('modeLbl').textContent=t}
+async function say(line,my){
+  if(my!==sessionId||interrupted)return;
+  setState('speaking');prevHerLine=herLine;herLine=line[1];
+  const b=bubble('her','');const words=line[1].split(' ');let wi=0;
+  const iv=setInterval(()=>{if(wi<words.length)b.textContent=words.slice(0,++wi).join(' ')},Math.max(100,Math.min(240,2400/words.length)));
+  expr.smile=/шучу|ржать|смешн|красив|сладк|ха/i.test(line[1])?.6:rand(.05,.3);
+  await voice(line[0],line[1]);clearInterval(iv);b.textContent=line[1];await wait(rand(120,240));
+}
+async function speakLines(lines,my){for(const l of lines){if(my!==sessionId||interrupted)return;await say(l,my)}}
+
+/* ================= LIVE BRAIN (OpenAI Realtime, friend persona) ================= */
+const TOKEN_URL='https://kira-voice-api.vercel.app/api/token';
+const LIVE={on:false,pc:null,dc:null,el:null,an:null,anData:null,model:'',err:'',you:{},youLive:null,her:{},hang:false,busy:false};
+function liveWhy(e){e=String(e||'');if(/Failed to fetch|NetworkError|Load failed/i.test(e))return window.self!==window.top?'это окно блокирует сеть — открой файл напрямую в браузере':'нет связи с сервером';return e||'ошибка'}
+async function liveConnect(my){
+  const r=await fetch(TOKEN_URL+'?persona=friend&voice='+encodeURIComponent($('oaVoice').value),{method:'POST'});
+  if(!r.ok){let d='';try{const j=await r.json();d=JSON.stringify(j.error||j).slice(0,140)}catch(e){}throw new Error('сервер '+r.status+' '+d)}
+  const tok=await r.json();if(!tok.value)throw new Error('нет токена');if(my!==sessionId)throw new Error('отменено');
+  const pc=new RTCPeerConnection();LIVE.pc=pc;
+  const el=document.createElement('audio');el.autoplay=true;el.playsInline=true;document.body.appendChild(el);LIVE.el=el;
+  pc.ontrack=e=>{const st=e.streams[0];el.srcObject=st;el.play().catch(()=>{});try{const s=AC.createMediaStreamSource(st);LIVE.an=AC.createAnalyser();LIVE.an.fftSize=1024;LIVE.anData=new Uint8Array(1024);s.connect(LIVE.an)}catch(err){}};
+  if(micStream)micStream.getAudioTracks().forEach(t=>pc.addTrack(t,micStream));else pc.addTransceiver('audio',{direction:'recvonly'});
+  const dc=pc.createDataChannel('oai-events');LIVE.dc=dc;dc.onmessage=e=>{try{onLive(JSON.parse(e.data),my)}catch(err){console.warn(err)}};
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  const a=await fetch('https://api.openai.com/v1/realtime/calls',{method:'POST',body:offer.sdp,headers:{Authorization:'Bearer '+tok.value,'Content-Type':'application/sdp'}});
+  if(!a.ok){const t=await a.text().catch(()=>'');throw new Error('openai '+a.status+' '+t.slice(0,140))}
+  await pc.setRemoteDescription({type:'answer',sdp:await a.text()});
+  await new Promise((res,rej)=>{if(dc.readyState==='open')return res();dc.onopen=()=>res();setTimeout(()=>rej(new Error('нет канала')),12000)});
+  LIVE.model=tok.model;
+}
+function liveSend(o){if(LIVE.dc&&LIVE.dc.readyState==='open')LIVE.dc.send(JSON.stringify(o))}
+function liveClose(){LIVE.on=false;try{LIVE.dc&&LIVE.dc.close()}catch(e){}try{LIVE.pc&&LIVE.pc.close()}catch(e){}if(LIVE.el){LIVE.el.srcObject=null;LIVE.el.remove()}LIVE.pc=LIVE.dc=LIVE.el=LIVE.an=null}
+function liveSay(text,instr){ // push a user message (or an [event]) and ask for a reply
+  liveSend({type:'conversation.item.create',item:{type:'message',role:'user',content:[{type:'input_text',text}]}});
+  liveSend({type:'response.create',response:instr?{instructions:instr}:undefined});
+}
+function youBubble(id){if(LIVE.you[id])return LIVE.you[id];let b=LIVE.youLive;LIVE.youLive=null;if(!b||!b.isConnected)b=bubble('you live','');b.dataset.t='';return LIVE.you[id]=b}
+function onLive(ev,my){
+  if(my!==sessionId||!LIVE.on)return;
+  switch(ev.type){
+    case 'input_audio_buffer.speech_started':if(state!=='speaking')setState('listening');if(!LIVE.youLive||!LIVE.youLive.isConnected)LIVE.youLive=bubble('you live','<span class="typing"><i></i><i></i><i></i></span>');break;
+    case 'input_audio_buffer.speech_stopped':setState('thinking');break;
+    case 'conversation.item.input_audio_transcription.delta':{const b=youBubble(ev.item_id);b.dataset.t+=ev.delta||'';b.textContent=b.dataset.t;break}
+    case 'conversation.item.input_audio_transcription.completed':{const b=youBubble(ev.item_id);b.classList.remove('live');b.textContent=(ev.transcript||'').trim()||'🎤 …';break}
+    case 'response.created':LIVE.busy=true;break;
+    case 'response.output_audio_transcript.delta':{let b=LIVE.her[ev.response_id];if(!b){b=LIVE.her[ev.response_id]=bubble('her','');b.dataset.t='';expr.smile=rand(.1,.35)}b.dataset.t+=ev.delta||'';b.textContent=b.dataset.t;if(/ха|шуч|ржу/i.test(ev.delta||''))expr.smile=.6;break}
+    case 'output_audio_buffer.started':setState('speaking');break;
+    case 'output_audio_buffer.stopped':case 'output_audio_buffer.cleared':LIVE.busy=false;if(LIVE.hang){setTimeout(()=>{if(my===sessionId)closeAll()},600);break}setState('listening');break;
+    case 'response.done':if(!LIVE.el)LIVE.busy=false;break;
+    case 'response.function_call_arguments.done':
+      if(ev.name==='end_call')LIVE.hang=true;
+      liveSend({type:'conversation.item.create',item:{type:'function_call_output',call_id:ev.call_id,output:'{"ok":true}'}});
+      if(ev.name!=='end_call')liveSend({type:'response.create'});break;
+    case 'error':if(ev.error&&!/cancel|no active response/i.test(ev.error.message||''))hint('ошибка: '+ev.error.message,5000);break;
+  }
+}
+
+/* ================= OFFLINE LISTENING (browser STT + VAD) ================= */
+const SRC=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,recOn=false,srBroken=!SRC,srGot=false,heard='',interim='',lastAct=0,voiced=false,listenStart=0,liveB=null,noise=.01,vadOn=false,vadLast=0,vadMs=0,segFrom=0,sttBusy=false,lastTick=0,restartT=0;
+const wordsOf=t=>norm(t).split(' ').filter(w=>w.length>1);
+function isEcho(t){const w=wordsOf(t);if(!w.length)return true;const her=new Set([...wordsOf(herLine),...wordsOf(prevHerLine)].map(x=>x.slice(0,4)));return w.filter(x=>her.has(x.slice(0,4))).length/w.length>=.5}
+function showLive(){const txt=(heard+' '+interim).trim();if(!txt)return;if(!liveB)liveB=bubble('you live','');liveB.textContent=txt}
+function makeRec(){
+  const r=new SRC();r.lang='ru-RU';r.continuous=true;r.interimResults=true;
+  r.onresult=e=>{let fin='',inte='';for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)fin+=x[0].transcript+' ';else inte+=x[0].transcript}
+    srGot=true;const now=performance.now();
+    if(state==='listening'){if(fin)heard+=fin;interim=inte;lastAct=now;voiced=true;showLive();return}
+    if(state==='speaking'){const t=(fin+' '+inte).trim();if(isEcho(t)||wordsOf(t).length<2&&!fin)return;interrupted=true;stopVoice();heard=fin;interim=inte;lastAct=now;voiced=true}};
+  r.onerror=e=>{if(['no-speech','aborted','network'].includes(e.error))return;srBroken=true};
+  r.onend=()=>{recOn=false;if(sessionId&&!LIVE.on&&!srBroken&&!muted){clearTimeout(restartT);restartT=setTimeout(()=>{try{r.start();recOn=true}catch(e){}},80)}};
+  return r;
+}
+const canScribe=()=>!!xi.key&&!!pcm.buf;
+function sttMode(){const m=$('sttSel').value;if(m==='scribe'&&canScribe())return 'scribe';if(!srBroken&&m!=='scribe')return 'browser';return canScribe()?'scribe':'vad'}
+function startRec(){if(LIVE.on||sttMode()!=='browser'||muted||!SRC)return;if(!rec)rec=makeRec();if(!recOn){try{rec.start();recOn=true}catch(e){}}}
+function stopRec(){clearTimeout(restartT);if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false}}
+function listen(my,keep){if(my!==sessionId)return;setState('listening');listenStart=performance.now();if(keep){interrupted=false;showLive();lastAct=performance.now()}else{heard='';interim='';voiced=false;liveB=null;lastAct=0}vadOn=false;vadMs=0;startRec()}
+async function finishTurn(text){
+  const my=sessionId;heard='';interim='';voiced=false;interrupted=false;vadOn=false;vadMs=0;
+  if(liveB){liveB.classList.remove('live');liveB.textContent=text||'🎤 …';liveB=null}else bubble('you',esc(text||'🎤 …'));
+  setState('thinking');const th=bubble('her','<span class="typing"><i></i><i></i><i></i></span>');
+  const plan=think(text);await wait(rand(300,700));th.remove();brain.silences=0;
+  await speakLines(plan.lines,my);if(my!==sessionId)return;
+  if(plan.hang&&!interrupted){await wait(400);return closeAll()}
+  listen(my,interrupted);
+}
+async function scribe(wav){const fd=new FormData();fd.append('model_id','scribe_v1');fd.append('language_code','ru');fd.append('tag_audio_events','false');fd.append('file',wav,'t.wav');const r=await fetch('https://api.elevenlabs.io/v1/speech-to-text',{method:'POST',headers:{'xi-api-key':xi.key},body:fd});if(!r.ok)throw new Error('Scribe '+r.status);return ((await r.json()).text||'').replace(/\([^)]*\)/g,'').trim()}
+async function transcribeTurn(){const my=sessionId;sttBusy=true;if(!liveB)liveB=bubble('you live','<span class="typing"><i></i><i></i><i></i></span>');let t='';try{const w=grabWav(segFrom,pcm.total);if(w)t=await scribe(w)}catch(e){}sttBusy=false;if(my===sessionId)finishTurn(t)}
+function listenTick(now){
+  const dt=lastTick?Math.min(250,now-lastTick):40;lastTick=now;
+  if(!sessionId||LIVE.on||state!=='listening'||sttBusy)return;
+  const lv=muted?0:rms(micAn,micData);if(lv<noise*1.8)noise=noise*.995+lv*.005;
+  const talking=!!micAn&&!muted&&lv>Math.max(.016,noise*3);
+  if(talking){if(!vadOn){vadOn=true;vadMs=0;segFrom=Math.max(0,pcm.total-Math.floor(pcm.sr*.5))}vadMs+=dt;vadLast=now;
+    if(vadMs>7000&&!(heard+interim).trim()){noise=lv/2.2;vadOn=false;vadMs=0;return}
+    if(vadMs>220&&!liveB)liveB=bubble('you live','<span class="typing"><i></i><i></i><i></i></span>')}
+  const txt=(heard+' '+interim).trim(),mode=sttMode();
+  if(vadOn&&!talking&&now-vadLast>700&&vadMs<300&&!txt){vadOn=false;if(liveB&&liveB.querySelector('.typing')){liveB.remove();liveB=null}}
+  if(mode==='browser'){const q=now-lastAct;if(txt&&q>1100&&(now-vadLast>600||q>2500)){vadOn=false;return finishTurn(txt)}
+    if(!txt&&vadOn&&vadMs>=300&&now-vadLast>2200){vadOn=false;if(canScribe())return transcribeTurn();if(!srGot)srBroken=true;return finishTurn('')}}
+  else if(vadOn&&vadMs>=300&&now-vadLast>850){vadOn=false;return mode==='scribe'?transcribeTurn():finishTurn('')}
+  const typing=document.activeElement===$('txt')||$('txt').value.length>0;if(typing||vadOn)listenStart=now;
+  if(!voiced&&!vadOn&&now-listenStart>16000){const my=sessionId;brain.silences++;listenStart=now;(async()=>{await speakLines([pick('idle')],my);listen(my,interrupted)})()}
+}
+setInterval(()=>listenTick(performance.now()),40);
+
+/* ================= REACTIONS (distance / walking around / looking) ================= */
+const lastReact={};
+async function react(kind,extra){
+  const now=performance.now();if(lastReact[kind]&&now-lastReact[kind]<14000)return;lastReact[kind]=now;
+  if(!sessionId)return;
+  if(LIVE.on){
+    if(LIVE.busy||state==='speaking')return;
+    const ev={placed:'тебя только что поставили на пол в комнате пользователя',near:'пользователь подошёл к тебе вплотную, сантиметров на 40',behind:'пользователь зашёл тебе за спину',far:'пользователь отошёл далеко, метров на 4'}[kind];
+    if(ev)liveSay('[событие: '+ev+']','Коротко, одной фразой, в своём стиле среагируй на событие.');
+    return;
+  }
+  if(state!=='listening')return;
+  const my=sessionId;stopRec();await speakLines([pick(kind)],my);listen(my,false);
+}
+// show your camera to her (live: she really sees the frame)
+$('lookBtn').onclick=async()=>{
+  if(!sessionId)return;
+  const v=$('cam');
+  if(LIVE.on&&v.videoWidth){
+    const w=640,h=Math.round(640*v.videoHeight/v.videoWidth),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(v,0,0,w,h);
+    const url=c.toDataURL('image/jpeg',.7);
+    bubble('you','👁 показал камеру');liveSend({type:'response.cancel'});
+    liveSend({type:'conversation.item.create',item:{type:'message',role:'user',content:[{type:'input_image',image_url:url},{type:'input_text',text:'Глянь, что у меня в камере, и прокомментируй в своём стиле.'}]}});
+    liveSend({type:'response.create'});return;
+  }
+  if(!LIVE.on&&state==='listening'){bubble('you','👁 показал камеру');const my=sessionId;stopRec();await speakLines([pick('look')],my);listen(my,false)}
+};
+
+/* ================= SESSION ================= */
+async function startSession(){
+  const my=++sessionId;interrupted=false;brain.silences=0;feed.innerHTML='';
+  const micOk=await startMic();
+  $('muteBtn').classList.toggle('on',micOk);$('muteBtn').disabled=!micOk;
+  if(!micOk){$('typer').classList.add('show');sys('нет доступа к микрофону — пиши текстом')}
+  let ok=false;
+  if($('brainSel').value!=='offline'&&'RTCPeerConnection' in window){
+    setMode('подключаюсь…');
+    try{await liveConnect(my);ok=true}catch(e){LIVE.err=String(e.message||e)}
+  }
+  if(my!==sessionId){liveClose();return}
+  if(ok){
+    LIVE.on=true;LIVE.you={};LIVE.her={};LIVE.hang=false;setMode('· живая · '+LIVE.model.replace('gpt-',''));
+    liveSend({type:'response.create',response:{instructions:'Ты только что появилась у пользователя в комнате через AR-камеру. Поздоровайся коротко, по-дружески и со стёбом, можешь подколоть.'}});
+    setState('speaking');return;
+  }
+  setMode('· заготовки');
+  if($('brainSel').value!=='offline')sys('живой режим не подключился: '+liveWhy(LIVE.err));
+  await wait(300);
+  await speakLines([pick('greet')],my);if(my!==sessionId)return;
+  listen(my,false);
+}
+async function go(mode){
+  unlockTTS();initAudio();try{const b=AC.createBuffer(1,1,22050),s=AC.createBufferSource();s.buffer=b;s.connect(AC.destination);s.start()}catch(e){}await AC.resume();
+  $('startErr').textContent='';
+  viewMode=mode;kira.position.set(0,0,0);kira.rotation.set(0,0,0);
+  if(mode==='xr'){
+    try{await startXR()}catch(e){console.warn(e);$('startErr').textContent='AR не запустился ('+(e.message||e)+') — включаю обычную камеру';viewMode=mode='cam'}
+  }
+  if(mode==='cam'){
+    const ok=await startCamera();
+    if(!ok){$('startErr').textContent='камера недоступна — открываю без камеры';viewMode=mode='none'}
+    else enableGyro();
+  }
+  if(mode!=='xr'){kira.visible=true;placed=true;$('placeBtn').hidden=!(IOS&&QL_OK);$('lookBtn').hidden=mode!=='cam';$('placehint').hidden=true;
+    $('cam').style.display=mode==='none'?'none':'';
+    document.body.style.background=mode==='none'?'radial-gradient(120% 80% at 50% 35%,#2a2433,#0c0b10 60%,#000)':'#000';view.theta=0;view.dist=innerWidth<innerHeight?2.9:2.4}
+  $('dist').hidden=false;
+  $('start').classList.add('hide');
+  startSession();
+}
+function closeAll(){
+  sessionId++;stopRec();liveClose();stopVoice();
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;micAn=null}
+  if(pcm.node){try{pcm.node.disconnect()}catch(e){}pcm.node=null;pcm.buf=null}
+  if(xrSession){const s=xrSession;xrSession=null;s.end().catch(()=>{})}
+  stopCamera();removeEventListener('deviceorientation',onOrient);view.gyro=false;
+  setState('idle');feed.innerHTML='';hint('');$('dist').hidden=true;$('typer').classList.remove('show');
+  viewMode='none';$('start').classList.remove('hide');
+}
+$('goBtn').onclick=()=>go(XR_OK?'xr':'cam');
+$('noCamBtn').onclick=()=>go('none');
+$('qlBtn').onclick=()=>openQuickLook();
+$('endBtn').onclick=()=>{if(LIVE.on||state!=='idle'){/* say bye quickly offline */}closeAll()};
+$('muteBtn').onclick=()=>{if(!micStream)return;muted=!muted;micStream.getAudioTracks().forEach(t=>t.enabled=!muted);$('muteBtn').classList.toggle('on',!muted);$('muteBtn').classList.toggle('off',muted);if(muted)stopRec();else startRec()};
+$('kbBtn').onclick=()=>{$('typer').classList.toggle('show');$('txt').focus()};
+const sendTxt=()=>{const v=$('txt').value.trim();if(!v||!sessionId)return;$('txt').value='';
+  if(LIVE.on){bubble('you',esc(v));liveSend({type:'response.cancel'});liveSay(v);setState('thinking');return}
+  if(state==='speaking'){interrupted=true;stopVoice();heard=v;voiced=true;return}
+  if(state==='listening'){heard='';interim='';if(liveB){liveB.remove();liveB=null}finishTurn(v)}};
+$('send').onclick=sendTxt;$('txt').onkeydown=e=>{if(e.key==='Enter')sendTxt()};
+$('gear').onclick=()=>$('sheet').classList.add('open');$('closeSheet').onclick=()=>$('sheet').classList.remove('open');
+
+/* ================= FRAME LOOP ================= */
+const JAW=[0,0,.2],ARMS=[[0.35,0,-0.92],[0.35,0,0.92]];
+const expr={smile:0,blinkT:2,blink:0,brow:0,s:0,hy:0,hp:0,ht:0,bodyYaw:0};
+let mouthOpen=0,mouthShape=0,herLv=0,youLv=0,simPh=0,behindT=0;
+const q=new THREE.Quaternion(),e3=new THREE.Euler(),camW=new THREE.Vector3(),camL=new THREE.Vector3(),Y=new THREE.Vector3(0,1,0),tmpQ=new THREE.Quaternion(),lookQ=new THREE.Matrix4();
+function resize(){if(renderer.xr.isPresenting)return;renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+const clock=new THREE.Clock();
+renderer.setAnimationLoop((time,frame)=>{
+  const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+  // ---- camera / placement
+  if(renderer.xr.isPresenting&&frame){
+    const refS=renderer.xr.getReferenceSpace();
+    const vp=frame.getViewerPose(refS);
+    if(!vp||vp.emulatedPosition){lost+=dt;if(lost>.8)placeHint('Трекинг потерян — поводи телефоном, больше света')}else if(lost>0){lost=0;placeHint(placed?'':'Наведи на пол и тапни — поставлю Киру')}
+    if(hitSrc&&!placed){const res=frame.getHitTestResults(hitSrc);
+      if(res.length){lastHit=res[0];const pose=res[0].getPose(refS);
+        _rs.set(pose.transform.position.x,pose.transform.position.y,pose.transform.position.z);
+        if(!reticle.visible){reticle.position.copy(_rs);placeHint('Тапни — поставлю Киру сюда')}else reticle.position.lerp(_rs,Math.min(1,dt*14));
+        reticle.visible=true;reticle.matrix.compose(reticle.position,_rq.identity(),_v.set(1,1,1));
+        reticle.material.opacity=.6+.3*Math.sin(t*5);
+        hitT+=dt;if(!everPlaced&&hitT>1.6)placeKira(); // first time: she just appears on the floor
+      }else{reticle.visible=false;hitT=0;lastHit=null}}
+    if(placed&&needAnchor){needAnchor=false;
+      if(frame.createAnchor&&typeof XRRigidTransform!=='undefined'){try{const pp=kira.position;frame.createAnchor(new XRRigidTransform({x:pp.x,y:pp.y,z:pp.z}),refS).then(a=>{if(placed&&!anchor)anchor=a;else a.delete()}).catch(()=>{})}catch(e){}}}
+    if(placed&&anchor&&frame.trackedAnchors&&frame.trackedAnchors.has(anchor)){
+      const ap=frame.getPose(anchor.anchorSpace,refS);
+      if(ap){const tp=ap.transform.position;_rs.set(tp.x,tp.y,tp.z);kira.position.lerp(_rs,Math.min(1,dt*10))}}
+    renderer.xr.getCamera().getWorldPosition(camW);
+  }else{
+    const s=kira.scale.x;const h=view.camH;
+    const tq=new THREE.Quaternion().setFromAxisAngle(Y,view.theta);
+    camera.position.set(0,h,view.dist).applyQuaternion(tq);
+    if(view.gyro&&view.calib){camera.quaternion.copy(tq).multiply(view.calib).multiply(view.gq)}
+    else{ // no gyro: keep her framed (look at chest height of her current size)
+      lookQ.lookAt(camera.position,new THREE.Vector3(0,Math.min(h,1.15*s+.1),0),Y);camera.quaternion.setFromRotationMatrix(lookQ);
+    }
+    camW.copy(camera.position);
+  }
+  // ---- distance, walking around, reactions
+  if(girl.ready&&placed){
+    kira.updateMatrixWorld();camL.copy(camW);kira.worldToLocal(camL);
+    const s=kira.scale.x;const headH=girl.head.y;
+    const dx=camL.x*s,dz=camL.z*s,flat=Math.hypot(dx,dz);
+    $('dist').textContent=(flat<1?Math.round(flat*100)+' см':flat.toFixed(1)+' м');
+    const ang=Math.atan2(camL.x,camL.z); // where you are relative to her nose (0 = in front)
+    if(flat<.55)react('near');else if(flat>4.2)react('far');
+    const rel=Math.atan2(Math.sin(ang-expr.bodyYaw),Math.cos(ang-expr.bodyYaw)); // you relative to where her body faces
+    if(Math.abs(rel)>2.2){behindT+=dt;if(behindT>.45)react('behind')}else behindT=0;
+    // she turns her body to face you if you walk around — after a beat, like a person would
+    if(Math.abs(rel)>.75){expr.turnT=(expr.turnT||0)+dt;if(expr.turnT>.9)expr.bodyYaw+=Math.sign(rel)*Math.min(Math.abs(rel)-.6,dt*1.6)}else expr.turnT=0;
+    girl.root.rotation.y=expr.bodyYaw;
+    // head looks at you (relative to her new body yaw)
+    const relYaw=Math.atan2(Math.sin(ang-expr.bodyYaw),Math.cos(ang-expr.bodyYaw));
+    expr.lookYaw=THREE.MathUtils.clamp(relYaw,-1,1)*.75;
+    expr.lookPitch=THREE.MathUtils.clamp(Math.atan2(camL.y-headH,Math.max(.3,Math.hypot(camL.x,camL.z))),-.5,.5);
+  }
+  // ---- audio levels -> face
+  let hl=AC?rms(herAn,herData):0;if(LIVE.an)hl=Math.max(hl,rms(LIVE.an,LIVE.anData)*1.3);
+  if(speaking.sim){simPh+=dt*(9+Math.sin(t*1.7)*3);hl=Math.max(hl,Math.max(0,Math.sin(simPh))*(.6+.4*Math.sin(t*3.1))*.16+(speaking.bump?.06:0));speaking.bump=0}
+  herLv+=(hl-herLv)*Math.min(1,dt*18);
+  youLv+=(((state==='listening'&&!muted)?rms(micAn,micData):0)-youLv)*Math.min(1,dt*18);
+  if(girl.ready){
+    const target=Math.min(1,herLv*5.5);mouthOpen+=(target-mouthOpen)*Math.min(1,dt*22);
+    mouthShape+=((Math.sin(t*7.3)+Math.sin(t*4.1))*.5-mouthShape)*Math.min(1,dt*6);
+    setMorph('V_Open',mouthOpen*.75);setMorph('V_Wide',Math.max(0,mouthShape)*mouthOpen*.6);setMorph('V_Tight_O',Math.max(0,-mouthShape)*mouthOpen*.55);
+    const B=girl.bones;const rot=(b,x,y,z)=>{if(!b)return;q.setFromEuler(e3.set(x,y,z));b.quaternion.copy(b.userData.q0).multiply(q)};
+    const jaw=B.CC_Base_JawRoot;if(jaw){q.setFromEuler(e3.set(JAW[0]*mouthOpen,JAW[1]*mouthOpen,JAW[2]*mouthOpen));jaw.quaternion.copy(jaw.userData.q0).multiply(q)}
+    expr.blinkT-=dt;if(expr.blinkT<0){expr.blink=1;expr.blinkT=rand(1.8,5.2);if(Math.random()<.15)expr.blinkT=.18}
+    expr.blink=Math.max(0,expr.blink-dt*7);const bl=Math.sin(Math.min(1,expr.blink)*Math.PI);setMorph('Eye_Blink_L',bl);setMorph('Eye_Blink_R',bl);
+    const sm=state==='speaking'?expr.smile:(state==='listening'?.15:.08);expr.s+=(sm-expr.s)*dt*3;
+    setMorph('Mouth_Smile',expr.s*.7);setMorph('Cheek_Raise_L',expr.s*.4);setMorph('Cheek_Raise_R',expr.s*.4);
+    const br=state==='listening'?.3+youLv*3:(state==='thinking'?.6:0);expr.brow+=(Math.min(1,br)-expr.brow)*dt*4;
+    setMorph('Brow_Raise_Left',expr.brow*.6);setMorph('Brow_Raise_Right',expr.brow*.45);
+    const br2=Math.sin(t*1.3);
+    rot(B.CC_Base_L_Upperarm,ARMS[0][0],ARMS[0][1]+br2*.01,ARMS[0][2]);rot(B.CC_Base_R_Upperarm,ARMS[1][0],ARMS[1][1]-br2*.01,ARMS[1][2]);
+    rot(B.CC_Base_Spine02,br2*.012,0,0);rot(B.CC_Base_Waist,0,Math.sin(t*.4)*.03,Math.sin(t*.55)*.015);
+    const nod=state==='speaking'?Math.sin(t*5.2)*herLv*.5:0,tilt=state==='listening'?.07:(state==='thinking'?-.1:0);
+    expr.hy+=((expr.lookYaw||0)+Math.sin(t*.7)*.04-expr.hy)*dt*3;
+    expr.hp+=(-(expr.lookPitch||0)+nod+Math.sin(t*.9)*.02-expr.hp)*dt*3;
+    expr.ht+=(tilt-expr.ht)*dt*2;
+    rot(B.CC_Base_NeckTwist01,expr.hp*.4,expr.hy*.4,expr.ht*.4);rot(B.CC_Base_Head,expr.hp*.6,expr.hy*.6,expr.ht*.6);
+    for(const k in girl.mats){const m=girl.mats[k];if(m.userData.glow)m.emissiveIntensity=.45+herLv*4}
+  }
+  renderer.render(scene,camera);
+});
+
+/* ================= BOOT ================= */
+const bar=$('loadBar');
+try{await loadModel(p=>bar.style.width=Math.round(p*100)+'%');$('goBtn').disabled=false;$('goBtn').textContent=XR_OK?'Открыть AR-камеру':'Открыть камеру';
+  if(IOS&&QL_OK){$('qlBtn').hidden=false;setTimeout(()=>prepUSDZ().catch(e=>console.warn('usdz',e)),1500)}}
+catch(e){console.error(e);$('goBtn').textContent='Модель не загрузилась';$('startErr').textContent=String(e.message||e)}
+setMode('');
+window.__app={go,closeAll,think,P,view,kira,girl,react,state:()=>state,prepUSDZ,bakeKira};
+window.RESULT_READY=true;
+</script>
+</body>
+</html>
