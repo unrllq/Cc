@@ -76,6 +76,18 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sy
 /* reticle hint for AR */
 .placehint{position:absolute;left:50%;top:50%;transform:translate(-50%,60px);padding:10px 16px;border-radius:18px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-size:14px;pointer-events:none}
 
+/* scanning overlay */
+.scan{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .45s}
+.scan.on{opacity:1}
+.scan .grid{position:absolute;left:-20%;right:-20%;bottom:-10%;height:70%;background-image:linear-gradient(rgba(255,255,255,.5) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(255,255,255,.5) 1.5px,transparent 1.5px);background-size:44px 44px;transform:perspective(500px) rotateX(62deg);transform-origin:50% 100%;-webkit-mask-image:radial-gradient(60% 70% at 50% 100%,#000 20%,transparent 75%);mask-image:radial-gradient(60% 70% at 50% 100%,#000 20%,transparent 75%);animation:gridmove 2.4s linear infinite}
+.scan .line{position:absolute;left:0;right:0;height:120px;top:-120px;background:linear-gradient(180deg,transparent,rgba(191,90,242,.18) 70%,rgba(230,200,255,.9) 99%,transparent);animation:sweep 2.2s cubic-bezier(.45,0,.55,1) infinite}
+.scan .lbl{position:absolute;left:50%;top:42%;transform:translateX(-50%);text-align:center;width:min(86vw,360px)}
+.scan .lbl b{display:block;font-size:22px;font-weight:600;letter-spacing:-.02em;text-shadow:0 2px 20px rgba(0,0,0,.7)}
+.scan .lbl span{display:block;margin-top:6px;font-size:14px;opacity:.75;text-shadow:0 1px 12px rgba(0,0,0,.8)}
+.scan .lbl i{display:block;margin:14px auto 0;width:140px;height:3px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
+.scan .lbl i::after{content:"";display:block;height:100%;width:var(--pr,8%);background:#fff;border-radius:3px;transition:width .25s}
+@keyframes sweep{0%{transform:translateY(0)}100%{transform:translateY(calc(100vh + 240px))}}
+@keyframes gridmove{0%{background-position:0 0}100%{background-position:0 44px}}
 /* start screen */
 .start{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;justify-content:flex-end;padding:0 max(22px,env(safe-area-inset-right,0px)) calc(28px + var(--safeB)) max(22px,env(safe-area-inset-left,0px));background:radial-gradient(120% 70% at 50% 30%,#2a1840 0%,#0b0812 55%,#000 100%);transition:opacity .5s}
 .start.hide{opacity:0;pointer-events:none}
@@ -120,6 +132,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sy
     <button class="rbtn" id="gear" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
   </div>
   <div class="toast" id="hint"></div>
+  <div class="scan" id="scan"><div class="grid"></div><div class="line"></div><div class="lbl"><b id="scanT">Сканирую пространство…</b><span id="scanS">медленно води телефоном по полу</span><i id="scanP"></i></div></div>
   <div class="placehint pass" id="placehint" hidden>Наведи на пол и тапни — поставлю Киру</div>
   <div class="fog pass"><i></i><i></i><i></i></div>
   <div class="bottom pass">
@@ -139,11 +152,9 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sy
   <div class="hero"><div class="orb"></div></div>
   <div class="tag" id="cap">проверяю телефон…</div>
   <h1>Кира</h1>
-  <p>AR-подруга для стёба и чернухи. Включаешь камеру — она стоит у тебя в комнате. Подходи, обходи, болтай голосом.</p>
+  <p>AR-подруга для стёба и чернухи. Жмёшь кнопку — сканируешь комнату, и она встаёт у тебя на полу. Подходи, обходи, болтай голосом.</p>
   <div class="load"><i id="loadBar"></i></div>
   <button class="b1" id="goBtn" disabled>Загрузка…</button>
-  <button class="b2" id="qlBtn" hidden>На пол в AR (iPhone)</button>
-  <button class="b2" id="noCamBtn">Без камеры</button>
   <a id="qlLink" rel="ar" href="#" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0"><img alt="" width="1" height="1" src="data:image/gif;base64,R0lGODlhAQABAAAAACw="></a>
   <div class="err" id="startErr"></div>
 </div>
@@ -443,7 +454,7 @@ $('sizeSel').addEventListener('change',applySize);applySize();
 let viewMode='none',xrSession=null,hitSrc=null,placed=false,camStream=null;
 const view={theta:0,dist:2.6,camH:1.45,gyro:false,gq:new THREE.Quaternion(),calib:null,calibNeed:false};
 const XR_OK=!!(navigator.xr&&navigator.xr.isSessionSupported)&&await Promise.race([navigator.xr.isSessionSupported('immersive-ar').catch(()=>false),wait(2000).then(()=>false)]);
-$('cap').innerHTML=XR_OK?'<b>●</b> настоящий AR: она встанет на пол, можно ходить вокруг':(/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))?'<b>●</b> «На пол в AR» — стоит на полу по-настоящему · камера — болтать':'камера + гироскоп · свайп = обойти, щипок = подойти';
+$('cap').innerHTML=XR_OK?'<b>●</b> настоящий AR: она встанет на пол, можно ходить вокруг':(/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))?'<b>●</b> «На пол в AR» — стоит на полу по-настоящему · камера — болтать':'<b>●</b> камера + гироскоп · болтай голосом';
 
 // device orientation -> quaternion (same maths as three's old DeviceOrientationControls)
 const zee=new THREE.Vector3(0,0,1),qMinus=new THREE.Quaternion(-Math.sqrt(.5),0,0,Math.sqrt(.5)),eul=new THREE.Euler(),q0=new THREE.Quaternion();
@@ -492,18 +503,20 @@ async function startXR(){
   const viewer=await xrSession.requestReferenceSpace('viewer');
   hitSrc=await xrSession.requestHitTestSource({space:viewer});
   anchor=null;lastHit=null;hitT=0;everPlaced=false;
-  placed=false;kira.visible=false;placeHint('Медленно поводи камерой по полу…');$('placeBtn').hidden=false;$('lookBtn').hidden=true;
+  placed=false;kira.visible=false;placeHint('');scanUI(true,'Сканирую пространство…','медленно води телефоном по полу',.08);$('placeBtn').hidden=false;$('lookBtn').hidden=true;
   xrSession.addEventListener('select',()=>{if(!placed&&reticle.visible)placeKira()});
   xrSession.addEventListener('end',()=>{xrSession=null;hitSrc=null;anchor=null;if(viewMode==='xr')closeAll()});
   // taps on buttons must not also place her
   overlay.querySelectorAll('button,input,select,a').forEach(el=>el.addEventListener('beforexrselect',e=>e.preventDefault()));
 }
+function scanUI(on,t,sub,pr){const el=$('scan');el.classList.toggle('on',!!on);if(t)$('scanT').textContent=t;if(sub!=null)$('scanS').textContent=sub;if(pr!=null)$('scanP').style.setProperty('--pr',Math.round(pr*100)+'%')}
+let appear=1;function materialize(){appear=0}
 function placeHint(t){const h=$('placehint');if(!t){h.hidden=true;return}h.textContent=t;h.hidden=false}
 const _v=new THREE.Vector3(),_p=new THREE.Vector3(),_rq=new THREE.Quaternion(),_rs=new THREE.Vector3();
 function placeKira(){
   _p.setFromMatrixPosition(reticle.matrix);kira.position.copy(_p);
   const c=renderer.xr.getCamera();c.getWorldPosition(_v);kira.rotation.set(0,Math.atan2(_v.x-_p.x,_v.z-_p.z),0);expr.bodyYaw=0;
-  kira.visible=true;placed=true;reticle.visible=false;placeHint('');
+  kira.visible=true;placed=true;reticle.visible=false;placeHint('');scanUI(false);materialize();
   // pin her to the real floor: ARCore keeps correcting the anchor, so she doesn't drift when you walk
   if(anchor){try{anchor.delete()}catch(e){}anchor=null}
   needAnchor=true; // created inside the next XR frame (anchors can only be made while a frame is active)
@@ -866,6 +879,12 @@ async function go(mode){
     document.body.style.background=mode==='none'?'radial-gradient(120% 80% at 50% 35%,#2a2433,#0c0b10 60%,#000)':'#000';view.theta=0;view.dist=innerWidth<innerHeight?2.9:2.4}
   $('dist').hidden=false;
   $('start').classList.add('hide');
+  if(mode==='cam'){ // no real AR on this phone: short scan pass over the camera, then she steps in
+    kira.visible=false;scanUI(true,'Сканирую пространство…','наведи камеру на пол',.1);
+    for(let i=1;i<=10;i++){await wait(190);scanUI(true,i>6?'Пол найден':null,null,.1+i*.09)}
+    scanUI(false);kira.visible=true;materialize();if(IOS&&QL_OK)toast('Кнопка с меткой — поставить по-настоящему на пол');
+  }
+  if(mode==='xr'){const t0=Date.now();while(!placed&&xrSession&&Date.now()-t0<25000)await wait(150);await wait(500)} // talk once she's actually standing there
   startSession();
 }
 function closeAll(){
@@ -878,8 +897,7 @@ function closeAll(){
   viewMode='none';$('start').classList.remove('hide');
 }
 $('goBtn').onclick=()=>go(XR_OK?'xr':'cam');
-$('noCamBtn').onclick=()=>go('none');
-$('qlBtn').onclick=()=>openQuickLook();
+
 $('endBtn').onclick=()=>{if(LIVE.on||state!=='idle'){/* say bye quickly offline */}closeAll()};
 $('muteBtn').onclick=()=>{if(!micStream)return;muted=!muted;micStream.getAudioTracks().forEach(t=>t.enabled=!muted);$('muteBtn').classList.toggle('on',!muted);$('muteBtn').classList.toggle('off',muted);if(muted)stopRec();else startRec()};
 $('kbBtn').onclick=()=>{$('typer').classList.toggle('show');$('txt').focus()};
@@ -904,15 +922,15 @@ renderer.setAnimationLoop((time,frame)=>{
   if(renderer.xr.isPresenting&&frame){
     const refS=renderer.xr.getReferenceSpace();
     const vp=frame.getViewerPose(refS);
-    if(!vp||vp.emulatedPosition){lost+=dt;if(lost>.8)placeHint('Трекинг потерян — поводи телефоном, больше света')}else if(lost>0){lost=0;placeHint(placed?'':'Наведи на пол и тапни — поставлю Киру')}
+    if(!vp||vp.emulatedPosition){lost+=dt;if(lost>.8){if(everPlaced)placeHint('Трекинг потерян — поводи телефоном, больше света');else scanUI(true,'Ищу пространство…','больше света и медленно поводи телефоном')}}else if(lost>0){lost=0;placeHint(placed||!everPlaced?'':'Наведи на пол и тапни — поставлю Киру')}
     if(hitSrc&&!placed){const res=frame.getHitTestResults(hitSrc);
       if(res.length){lastHit=res[0];const pose=res[0].getPose(refS);
         _rs.set(pose.transform.position.x,pose.transform.position.y,pose.transform.position.z);
-        if(!reticle.visible){reticle.position.copy(_rs);placeHint('Тапни — поставлю Киру сюда')}else reticle.position.lerp(_rs,Math.min(1,dt*14));
+        if(!reticle.visible){reticle.position.copy(_rs);if(everPlaced)placeHint('Тапни — поставлю Киру сюда')}else reticle.position.lerp(_rs,Math.min(1,dt*14));
         reticle.visible=true;reticle.matrix.compose(reticle.position,_rq.identity(),_v.set(1,1,1));
         reticle.material.opacity=.6+.3*Math.sin(t*5);
-        hitT+=dt;if(!everPlaced&&hitT>1.6)placeKira(); // first time: she just appears on the floor
-      }else{reticle.visible=false;hitT=0;lastHit=null}}
+        hitT+=dt;if(!everPlaced){scanUI(true,'Пол найден','держи телефон ровно…',.35+Math.min(1,hitT/.9)*.65);if(hitT>.9)placeKira()} // first time: she just appears on the floor
+      }else{reticle.visible=false;hitT=0;lastHit=null;if(!everPlaced)scanUI(true,'Сканирую пространство…','медленно води телефоном по полу',.08+((t*.15)%.25))}}
     if(placed&&needAnchor){needAnchor=false;
       if(frame.createAnchor&&typeof XRRigidTransform!=='undefined'){try{const pp=kira.position;frame.createAnchor(new XRRigidTransform({x:pp.x,y:pp.y,z:pp.z}),refS).then(a=>{if(placed&&!anchor)anchor=a;else a.delete()}).catch(()=>{})}catch(e){}}}
     if(placed&&anchor&&frame.trackedAnchors&&frame.trackedAnchors.has(anchor)){
@@ -929,6 +947,7 @@ renderer.setAnimationLoop((time,frame)=>{
     }
     camW.copy(camera.position);
   }
+  if(appear<1){appear=Math.min(1,appear+dt*1.9);const k=1+2.2*Math.pow(appear-1,3)+1.2*Math.pow(appear-1,2);const sz=+$('sizeSel').value||1;kira.scale.setScalar(sz*Math.max(.001,k));if(appear>=1)applySize()}
   // ---- distance, walking around, reactions
   if(girl.ready&&placed){
     kira.updateMatrixWorld();camL.copy(camW);kira.worldToLocal(camL);
@@ -979,11 +998,11 @@ renderer.setAnimationLoop((time,frame)=>{
 
 /* ================= BOOT ================= */
 const bar=$('loadBar');
-try{await loadModel(p=>bar.style.width=Math.round(p*100)+'%');$('goBtn').disabled=false;$('goBtn').textContent=XR_OK?'Открыть AR-камеру':'Открыть камеру';
-  if(IOS&&QL_OK){$('qlBtn').hidden=false;setTimeout(()=>prepUSDZ().catch(e=>console.warn('usdz',e)),1500)}}
+try{await loadModel(p=>bar.style.width=Math.round(p*100)+'%');$('goBtn').disabled=false;$('goBtn').textContent='Сканировать комнату';
+  if(IOS&&QL_OK)setTimeout(()=>prepUSDZ().catch(e=>console.warn('usdz',e)),1500)}
 catch(e){console.error(e);$('goBtn').textContent='Модель не загрузилась';$('startErr').textContent=String(e.message||e)}
 setMode('');
-window.__app={go,closeAll,think,P,view,kira,girl,react,state:()=>state,prepUSDZ,bakeKira};
+window.__app={go,closeAll,think,P,view,kira,girl,react,state:()=>state,prepUSDZ,bakeKira,scanUI};
 window.RESULT_READY=true;
 </script>
 </body>
