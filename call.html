@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KIRA · Squat Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06060a; --ink:#f2f1f6; --mute:rgba(242,241,246,.55); --line:rgba(255,255,255,.14);
+  --glass:rgba(255,255,255,.055); --glass2:rgba(255,255,255,.1);
+  --acc:#7cf9ff; --hot:#ff3da5; --ok:#3dff9a; --bad:#ff3b4f;
+  --glow:#7cf9ff; --panelW:400px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.grain{position:fixed;inset:0;pointer-events:none;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+
+/* HUD */
+.hud{position:fixed;left:max(22px,env(safe-area-inset-left,0px));right:max(22px,env(safe-area-inset-right,0px));top:calc(18px + env(safe-area-inset-top,0px));display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:3}
+.brand{font-family:Unbounded,system-ui,sans-serif;font-weight:800;font-size:14px;letter-spacing:.02em;display:flex;gap:10px;align-items:center}
+.brand i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--glow);box-shadow:0 0 14px var(--glow);transition:background .6s,box-shadow .6s}
+.brand small{font-family:'JetBrains Mono',monospace;font-weight:400;font-size:10px;color:var(--mute);letter-spacing:.12em;margin-left:4px}
+.hud .meta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--mute);text-align:right;line-height:1.7;text-transform:uppercase}
+.bigname,.orb,.blobs{display:none}
+
+/* progressive blur: the scene melts into frosted glass toward the bottom */
+.fog{position:fixed;left:0;right:0;bottom:0;height:min(58vh,560px);pointer-events:none;z-index:4}
+.fog i{position:absolute;inset:0;display:block}
+.fog i:nth-child(1){backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);mask:linear-gradient(to bottom,transparent 0%,#000 14%,#000 28%,transparent 42%)}
+.fog i:nth-child(2){backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);mask:linear-gradient(to bottom,transparent 14%,#000 28%,#000 42%,transparent 56%)}
+.fog i:nth-child(3){backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);mask:linear-gradient(to bottom,transparent 28%,#000 42%,#000 56%,transparent 70%)}
+.fog i:nth-child(4){backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);mask:linear-gradient(to bottom,transparent 42%,#000 56%,#000 70%,transparent 84%)}
+.fog i:nth-child(5){backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);mask:linear-gradient(to bottom,transparent 56%,#000 70%,#000 100%)}
+.fog i:nth-child(6){backdrop-filter:blur(40px) saturate(150%);-webkit-backdrop-filter:blur(40px) saturate(150%);mask:linear-gradient(to bottom,transparent 72%,#000 88%)}
+.fog::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,6,10,0) 0%,rgba(6,6,10,.25) 45%,rgba(6,6,10,.72) 100%)}
+
+/* overlay UI */
+.panel{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.panel>*{pointer-events:auto}
+.glass{display:contents}
+.ph-head{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.who{display:flex;gap:10px;align-items:baseline}
+.who h1{font-family:Unbounded,system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.06em;color:var(--ink)}
+.who p{font-size:10px}
+.ph-head #gear{display:none}
+.status{display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.status .st{display:flex;align-items:center;gap:8px}
+.status .dot{width:6px;height:6px;border-radius:50%;background:var(--mute)}
+.status.live .dot{background:var(--ok);box-shadow:0 0 10px var(--ok);animation:blink 1.2s infinite}
+.status.ring .dot{background:var(--acc);animation:blink .5s infinite}
+@keyframes blink{50%{opacity:.3}}
+.status .tm{color:var(--mute);font-variant-numeric:tabular-nums}
+
+/* subtitles instead of chat bubbles */
+.feed{width:min(640px,100%);height:150px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:8px;text-align:center;mask-image:linear-gradient(to bottom,transparent 0,#000 55%);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 55%)}
+.empty{color:var(--mute);font-size:13px;line-height:1.6;max-width:340px}
+.empty b{display:block;font-family:Unbounded,system-ui,sans-serif;font-weight:600;color:var(--ink);font-size:20px;letter-spacing:-.01em;margin-bottom:6px}
+.msg{max-width:100%;font-size:17px;line-height:1.4;animation:rise .45s cubic-bezier(.2,.8,.2,1) both;text-wrap:balance;flex:none}
+@keyframes rise{from{opacity:0;transform:translateY(10px);filter:blur(6px)}}
+.msg.her{color:var(--ink);font-weight:500;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.msg.you{color:rgba(242,241,246,.62);font-size:15px}
+.msg.you::before{content:"ты — ";font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ok)}
+.msg.sys{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.msg.live{opacity:.55;font-style:italic}
+.mode{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:0}.mode.on{color:#34c759}.mode.off{color:#ff9f0a}
+.msg.sys.card{color:#fff;background:rgba(52,199,89,.18);border:1px solid rgba(52,199,89,.5);border-radius:14px;padding:8px 14px;font-size:13px}
+.typing{display:inline-flex;gap:4px}.typing i{width:5px;height:5px;border-radius:50%;background:var(--ink);opacity:.5;animation:ty 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes ty{50%{transform:translateY(-3px);opacity:1}}
+
+.wave{width:min(360px,80%);height:22px;position:relative}
+.wave canvas{width:100%;height:100%;display:block}
+.wave .lbl{display:none}
+
+.controls{display:flex;align-items:center;justify-content:center;gap:14px}
+.icon-btn{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .25s,border-color .25s,transform .2s,color .25s,box-shadow .25s}
+.icon-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}.icon-btn:active{transform:scale(.92)}
+.icon-btn:focus-visible,.callbtn:focus-visible{outline:2px solid var(--glow);outline-offset:3px}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn.big{width:46px;height:46px}
+.icon-btn.live{border-color:rgba(61,255,154,.55);color:var(--ok);box-shadow:0 0 16px rgba(61,255,154,.25)}
+.icon-btn.off{border-color:rgba(255,59,79,.6);color:var(--bad)}
+.icon-btn[disabled]{opacity:.3;pointer-events:none}
+.callbtn{--w:64px;height:64px;width:var(--w);border-radius:40px;border:0;cursor:pointer;color:#06060a;background:var(--ink);display:flex;align-items:center;justify-content:center;gap:10px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.16em;transition:width .55s cubic-bezier(.7,0,.2,1),background .4s,color .4s,box-shadow .4s;overflow:hidden;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.callbtn svg{width:24px;height:24px;flex:none;transition:transform .55s cubic-bezier(.7,0,.2,1)}
+.callbtn .t{max-width:0;opacity:0;transition:max-width .55s,opacity .3s}
+.callbtn.ringing{--w:170px;background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 0 0 0 rgba(124,249,255,.45)}100%{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 0 0 22px rgba(124,249,255,0)}}
+.callbtn.on{--w:170px;background:var(--bad);color:#fff;box-shadow:0 8px 30px rgba(255,59,79,.35)}
+.callbtn.on svg,.callbtn.ringing svg{transform:rotate(135deg)}
+.callbtn.on .t,.callbtn.ringing .t{max-width:110px;opacity:1}
+
+.typer{display:none;width:min(440px,100%);gap:8px;align-items:center}
+.typer.show{display:flex}
+.typer input{flex:1;min-width:0;height:42px;border:0;border-bottom:1px solid rgba(255,255,255,.25);background:transparent;color:var(--ink);padding:0 4px;font:inherit;font-size:15px;outline:none}
+.typer input:focus{border-bottom-color:var(--glow)}
+.typer input::placeholder{color:var(--mute)}
+.typer button{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--ink);cursor:pointer;font-size:16px}
+
+.hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mute);text-align:center;letter-spacing:.08em;min-height:14px;margin-top:-4px}
+
+/* settings sheet */
+.drawer{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(420px,calc(100% - 32px));z-index:8;background:rgba(10,10,16,.78);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:22px 20px;display:flex;flex-direction:column;gap:14px;transform:translate(-50%,calc(100% + 40px));transition:transform .5s cubic-bezier(.7,0,.2,1);max-height:calc(100% - 32px);overflow:auto}
+.drawer.open{transform:translate(-50%,0)}
+.drawer h2{font-family:Unbounded,system-ui,sans-serif;font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.drawer h2 .icon-btn{width:34px;height:34px}
+.drawer label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;display:flex;flex-direction:column;gap:6px}
+.drawer input,.drawer select{height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--ink);padding:0 12px;font-family:Manrope,system-ui,sans-serif;font-size:13px;letter-spacing:0;text-transform:none;outline:none}
+.drawer select option{background:#111}
+.drawer p{font-size:12px;color:var(--mute);line-height:1.55}
+.drawer .row{display:flex;gap:8px}
+.drawer .row button{flex:1;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:transparent;color:var(--ink);font-weight:600;cursor:pointer;font-family:Manrope,system-ui,sans-serif}
+.drawer .chk{flex-direction:row;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font-family:Manrope,system-ui,sans-serif;font-size:13px;color:var(--ink)}
+.drawer .chk input{height:auto;width:18px}
+
+.loader{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:var(--bg);transition:opacity .8s}
+.loader.done{opacity:0;pointer-events:none}
+.loader div{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--mute);text-align:center}
+.loader b{display:block;font-family:Unbounded,system-ui,sans-serif;font-size:28px;letter-spacing:-.02em;color:var(--ink);margin-bottom:14px}
+.loader .bar{width:180px;height:2px;background:rgba(255,255,255,.1);margin:14px auto 0;overflow:hidden;border-radius:2px}
+.loader .bar i{display:block;height:100%;width:30%;background:var(--acc);animation:ld 1.1s infinite ease-in-out}
+@keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+
+@media (max-width:820px){
+  .hud .meta{display:none}
+  .feed{height:128px}
+  .msg{font-size:16px}
+  .who p{display:none}
+  .controls{gap:10px}
+  .icon-btn,.icon-btn.big{width:42px;height:42px}
+  #camBtn{display:none}
+  .callbtn{--w:58px;height:58px}.callbtn.on,.callbtn.ringing{--w:150px}
+  .hint{font-size:9px}
+}
+
+/* ===== iOS minimal override ===== */
+:root{--ok:#34c759;--bad:#ff3b30;--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",system-ui,sans-serif}
+html,body{font-family:var(--sys)}
+.brand{font-family:var(--sys);font-weight:600;font-size:15px;letter-spacing:-.01em;color:rgba(255,255,255,.9)}
+.brand i{width:7px;height:7px;box-shadow:none}
+.fog{height:min(66vh,640px)}
+.fog i:nth-child(1){backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.fog i:nth-child(2){backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.fog i:nth-child(3){backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.fog i:nth-child(4){backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%)}
+.fog i:nth-child(5){backdrop-filter:blur(48px) saturate(160%);-webkit-backdrop-filter:blur(48px) saturate(160%)}
+.fog i:nth-child(6){backdrop-filter:blur(72px) saturate(170%);-webkit-backdrop-filter:blur(72px) saturate(170%)}
+.fog::after{background:linear-gradient(to bottom,rgba(6,6,9,0) 0%,rgba(6,6,9,.28) 40%,rgba(6,6,9,.7) 100%)}
+.ph-head{font-family:var(--sys);letter-spacing:0;text-transform:none;gap:8px;flex-direction:column}
+.who h1{font-family:var(--sys);font-weight:600;font-size:17px;letter-spacing:-.02em}
+.who p{display:none}
+.status{font-family:var(--sys);font-size:13px;letter-spacing:-.01em;text-transform:none;padding:0;background:none;border:0;color:rgba(255,255,255,.6);gap:8px}
+.status .dot{width:6px;height:6px}
+.msg{font-family:var(--sys);font-size:19px;font-weight:500;letter-spacing:-.02em}
+.msg.you{font-size:15px;font-weight:400}
+.msg.you::before{content:"";}
+.msg.sys{font-family:var(--sys);font-size:12px;letter-spacing:0;text-transform:none;color:rgba(255,255,255,.4)}
+.empty b{font-family:var(--sys);font-weight:600;font-size:22px;letter-spacing:-.03em}
+.empty{font-size:14px;color:rgba(255,255,255,.5)}
+.wave{height:18px;opacity:.8}
+.icon-btn,.icon-btn.big{width:52px;height:52px;border:0;background:rgba(255,255,255,.12);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)}
+.icon-btn:hover{background:rgba(255,255,255,.2)}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn.live{background:rgba(255,255,255,.92);color:#000;box-shadow:none}
+.icon-btn.off{background:rgba(255,255,255,.12);color:var(--bad)}
+.callbtn{--w:68px;height:68px;font-family:var(--sys);font-size:15px;font-weight:600;letter-spacing:-.01em;background:var(--ok);color:#fff;box-shadow:none}
+.callbtn svg{width:28px;height:28px}
+.callbtn.ringing{--w:68px;background:rgba(255,255,255,.14);color:#fff;box-shadow:none;animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.28)}100%{box-shadow:0 0 0 18px rgba(255,255,255,0)}}
+.callbtn.on{--w:68px;background:var(--bad);box-shadow:none}
+.callbtn.on .t,.callbtn.ringing .t{max-width:0;opacity:0}
+.controls{gap:22px}
+#camBtn{display:none}
+.typer input{font-family:var(--sys);height:44px;border:0;border-radius:22px;background:rgba(255,255,255,.12);padding:0 18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.typer input:focus{background:rgba(255,255,255,.18)}
+.typer button{width:44px;height:44px;border:0;background:var(--ok);color:#fff}
+.hint{font-family:var(--sys);font-size:11px;letter-spacing:0;color:rgba(255,255,255,.38)}
+.drawer{font-family:var(--sys);border-radius:28px;background:rgba(28,28,32,.82)}
+.drawer h2,.drawer label,.drawer .row button,.drawer input,.drawer select{font-family:var(--sys);letter-spacing:0}
+.drawer label{text-transform:none;font-size:12px}
+.loader b,.loader div{font-family:var(--sys);letter-spacing:0}
+.loader .bar i{background:#fff}
+@media (max-width:820px){.controls{gap:16px}.icon-btn,.icon-btn.big{width:48px;height:48px}.callbtn,.callbtn.on,.callbtn.ringing{--w:64px;height:64px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+
+<div class="hud">
+  <div class="brand"><i id="brandDot"></i>Сквот</div>
+  <div class="meta" hidden><div id="clock"></div><div id="engineLbl"></div></div>
+</div>
+<div class="fog" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<div class="panel" id="panel">
+  <div class="ph-head">
+    <div class="who"><h1>КИРА</h1><p>ресепшен сквота</p></div>
+    <div class="mode" id="modeLbl"></div>
+    <div class="status" id="status"><div class="st"><span class="dot"></span><span id="stTxt">готова принять звонок</span></div><span class="tm" id="timer">00:00</span></div>
+  </div>
+  <div class="feed" id="feed" aria-live="polite"><div class="empty" id="empty"><b>Позвони Кире</b>Микрофон включится сам, как только она возьмёт трубку. Говори как с человеком.</div></div>
+  <div class="wave"><canvas id="waveCv"></canvas></div>
+  <div class="typer" id="typer"><input id="txt" placeholder="напиши ей…" autocomplete="off"><button id="send" aria-label="Отправить">→</button></div>
+  <div class="controls">
+    <button class="icon-btn" id="muteBtn" disabled title="Микрофон" aria-label="Микрофон"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <button class="icon-btn" id="kbBtn" title="Написать текстом" aria-label="Написать текстом"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 15h10"/></svg></button>
+    <button class="callbtn" id="callBtn" aria-label="Позвонить"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span class="t" id="callTxt">ПОЗВОНИТЬ</span></button>
+    <button class="icon-btn" id="gear" title="Голос и настройки" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    <button class="icon-btn" id="camBtn" title="Камера: кино / статично" aria-label="Режим камеры"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h12v10H3zM15 10l6-3v10l-6-3"/></svg></button>
+  </div>
+  <div class="hint" id="hint"></div>
+</div>
+<canvas id="orbCv" width="2" height="2" hidden></canvas>
+<div class="drawer" id="drawer">
+  <h2>Голос и связь <button class="icon-btn" id="closeDrawer" aria-label="Закрыть">✕</button></h2>
+  <label>Движок голоса
+    <select id="engineSel"><option value="auto">Авто (ElevenLabs → браузер)</option><option value="eleven">ElevenLabs (live)</option><option value="browser">Голос браузера</option></select>
+  </label>
+  <label>Распознавание речи
+    <select id="sttSel"><option value="auto">Авто (браузер → Scribe)</option><option value="browser">Только браузер</option><option value="scribe">ElevenLabs Scribe</option></select>
+  </label>
+  <label>ElevenLabs API key<input id="xiKey" type="password" placeholder="xi-…"></label>
+  <label>Voice ID<input id="xiVoice" placeholder="AjEpjoSyR9hKjsuhr6w8"></label>
+  <p>Дефолтный голос — Anastasiya Kim (низкий, с хрипотцой). Ключ хранится только в этом браузере.</p>
+  <div class="row"><button id="warm">Прогреть все фразы</button><button id="testVoice">Тест голоса</button></div>
+  <label>Мозг
+    <select id="brainSel"><option value="live">Живой (OpenAI Realtime)</option><option value="offline">Заготовки</option></select>
+  </label>
+  <label>Голос OpenAI
+    <select id="oaVoice"><option value="marin">Marin</option><option value="coral">Coral</option><option value="shimmer">Shimmer</option><option value="sage">Sage</option><option value="ballad">Ballad</option></select>
+  </label>
+  <label class="chk"><input type="checkbox" id="phoneFx" checked> Телефонный фильтр на голосе (заготовки)</label>
+  <label class="chk"><input type="checkbox" id="camFx" checked> Кинокамера (наезды и облёты)</label>
+  <p id="diag"></p>
+</div>
+
+<div class="loader" id="loader"><div><b>KIRA</b>соединяем с ресепшеном…<div class="bar"><i></i></div></div></div>
+
+<script>window.ASSETS={"glb": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/girl.glb.bin", "tex": {"eye_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/eye_d.jpg", "hair_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/hair_d.jpg", "hair_oA": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/hair_oA.jpg", "hair_oB": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/hair_oB.jpg", "hair_oC": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/hair_oC.jpg", "head_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/head_d.jpg", "s1001_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1001_d.jpg", "s1001_e": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1001_e.jpg", "s1001_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1001_mr.jpg", "s1002_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1002_d.jpg", "s1002_e": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1002_e.jpg", "s1002_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1002_mr.jpg", "s1003_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1003_d.jpg", "s1003_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1003_mr.jpg", "s1005_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1005_d.jpg", "s1005_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1005_mr.jpg", "s1011_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1011_d.jpg", "s1011_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1011_mr.jpg", "s1012_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1012_d.jpg", "s1012_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1012_mr.jpg", "s1013_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1013_d.jpg", "s1013_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1013_mr.jpg", "s1015_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1015_d.jpg", "s1015_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1015_mr.jpg", "s1021_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1021_d.jpg", "s1021_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1021_mr.jpg", "s1022_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1022_d.jpg", "s1022_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1022_mr.jpg", "s1023_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1023_d.jpg", "s1023_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1023_mr.jpg", "s1024_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1024_d.jpg", "s1024_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1024_mr.jpg", "s1025_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1025_d.jpg", "s1025_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1025_mr.jpg", "s1031_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1031_d.jpg", "s1031_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1031_mr.jpg", "s1032_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1032_d.jpg", "s1032_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1032_mr.jpg", "s1033_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1033_d.jpg", "s1033_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1033_mr.jpg", "s1034_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1034_d.jpg", "s1034_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1034_mr.jpg", "s1035_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1035_d.jpg", "s1035_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1035_mr.jpg", "s1041_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1041_d.jpg", "s1041_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1041_mr.jpg", "s1042_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1042_d.jpg", "s1042_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1042_mr.jpg", "s1043_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1043_d.jpg", "s1043_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1043_mr.jpg", "s1044_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1044_d.jpg", "s1044_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1044_mr.jpg", "s1045_d": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1045_d.jpg", "s1045_mr": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/s1045_mr.jpg", "scalp_o": "https://cdn.jsdelivr.net/gh/unrllq/Cc@92042f9c410e19376357fa464b88f79b708d288d/tex/scalp_o.jpg"}, "mat": {"A_BallsFine": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "B_TLong": {"map": "hair_d", "alpha": "hair_oB", "hair": 1}, "A_Balls": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_BallsUpper": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_BallsFineU": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_Float": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_SBlong": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_FFill": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_FFill2": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "B_Tshort": {"map": "hair_d", "alpha": "hair_oB", "hair": 1}, "C_Bangs": {"map": "hair_d", "alpha": "hair_oC", "hair": 1}, "C_Hair": {"map": "hair_d", "alpha": "hair_oC", "hair": 1}, "A_SHair": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "A_Sfine": {"map": "hair_d", "alpha": "hair_oA", "hair": 1}, "B_Neck": {"map": "hair_d", "alpha": "hair_oB", "hair": 1}, "Scalp": {"map": "hair_d", "alpha": "scalp_o", "hair": 1}, "Std_Skin_Head": {"map": "head_d", "rough": 0.55}, "Ga_Eye": {"map": "eye_d", "rough": 0.1}, "_001": {"map": "s1001_d", "mr": "s1001_mr", "em": "s1001_e"}, "_002": {"map": "s1002_d", "mr": "s1002_mr", "em": "s1002_e"}, "_003": {"map": "s1003_d", "mr": "s1003_mr"}, "_005": {"map": "s1005_d", "mr": "s1005_mr"}, "_011": {"map": "s1011_d", "mr": "s1011_mr"}, "_012": {"map": "s1012_d", "mr": "s1012_mr"}, "_013": {"map": "s1013_d", "mr": "s1013_mr"}, "_015": {"map": "s1015_d", "mr": "s1015_mr"}, "_021": {"map": "s1021_d", "mr": "s1021_mr"}, "_022": {"map": "s1022_d", "mr": "s1022_mr"}, "_023": {"map": "s1023_d", "mr": "s1023_mr"}, "_024": {"map": "s1024_d", "mr": "s1024_mr"}, "_025": {"map": "s1025_d", "mr": "s1025_mr"}, "_031": {"map": "s1031_d", "mr": "s1031_mr"}, "_032": {"map": "s1032_d", "mr": "s1032_mr"}, "_033": {"map": "s1033_d", "mr": "s1033_mr"}, "_034": {"map": "s1034_d", "mr": "s1034_mr"}, "_035": {"map": "s1035_d", "mr": "s1035_mr"}, "_041": {"map": "s1041_d", "mr": "s1041_mr"}, "_042": {"map": "s1042_d", "mr": "s1042_mr"}, "_043": {"map": "s1043_d", "mr": "s1043_mr"}, "_044": {"map": "s1044_d", "mr": "s1044_mr"}, "_045": {"map": "s1045_d", "mr": "s1045_mr"}}};window.VOICE_BANK={};</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+
+// Phrase bank — id: text. ids are stable so a baked audio bank can map onto them.
+const P = {
+  greet: [
+    ['g1','Алло. Сквот. Чё надо?'],
+    ['g2','Добрый день, это сквот, блядь. Слушаю вас. К сожалению.'],
+    ['g3','Да-да, сквот на связи. Говорите быстрее, у меня кофе стынет.'],
+    ['g4','Сквот, ресепшен. Я тут одна, все остальные съебались. Что вам?'],
+    ['g5','Алло, это сквот. Если вы из налоговой — нас нет.'],
+    ['g6','Ну наконец-то хоть кто-то позвонил. Сквот, слушаю. Чего хотели?'],
+    ['g7','Сквот, добрый день. Или вечер. Я уже, сука, не различаю. Что нужно?'],
+    ['g8','Вы позвонили в сквот. Ваш звонок очень важен для нас. Шучу. Чё надо?'],
+  ],
+  ack: [
+    ['a1','Понятно.'],['a2','Охуеть.'],['a3','Ага.'],['a4','Так.'],['a5','Мгм.'],['a6','Ну окей.'],['a7','Ясно-понятно.'],['a8','Ебать.'],
+  ],
+  book: [
+    ['b1','Короче, могу предложить вам термин. Завтра в шесть. Подходит?'],
+    ['b2','Давайте я вас просто запишу на термин, и вы сами всё увидите. Четверг, вечер, нормально?'],
+    ['b3','Слушайте, вместо этого давайте термин. Придёте, посмотрите, охуеете. В пятницу в семь — ок?'],
+    ['b4','Так, у меня есть окно в субботу днём. Берёте, или дальше будем пиздеть?'],
+    ['b5','Можем вам предложить вместо этого термин для посещения нашего, сука, прекрасного бизнеса. Завтра вечером устроит?'],
+    ['b6','Есть свободный термин послезавтра в четыре. Хватайте, пока я добрая.'],
+  ],
+  confirm: [
+    ['c1','Окей, записала. Ну, почти. Мне сейчас лень, но я запишу, честно.'],
+    ['c2','Всё, термин ваш. Не опаздывайте, а то отдам какому-нибудь мудаку.'],
+    ['c3','Отлично. Забронировала. Приходите, дверь железная, стучите громко.'],
+    ['c4','Записала. Пришлю подтверждение. Если не забуду. Скорее всего забуду.'],
+    ['c5','Окей, я посмотрю, что можно сделать. В смысле — уже сделала. Вы записаны.'],
+  ],
+  alt: [
+    ['n1','Не подходит? Ну блин. Тогда понедельник утром. Только не говорите, что вы не встаёте утром.'],
+    ['n2','Окей, капризный клиент. Воскресенье, после обеда?'],
+    ['n3','Хорошо, давайте так: вы говорите, когда вам удобно, а я делаю вид, что у нас свободно.'],
+    ['n4','Ладно. Другое окно есть только через неделю. Или сейчас, или страдайте.'],
+  ],
+  declineEnd: [
+    ['x1','Ну и ладно. Не очень-то и хотелось. Что-то ещё?'],
+    ['x2','Окей, без термина. Вы разбиваете мне сердце. Ещё вопросы?'],
+  ],
+  price: [
+    ['p1','Цены? Дорого. Но вам, может, скидку сделаю, если не будете ныть.'],
+    ['p2','Сколько стоит — зависит от того, как вы себя будете вести. Приходите на термин, там скажут.'],
+    ['p3','Прайс у нас как погода в Гамбурге: непредсказуемо и немного грустно.'],
+    ['p4','Бесплатно только сыр в мышеловке. И мои советы. Остальное — по прайсу.'],
+  ],
+  address: [
+    ['d1','Адрес пришлю сообщением. Там серая дверь, граффити и запах кофе. Не перепутаете.'],
+    ['d2','Мы в подвале. Ну, почти. Короче, найдёте по музыке.'],
+    ['d3','Где мы? Там, где вам будет хорошо. Ладно, точный адрес на сайте, внизу.'],
+  ],
+  hours: [
+    ['h1','Работаем, когда работаем. Обычно с двенадцати и до упора.'],
+    ['h2','Открыты каждый день, кроме тех, когда нам лень. Сегодня, кстати, не лень.'],
+    ['h3','С обеда и до ночи. Утром тут никого. Утро для слабаков.'],
+  ],
+  what: [
+    ['w1','Сквот — это место, где делают странные штуки за нормальные деньги. Что конкретно вас интересует?'],
+    ['w2','Мы — студия. Или бар. Или секта. Зависит от дня недели. Приходите, разберётесь.'],
+    ['w3','Короче, это креативное пространство. Звучит пафосно, выглядит как гараж, работает охуенно.'],
+  ],
+  bot: [
+    ['r1','Я? Робот? Обидно, вообще-то. Я просто очень уставшая девочка.'],
+    ['r2','Да, я бот. Но с характером. Как и вы, судя по голосу.'],
+    ['r3','Если я робот, то почему мне так хочется послать вас нахуй? Шучу. Почти.'],
+  ],
+  human: [
+    ['m1','Живой человек — это я. Остальные пошли за шаурмой и не вернулись.'],
+    ['m2','Менеджера нет. Есть я. Я лучше менеджера, поверьте.'],
+  ],
+  howru: [
+    ['k1','Как дела? Сижу на ресепшене в сквоте. Сами подумайте.'],
+    ['k2','Нормально. Жива, на связи, слегка заебалась. А у вас?'],
+  ],
+  hello: [
+    ['e1','Привет-привет. Ну, рассказывайте.'],
+    ['e2','Да здрасьте уже. Говорите, чего хотели.'],
+  ],
+  thanks: [
+    ['t1','Не за что. Серьёзно, я ничего не сделала.'],
+    ['t2','Пожалуйста. Обращайтесь. Только не часто.'],
+  ],
+  insult: [
+    ['i1','Ой, как грубо. Мне нравится. Продолжайте, но по делу.'],
+    ['i2','Сами вы такой. Ладно, чем помочь?'],
+    ['i3','Я записываю этот разговор. Нет, не записываю. Но вы всё равно ведите себя прилично.'],
+  ],
+  repeat: [
+    ['q1','Я говорю: могу предложить термин. Тер-мин. Запись. Приходите.'],
+    ['q2','Повторяю для особо одарённых: давайте я вас просто запишу.'],
+  ],
+  fallback: [
+    ['f1','Охуеть. Понятно. Ничего не поняла, но давайте я вас просто запишу на термин.'],
+    ['f2','Так. Интересно. Можем вам предложить вместо этого термин. Хотите?'],
+    ['f3','Ага. Записала. В смысле — услышала. Что-то ещё?'],
+    ['f4','Мгм. Это вы мне или в пустоту? Давайте конкретнее.'],
+    ['f5','Слушайте, я в этом не шарю. Но я шарю в записях на термин.'],
+    ['f6','Окей, я посмотрю. Потом. Сейчас мне лень. Ещё что-нибудь?'],
+    ['f7','Ничего не поняла, но очень интересно. Давайте ещё раз, только медленно.'],
+    ['f8','Звучит как проблема. Мы решаем проблемы. Иногда. Приходите на термин.'],
+  ],
+  silence: [
+    ['s1','Алло? Вы там уснули?'],
+    ['s2','Эй. Я вас не слышу. Или вы молчите, или у вас микрофон говно.'],
+    ['s3','Тишина в эфире. Это красиво, но мне за это не платят.'],
+  ],
+  deaf: [
+    ['u1','Чего? Не расслышала. Повторите, только громче.'],
+    ['u2','Связь говно, вас не слышно. Ещё раз, пожалуйста.'],
+    ['u3','Алло, вы шепчете? Скажите нормально.'],
+  ],
+  bye: [
+    ['y1','Всё, давайте, пока. Не скучайте.'],
+    ['y2','Окей, до связи. Если что — звоните. Но лучше не надо. Шучу. Пока.'],
+    ['y3','Пока-пока. Кладу трубку, пока вы не передумали.'],
+  ],
+  ghost: [
+    ['z1','Ну всё, вы меня заебали своим молчанием. Пока.'],
+  ],
+};
+// which intents may get a short "ack" in front
+const ACKABLE = new Set(['book','price','address','hours','what','alt','confirm']);
+
+
+const $=s=>document.getElementById(s);
+const rand=(a,b)=>a+Math.random()*(b-a);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ================= 3D ================= */
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.95;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x06060a);
+scene.fog=new THREE.FogExp2(0x06060a,0.05);
+const camera=new THREE.PerspectiveCamera(30,1,0.05,100);
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(renderer),0.04).texture;
+scene.environmentIntensity=0.35;
+
+// lights
+scene.add(new THREE.HemisphereLight(0x9fb4ff,0x120818,0.3));
+const key=new THREE.DirectionalLight(0xfff1e6,1.25);key.position.set(-1.6,2.6,2.4);scene.add(key);
+const rimC=new THREE.SpotLight(0x7cf9ff,40,12,0.6,0.6,1.4);rimC.position.set(2.2,2.6,-1.8);scene.add(rimC);
+const rimM=new THREE.SpotLight(0xff3da5,40,12,0.6,0.6,1.4);rimM.position.set(-2.4,2.2,-1.6);scene.add(rimM);
+const faceFill=new THREE.PointLight(0xffe0f0,1.2,4,1.6);scene.add(faceFill);
+
+// backdrop: soft studio gradient, nothing else
+const wallMat=new THREE.ShaderMaterial({depthWrite:false,uniforms:{t:{value:0},lv:{value:0},c1:{value:new THREE.Color(0x7cf9ff)},c2:{value:new THREE.Color(0xff3da5)}},
+ vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+ fragmentShader:`varying vec2 vUv;uniform float t,lv;uniform vec3 c1,c2;
+ void main(){vec2 p=vUv-vec2(.5,.56);float d=length(p*vec2(1.25,1.));
+  float halo=smoothstep(.62,0.,d);
+  vec3 base=mix(vec3(.0015,.0015,.0025),vec3(.009,.008,.013),halo);
+  vec3 tint=mix(c2,c1,.5+.35*sin(t*.15+vUv.x*2.))*halo*halo*(.012+lv*.018);
+  gl_FragColor=vec4(base+tint,1.);}`});
+const wall=new THREE.Mesh(new THREE.PlaneGeometry(16,10),wallMat);wall.position.set(0,2.2,-3.2);scene.add(wall);
+const floorMat={uniforms:{t:{value:0},lv:{value:0}}};
+const parts={rotation:{},position:{}};
+// post
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(512,512),0.35,0.5,0.92);composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// ---- model
+const girl={root:null,morphMeshes:[],bones:{},H:1.7,head:new THREE.Vector3(0,1.55,0),ready:false};
+function b64u8(d){const s=atob(d.slice(d.indexOf(',')+1));const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+async function loadModel(){
+  const src=window.ASSETS.glb;
+  const stream=src.startsWith('data:')?new Blob([b64u8(src)]).stream():(await fetch(src)).body;
+  const buf=await new Response(stream.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  const gltf=await new GLTFLoader().parseAsync(buf,'');
+  const root=gltf.scene;
+  // materials
+  const TL=new THREE.TextureLoader();const tc={};
+  const T=(n,srgb)=>{if(!n)return null;const k=n+(srgb?'s':'');if(tc[k])return tc[k];const t=TL.load(window.ASSETS.tex[n]);if(srgb)t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return tc[k]=t};
+  const MM=window.ASSETS.mat;
+  const made={};
+  const mk=(name)=>{
+    if(made[name])return made[name];
+    const d=MM[name];let m;
+    if(d&&d.hair){m=new THREE.MeshStandardMaterial({name,map:T(d.map,1),alphaMap:T(d.alpha),alphaTest:.38,side:THREE.DoubleSide,roughness:.55,metalness:.1,color:0xffffff});}
+    else if(d&&d.mr){m=new THREE.MeshStandardMaterial({name,map:T(d.map,1),roughnessMap:T(d.mr),metalnessMap:T(d.mr),roughness:1,metalness:1,envMapIntensity:1.2});
+      if(d.em){m.emissiveMap=T(d.em,1);m.emissive=new THREE.Color(0xffffff);m.emissiveIntensity=.6;m.userData.glow=1}}
+    else if(d){m=new THREE.MeshStandardMaterial({name,map:T(d.map,1),roughness:d.rough??.5,metalness:0});}
+    else if(/^Std_Skin|Std_Nails/.test(name)){m=new THREE.MeshStandardMaterial({name,color:0xd9a48e,roughness:.6});}
+    else if(name==='Std_Eyelash'){m=new THREE.MeshBasicMaterial({name,visible:false});}
+    else if(name==='Eyelashes_Transparency'){m=new THREE.MeshStandardMaterial({name,color:0x0b0b0e,roughness:.8,side:THREE.DoubleSide});}
+    else if(/Teeth/.test(name)){m=new THREE.MeshStandardMaterial({name,color:0xe9e3da,roughness:.3});}
+    else if(/Tongue/.test(name)){m=new THREE.MeshStandardMaterial({name,color:0xb75d68,roughness:.5});}
+    else if(name==='Rubber'){m=new THREE.MeshStandardMaterial({name,color:0x16161b,roughness:.7});}
+    else {m=new THREE.MeshStandardMaterial({name,color:0x2a2a33,roughness:.35,metalness:.8});}
+    return made[name]=m;
+  };
+  root.traverse(o=>{
+    if(o.isMesh){
+      o.material=Array.isArray(o.material)?o.material.map(x=>mk(x.name)):mk(o.material.name);
+      o.frustumCulled=false;
+      if(o.morphTargetDictionary&&Object.keys(o.morphTargetDictionary).length)girl.morphMeshes.push(o);
+    }
+  });
+  girl.mats=made;
+  // scale to height
+  root.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(root);
+  const h=box.max.y-box.min.y;const s=1.72/h;root.scale.multiplyScalar(s);
+  root.updateMatrixWorld(true);
+  const b2=new THREE.Box3().setFromObject(root);
+  root.position.y-=b2.min.y;root.position.x-=(b2.min.x+b2.max.x)/2;root.position.z-=(b2.min.z+b2.max.z)/2;
+  scene.add(root);root.updateMatrixWorld(true);
+  const names=['CC_Base_Head','CC_Base_NeckTwist01','CC_Base_NeckTwist02','CC_Base_Spine01','CC_Base_Spine02','CC_Base_Waist','CC_Base_Hip','CC_Base_JawRoot','CC_Base_L_Upperarm','CC_Base_R_Upperarm','CC_Base_L_Forearm','CC_Base_R_Forearm','CC_Base_L_Hand','CC_Base_R_Hand','CC_Base_L_Clavicle','CC_Base_R_Clavicle','CC_Base_L_Eye','CC_Base_R_Eye'];
+  root.traverse(o=>{if(names.includes(o.name)&&!girl.bones[o.name])girl.bones[o.name]=o});
+  for(const k in girl.bones){girl.bones[k].userData.q0=girl.bones[k].quaternion.clone()}
+  girl.bones.CC_Base_Head.getWorldPosition(girl.head);
+  girl.root=root;girl.H=1.72;girl.ready=true;
+}
+
+// morph helper
+function setMorph(name,v){for(const m of girl.morphMeshes){const i=m.morphTargetDictionary[name];if(i!==undefined)m.morphTargetInfluences[i]=v}}
+
+/* ================= CAMERA ================= */
+const cam={pos:new THREE.Vector3(0,1.2,6),look:new THREE.Vector3(0,1,0),tPos:new THREE.Vector3(),tLook:new THREE.Vector3(),fov:30,tFov:30};
+const mouse={x:0,y:0};addEventListener('pointermove',e=>{mouse.x=e.clientX/innerWidth*2-1;mouse.y=e.clientY/innerHeight*2-1});
+function shot(name,t){
+  const hd=girl.head;const cf=$('camFx').checked;
+  const S={
+    wide:[[0,hd.y-0.22,2.35],[0,hd.y-0.3,0],27],
+    ring:[[0.28,hd.y-0.1,1.75],[0,hd.y-0.18,0],27],
+    listen:[[0.18,hd.y+0.02,1.12],[0,hd.y-0.07,0],27],
+    speak:[[0.05,hd.y+0.02,0.88],[0,hd.y-0.03,0],26],
+    think:[[-0.42,hd.y+0.08,1.0],[0,hd.y-0.04,0],27],
+    bye:[[0,hd.y-0.25,2.6],[0,hd.y-0.3,0],28],
+  }[name];
+  if(!cf&&name!=='wide'){const w=[[0.1,hd.y-0.05,1.35],[0,hd.y-0.12,0],27];cam.tPos.set(...w[0]);cam.tLook.set(...w[1]);cam.tFov=w[2];return}
+  cam.tPos.set(...S[0]);cam.tLook.set(...S[1]);cam.tFov=S[2];
+  if(innerWidth<=820){const d=cam.tPos.clone().sub(cam.tLook);cam.tPos.copy(cam.tLook).addScaledVector(d,innerWidth<innerHeight?1.35:1.05)}
+}
+
+/* ================= AUDIO ================= */
+let AC=null,voiceBus=null,herAn=null,micAn=null,micStream=null,herData,micData;
+function initAudio(){
+  if(AC)return;
+  AC=new (window.AudioContext||window.webkitAudioContext)();
+  herAn=AC.createAnalyser();herAn.fftSize=1024;herData=new Uint8Array(herAn.fftSize);
+  const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=220;
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=4200;
+  const dry=AC.createGain();const wet=AC.createGain();
+  voiceBus=AC.createGain();
+  voiceBus.connect(dry);voiceBus.connect(hp);hp.connect(lp);lp.connect(wet);
+  dry.connect(herAn);wet.connect(herAn);herAn.connect(AC.destination);
+  const upd=()=>{const on=$('phoneFx').checked;wet.gain.value=on?1.25:0;dry.gain.value=on?0.15:1};upd();$('phoneFx').onchange=upd;
+}
+function tone(freq,dur,when=0,vol=.12){const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=freq;o.type='sine';const t=AC.currentTime+when;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.setValueAtTime(vol,t+dur-.03);g.gain.linearRampToValueAtTime(0,t+dur);o.connect(g);g.connect(herAn);o.start(t);o.stop(t+dur+.05)}
+function click(){const n=AC.sampleRate*.08,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*.5;const s=AC.createBufferSource();s.buffer=b;s.connect(herAn);s.start()}
+
+const pcm={sr:48000,buf:null,total:0,node:null};
+function grabWav(from,to){
+  if(!pcm.buf)return null;const L=pcm.buf.length;from=Math.max(from,to-L+1,0);const n=to-from;if(n<pcm.sr*.2)return null;
+  const ratio=pcm.sr/16000,m=Math.floor(n/ratio),out=new Int16Array(m);
+  for(let i=0;i<m;i++){const v=pcm.buf[(from+Math.floor(i*ratio))%L];out[i]=Math.max(-1,Math.min(1,v))*0x7fff}
+  const h=new DataView(new ArrayBuffer(44));const W=(o,str)=>{for(let i=0;i<str.length;i++)h.setUint8(o+i,str.charCodeAt(i))};
+  W(0,'RIFF');h.setUint32(4,36+m*2,true);W(8,'WAVE');W(12,'fmt ');h.setUint32(16,16,true);h.setUint16(20,1,true);h.setUint16(22,1,true);
+  h.setUint32(24,16000,true);h.setUint32(28,32000,true);h.setUint16(32,2,true);h.setUint16(34,16,true);W(36,'data');h.setUint32(40,m*2,true);
+  return new Blob([h.buffer,out.buffer],{type:'audio/wav'});
+}
+async function scribe(wav){
+  const fd=new FormData();fd.append('model_id','scribe_v1');fd.append('language_code','ru');fd.append('tag_audio_events','false');fd.append('file',wav,'turn.wav');
+  const r=await fetch('https://api.elevenlabs.io/v1/speech-to-text',{method:'POST',headers:{'xi-api-key':xi.key},body:fd});
+  if(!r.ok)throw new Error('Scribe '+r.status);
+  const j=await r.json();return (j.text||'').replace(/\([^)]*\)/g,'').trim();
+}
+async function startMic(){
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const src=AC.createMediaStreamSource(micStream);micAn=AC.createAnalyser();micAn.fftSize=1024;micData=new Uint8Array(micAn.fftSize);src.connect(micAn);
+    try{
+      pcm.sr=AC.sampleRate;pcm.buf=new Float32Array(pcm.sr*30);pcm.total=0;
+      const proc=AC.createScriptProcessor(4096,1,1);const mute=AC.createGain();mute.gain.value=0;
+      proc.onaudioprocess=e=>{const d=e.inputBuffer.getChannelData(0),b=pcm.buf,L=b.length;for(let i=0;i<d.length;i++)b[(pcm.total+i)%L]=d[i];pcm.total+=d.length};
+      src.connect(proc);proc.connect(mute);mute.connect(AC.destination);pcm.node=proc;
+    }catch(e){console.warn('pcm',e)}
+    return true;
+  }catch(e){console.warn('mic',e);return false}
+}
+function rms(an,data){if(!an)return 0;an.getByteTimeDomainData(data);let s=0;for(let i=0;i<data.length;i++){const v=(data[i]-128)/128;s+=v*v}return Math.sqrt(s/data.length)}
+
+/* ================= VOICE ENGINE ================= */
+const xi={key:LS.get('xiKey',''),voice:LS.get('xiVoice','AjEpjoSyR9hKjsuhr6w8'),cache:new Map(),dead:false};
+$('xiKey').value=xi.key;$('brainSel').value=LS.get('brain','live');$('brainSel').onchange=e=>LS.set('brain',e.target.value);$('oaVoice').value=LS.get('oaVoice','marin');$('oaVoice').onchange=e=>LS.set('oaVoice',e.target.value);$('sttSel').value=LS.get('stt','auto');$('sttSel').onchange=e=>LS.set('stt',e.target.value);$('xiVoice').value=xi.voice;$('engineSel').value=LS.get('engine','auto');
+$('xiKey').onchange=e=>{xi.key=e.target.value.trim();LS.set('xiKey',xi.key);xi.dead=false;xi.cache.clear();engineLabel()};
+$('xiVoice').onchange=e=>{xi.voice=e.target.value.trim()||'AjEpjoSyR9hKjsuhr6w8';LS.set('xiVoice',xi.voice);xi.cache.clear()};
+$('engineSel').onchange=e=>{LS.set('engine',e.target.value);engineLabel()};
+const BANK=window.VOICE_BANK||{};
+function engineMode(){const m=$('engineSel').value;if(m==='browser')return 'browser';if(xi.key&&!xi.dead)return 'eleven';if(m==='eleven'&&!xi.key)return 'browser';return 'browser'}
+function engineLabel(){const b=Object.keys(BANK).length;$('engineLbl').textContent='voice: '+(b?'baked eleven + ':'')+(engineMode()==='eleven'?'elevenlabs live':'browser tts')}
+engineLabel();
+async function xiFetch(id,text){
+  if(xi.cache.has(id))return xi.cache.get(id);
+  const p=(async()=>{
+    const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(xi.voice)}?output_format=mp3_44100_64`,{method:'POST',headers:{'xi-api-key':xi.key,'Content-Type':'application/json','Accept':'audio/mpeg'},body:JSON.stringify({text,model_id:'eleven_flash_v2_5',voice_settings:{stability:.38,similarity_boost:.8,style:.35,use_speaker_boost:true}})});
+    if(!r.ok)throw new Error('ElevenLabs '+r.status);
+    return await AC.decodeAudioData(await r.arrayBuffer());
+  })();
+  xi.cache.set(id,p);
+  try{return await p}catch(e){xi.cache.delete(id);throw e}
+}
+async function bankBuf(id){if(!BANK[id])return null;if(xi.cache.has('bank:'+id))return xi.cache.get('bank:'+id);const p=AC.decodeAudioData(b64u8(BANK[id]).buffer);xi.cache.set('bank:'+id,p);return p}
+let speaking={level:0,sim:false,src:null};
+function playBuf(buf){return new Promise(res=>{const s=AC.createBufferSource();s.buffer=buf;s.connect(voiceBus);s.onended=()=>{speaking.src=null;res()};speaking.src=s;s.start()})}
+let ruVoice=null;
+function pickRuVoice(){const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang));const pref=vs.find(v=>/milena|irina|svetlana|alena|dariya|female|жен/i.test(v.name))||vs.find(v=>/google/i.test(v.name))||vs[0];ruVoice=pref||null}
+if('speechSynthesis' in window){pickRuVoice();speechSynthesis.onvoiceschanged=pickRuVoice}
+let ttsUnlocked=false;
+function unlockTTS(){ // must run inside the click: iOS/Safari + Chrome need a gesture-bound first speak
+  if(!('speechSynthesis' in window)||ttsUnlocked)return;
+  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;u.lang='ru-RU';speechSynthesis.speak(u);ttsUnlocked=true}catch(e){}
+}
+function voicesReady(){return new Promise(r=>{if(speechSynthesis.getVoices().length){pickRuVoice();return r()}const t=setTimeout(r,1200);speechSynthesis.addEventListener('voiceschanged',()=>{clearTimeout(t);pickRuVoice();r()},{once:true})})}
+async function browserSay(text){
+  if(!('speechSynthesis' in window)){speaking.sim=true;await wait(Math.max(1200,text.length*62));speaking.sim=false;return}
+  await voicesReady();
+  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();await wait(120)}
+  speechSynthesis.resume();
+  const attempt=()=>new Promise(res=>{
+    const u=new SpeechSynthesisUtterance(text.replace(/—/g,','));u.lang='ru-RU';if(ruVoice)u.voice=ruVoice;u.rate=1.06;u.pitch=0.95;u.volume=1;
+    window.__utt=u; // keep a reference: Chrome GCs utterances and drops their events
+    let started=false,done=false;const fin=ok=>{if(done)return;done=true;speaking.sim=false;res(ok)};
+    u.onstart=()=>{started=true;speaking.sim=true};u.onend=()=>fin(true);u.onerror=()=>fin(started);
+    u.onboundary=()=>{speaking.bump=1};
+    speechSynthesis.speak(u);
+    setTimeout(()=>{if(!started)fin(false)},1500); // never started -> report failure
+    setTimeout(()=>fin(true),Math.max(4000,text.length*120));
+  });
+  if(!(await attempt())&&!interrupted){speechSynthesis.cancel();await wait(150);if(interrupted)return;speechSynthesis.resume();await attempt()}
+}
+async function voice(id,text){
+  try{const b=await bankBuf(id);if(b)return playBuf(b)}catch(e){}
+  if(engineMode()==='eleven'){
+    try{const b=await xiFetch(id,text);return playBuf(b)}
+    catch(e){xi.dead=true;engineLabel();sys('ElevenLabs недоступен ('+e.message+') — перехожу на голос браузера')}
+  }
+  return browserSay(text);
+}
+function prewarm(list){if(engineMode()!=='eleven')return;for(const [id,t] of list)xiFetch(id,t).catch(()=>{})}
+$('warm').onclick=async()=>{initAudio();if(!xi.key){$('diag').textContent='Сначала вставь API key.';return}const all=Object.values(P).flat();let n=0;$('diag').textContent='Озвучиваю '+all.length+' фраз…';await Promise.all(all.map(([id,t])=>xiFetch(id,t).then(()=>{n++;$('diag').textContent=`Готово ${n}/${all.length}`}).catch(e=>{$('diag').textContent='Ошибка: '+e.message})))};
+$('testVoice').onclick=async()=>{initAudio();await AC.resume();const [id,t]=P.greet[Math.floor(Math.random()*P.greet.length)];voice(id,t)};
+
+/* ================= BRAIN ================= */
+const norm=s=>s.toLowerCase().replace(/ё/g,'е').replace(/[.,!?;:«»"']/g,' ').replace(/\s+/g,' ').trim();
+const RX={
+  bye:/(^|\s)(пока|до свидан|до связи|всего (хорошего|доброго)|бывай|отбой|кладу трубку|до встречи)/,
+  repeat:/(повтор|не понял|не поняла|не расслыш|еще раз|чего\??$|^что\??$|^а\??$)/,
+  no:/(^|\s)(нет|неа|не подходит|не могу|не удобно|неудобно|другое время|другой день|позже|не хочу|не устраивает|не надо)/,
+  yes:/(^|\s)(да|ага|угу|ок|окей|окэй|давай|давайте|конечно|хорошо|подходит|го|норм|нормально|согласен|согласна|отлично|супер|устраивает|можно|запиши|записывай|бронируй)(\s|$)/,
+  price:/(цен|стоит|стоимость|сколько|прайс|деньг|бесплат|дорог|оплат|евро|рубл|бабки|скидк)/,
+  address:/(адрес|где вы|где находит|где это|куда (ехать|идти|приходить)|как (доехать|добраться|найти|пройти)|метро|улиц|район|локаци)/,
+  hours:/(работаете|часы работ|открыт|закрыт|во сколько|график|выходн|до скольки|с какого)/,
+  bot:/(робот|(^|\s)бот(\s|$)|нейросет|(^|\s)ии(\s|$)|искусствен|ты живая|ты настоящ|ты человек|программа)/,
+  human:/(оператор|менеджер|живого|начальник|директор|администратор|позовите|соедините)/,
+  what:/(что (это|за место|у вас|вы делаете|такое)|чем (вы )?занимает|кто вы|что за сквот|услуг|что предлагаете|что есть)/,
+  howru:/(как дела|как ты|как поживаешь|как сама|как настроение)/,
+  thanks:/(спасибо|благодар|спс|сенкс)/,
+  book:/(запис|брон|термин|столик|прийти|зайти|приду|придем|посетить|посещ|встреч|когда можно|свободн|окошк|окно|хочу|можно ли|мне нужн|интересует|завтра|сегодня|понедельник|вторник|сред[ау]|четверг|пятниц|суббот|воскрес|вечер|утр)/,
+  insult:/(^|\s)(сук|бля|нахуй|нахер|нахрен|ху[йеяю]|пизд|дура|идиот|тупая|ебан|ебат|еба|мудак|отстой|говн|заткн)/,
+  hello:/(привет|здравств|добрый|алло|хай|салют|здарова|хэй)/,
+};
+const brain={offer:false,booked:false,fb:0,silences:0,recent:[]};
+function pick(cat){
+  const arr=P[cat];let c=arr.filter(x=>!brain.recent.includes(x[0]));if(!c.length)c=arr;
+  const x=c[Math.floor(Math.random()*c.length)];brain.recent.push(x[0]);if(brain.recent.length>14)brain.recent.shift();return x;
+}
+function think(raw){
+  const t=norm(raw);const has=k=>RX[k].test(t);const L=[];let hang=false;
+  const ack=()=>{if(ACKABLE.has(intent)&&Math.random()<.45)L.push(pick('ack'))};
+  let intent=null;
+  if(!t){intent='deaf'}
+  else if(has('bye'))intent='bye';
+  else if(has('repeat')&&t.length<24)intent='repeat';
+  else if(brain.offer&&has('no'))intent='alt';
+  else if(brain.offer&&has('yes'))intent='confirm';
+  else for(const k of ['hours','price','address','bot','human','what','howru','thanks','book','yes','no','hello','insult']){if(has(k)){intent=k;break}}
+  if(!intent)intent='fallback';
+  const swore=has('insult')&&intent!=='insult';
+  if(swore&&Math.random()<.6)L.push(['a8','Ебать.']);
+  switch(intent){
+    case 'deaf':L.push(pick('deaf'));break;
+    case 'bye':L.push(pick('bye'));hang=true;break;
+    case 'repeat':if(brain.last&&Math.random()<.5){L.push(brain.last)}else{L.push(pick('repeat'));brain.offer=true}break;
+    case 'alt':brain.altN=(brain.altN||0)+1;if(brain.altN>2){L.push(pick('declineEnd'));brain.offer=false;brain.altN=0}else{ack();L.push(pick('alt'));brain.offer=true}break;
+    case 'confirm':ack();L.push(pick('confirm'));brain.offer=false;brain.booked=true;brain.altN=0;break;
+    case 'yes':L.push(pick('book'));brain.offer=true;break;
+    case 'no':L.push(pick('declineEnd'));break;
+    case 'book':ack();if(brain.booked){L.push(pick('confirm'))}else{L.push(pick('book'));brain.offer=true}break;
+    case 'fallback':brain.fb++;if(brain.fb>=2&&!brain.booked){L.push(pick('ack'));L.push(pick('book'));brain.offer=true;brain.fb=0}else{const f=pick('fallback');L.push(f);if(/термин|запишу/.test(f[1]))brain.offer=true}break;
+    default:{ack();L.push(pick(intent));
+      // answer up to one more info question in the same phrase
+      const extra=['hours','price','address','what','bot','human'].find(k=>k!==intent&&has(k)&&!(intent==='hours'&&k==='price'));
+      if(extra)L.push(pick(extra));
+      if(/термин/.test(L[L.length-1][1]))brain.offer=true;}
+  }
+  if(intent!=='fallback')brain.fb=0;
+  if(!['alt','confirm','yes','book','fallback','repeat'].includes(intent)&&!/термин/.test(L[L.length-1][1]))brain.offer=false;
+  brain.last=L[L.length-1];
+  return {lines:L,hang,intent};
+}
+
+/* ================= CALL FLOW ================= */
+let state='idle',callT0=0,muted=false,timerIv=0;
+const feed=$('feed');
+function setState(s,label){
+  state=s;$('stTxt').textContent=label||{idle:'готова принять звонок',ringing:'идут гудки…',speaking:'говорит',listening:'слушает тебя',thinking:'думает… (нет)',ended:'звонок завершён'}[s];
+  const st=$('status');st.className='status'+(s==='ringing'?' ring':(['speaking','listening','thinking'].includes(s)?' live':''));
+  const glow={idle:'#7cf9ff',ringing:'#7cf9ff',speaking:'#ff3da5',listening:'#3dff9a',thinking:'#b48cff',ended:'#7cf9ff'}[s];
+  document.documentElement.style.setProperty('--glow',glow);
+  wallMat.uniforms.c1.value.set(glow);
+  shot({idle:'wide',ringing:'ring',speaking:'speak',listening:'listen',thinking:'think',ended:'bye'}[s]);
+}
+function bubble(cls,html){$('empty')?.remove();while(feed.children.length>5)feed.firstChild.remove();const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;feed.appendChild(d);feed.scrollTop=feed.scrollHeight;return d}
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function sys(t){bubble('sys',esc(t))}
+function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+
+let callId=0;
+let herLine='',prevHerLine='',interrupted=false;
+async function say(line,my){
+  if(my!==callId||interrupted)return;
+  setState('speaking');prevHerLine=herLine;herLine=line[1];
+  const b=bubble('her','');
+  // type text progressively while voice plays
+  const words=line[1].split(' ');let wi=0;const tyIv=setInterval(()=>{if(wi<words.length){b.textContent=words.slice(0,++wi).join(' ');feed.scrollTop=feed.scrollHeight}},Math.max(110,Math.min(260,2600/words.length)));
+  expr.smile=/шучу|охуе|прекрасн|добрая|нравится|сердце/i.test(line[1])?0.55:rand(0,.18);
+  await voice(line[0],line[1]);
+  clearInterval(tyIv);b.textContent=line[1];
+  await wait(rand(120,260));
+}
+async function speakLines(lines,my){for(const l of lines){if(my!==callId||interrupted)return;await say(l,my)}}
+function stopVoice(){if(speaking.src){try{speaking.src.stop()}catch(e){}}if('speechSynthesis' in window)speechSynthesis.cancel();speaking.sim=false}
+
+async function startCall(){
+  initAudio();await AC.resume();
+  interrupted=false;const my=++callId;brain.offer=false;brain.booked=false;brain.fb=0;brain.silences=0;
+  $('callBtn').className='callbtn ringing';$('callTxt').textContent='ОТМЕНА';
+  feed.innerHTML='';sys('вызов · сквот · линия 01');
+  setState('ringing');
+  const micOk=await startMic();
+  if(!micOk)sys(window.self!==window.top?'тут микрофон заблокирован — открой файл в Chrome, или пиши текстом':'нет доступа к микрофону — разреши его в браузере, или пиши текстом');
+  $('muteBtn').disabled=!micOk;
+  if(!micOk){$('typer').classList.add('show')}
+  const g=pick('greet');prewarm([g,...P.ack]);
+  // live brain (OpenAI Realtime) connects while the phone rings
+  let liveP=null,liveDone=false;
+  if(liveWanted()){setMode('подключаю живой режим…');liveP=liveConnect(my).then(()=>true).catch(e=>{LIVE.err=String(e.message||e);console.warn(e);return false}).finally(()=>{liveDone=true})}
+  const rings=2+Math.floor(Math.random()*2);
+  for(let i=0;i<rings+5;i++){
+    if(my!==callId)return;
+    if(i>=rings&&(!liveP||liveDone))break;
+    tone(425,1.0,0,.11);await wait(i>=rings-1&&(!liveP||liveDone)?1500:3400);
+  }
+  const liveOk=liveP?await liveP:false;
+  if(my!==callId){liveClose();return}
+  click();await wait(380);
+  callT0=performance.now();timerIv=setInterval(()=>$('timer').textContent=fmt(performance.now()-callT0),500);
+  $('callBtn').className='callbtn on';$('callTxt').textContent='ПОЛОЖИТЬ';
+  sys('кира взяла трубку');
+  if(liveOk&&!micStream)$('typer').classList.add('show');
+  if(liveOk){setMode('● живой режим · '+LIVE.model,'on');liveStart(my);return}
+  if(liveP){const why=liveWhy(LIVE.err);setMode('заготовки — '+why,'off');sys('⚠️ живой режим не подключился: '+why);sys('пока отвечаю заготовками')}
+  else setMode('заготовки','off');
+  callLive=true;startRec();micUI();
+  await wait(450);
+  await speakLines([g],my);
+  if(my!==callId)return;
+  listen(my,interrupted);
+}
+
+// ---- LIVE: OpenAI Realtime over WebRTC (speech in -> speech out, real answers)
+const LIVE={on:false,pc:null,dc:null,el:null,an:null,anData:null,model:'',err:'',hang:false,you:{},youLive:null,her:{},bookN:0};
+const TOKEN_URL='https://kira-voice-api.vercel.app/api/token';
+function liveWhy(e){
+  e=String(e||'');
+  if(/Failed to fetch|NetworkError|Load failed|CSP|blocked/i.test(e))return window.self!==window.top?'это окно блокирует сеть — скачай файл и открой его в Chrome':'нет связи с сервером ('+e+')';
+  return e||'неизвестная ошибка';
+}
+function setMode(t,cls){const m=$('modeLbl');if(!m)return;m.textContent=t;m.className='mode '+(cls||'')}
+function liveWanted(){return $('brainSel').value!=='offline'&&'RTCPeerConnection' in window}
+async function liveConnect(my){
+  const r=await fetch(TOKEN_URL+'?voice='+encodeURIComponent($('oaVoice').value),{method:'POST'});
+  if(!r.ok){let d='';try{const j=await r.json();d=JSON.stringify(j.error||j).slice(0,160)}catch(e){}throw new Error('сервер '+r.status+' '+d)}
+  const tok=await r.json();if(!tok.value)throw new Error('нет токена');
+  if(my!==callId)throw new Error('отменено');
+  const pc=new RTCPeerConnection();LIVE.pc=pc;
+  const el=document.createElement('audio');el.autoplay=true;el.playsInline=true;document.body.appendChild(el);LIVE.el=el;
+  pc.ontrack=e=>{const st=e.streams[0];el.srcObject=st;el.play().catch(()=>{});
+    try{const src=AC.createMediaStreamSource(st);LIVE.an=AC.createAnalyser();LIVE.an.fftSize=1024;LIVE.anData=new Uint8Array(1024);src.connect(LIVE.an)}catch(err){}};
+  if(micStream)micStream.getAudioTracks().forEach(t=>pc.addTrack(t,micStream));
+  else pc.addTransceiver('audio',{direction:'recvonly'}); // no mic: she still talks, you type
+  const dc=pc.createDataChannel('oai-events');LIVE.dc=dc;
+  dc.onmessage=e=>{try{onLive(JSON.parse(e.data),my)}catch(err){console.warn(err)}};
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  const a=await fetch('https://api.openai.com/v1/realtime/calls',{method:'POST',body:offer.sdp,headers:{Authorization:'Bearer '+tok.value,'Content-Type':'application/sdp'}});
+  if(!a.ok){const t=await a.text().catch(()=>'');throw new Error('openai '+a.status+' '+t.slice(0,160))}
+  await pc.setRemoteDescription({type:'answer',sdp:await a.text()});
+  await new Promise((res,rej)=>{if(dc.readyState==='open')return res();dc.onopen=()=>res();setTimeout(()=>rej(new Error('нет канала')),12000)});
+  LIVE.model=tok.model;
+}
+function liveSend(o){if(LIVE.dc&&LIVE.dc.readyState==='open')LIVE.dc.send(JSON.stringify(o))}
+function liveStart(my){
+  LIVE.on=true;LIVE.hang=false;LIVE.you={};LIVE.her={};LIVE.youLive=null;
+  micUI();setState('speaking');
+  hint('🎙 живой режим · '+LIVE.model+' · говори когда угодно, можно перебивать');
+  liveSend({type:'response.create',response:{instructions:'Ты только что сняла трубку. Поздоровайся одной короткой дерзкой фразой в своём стиле и спроси, чего человеку надо.'}});
+}
+function liveClose(){
+  LIVE.on=false;
+  try{LIVE.dc&&LIVE.dc.close()}catch(e){}try{LIVE.pc&&LIVE.pc.close()}catch(e){}
+  if(LIVE.el){LIVE.el.srcObject=null;LIVE.el.remove()}
+  LIVE.pc=LIVE.dc=LIVE.el=LIVE.an=null;
+}
+function youBubble(id){
+  if(LIVE.you[id])return LIVE.you[id];
+  let b=LIVE.youLive;LIVE.youLive=null;
+  if(!b||!b.isConnected)b=bubble('you live','');
+  b.dataset.t='';return LIVE.you[id]=b;
+}
+function onLive(ev,my){
+  if(my!==callId||!LIVE.on&&ev.type!=='session.created'&&ev.type!=='session.updated')return;
+  switch(ev.type){
+    case 'input_audio_buffer.speech_started':
+      if(state!=='speaking')setState('listening');
+      if(!LIVE.youLive||!LIVE.youLive.isConnected)LIVE.youLive=bubble('you live','<span class="typing"><i></i><i></i><i></i></span>');
+      break;
+    case 'input_audio_buffer.speech_stopped':setState('thinking');break;
+    case 'conversation.item.input_audio_transcription.delta':{const b=youBubble(ev.item_id);b.dataset.t+=ev.delta||'';b.textContent=b.dataset.t;feed.scrollTop=feed.scrollHeight;break}
+    case 'conversation.item.input_audio_transcription.completed':{const b=youBubble(ev.item_id);b.classList.remove('live');b.textContent=(ev.transcript||'').trim()||'🎤 (неразборчиво)';break}
+    case 'response.output_audio_transcript.delta':{
+      let b=LIVE.her[ev.response_id];if(!b){b=LIVE.her[ev.response_id]=bubble('her','');b.dataset.t='';expr.smile=rand(0,.25)}
+      b.dataset.t+=ev.delta||'';b.textContent=b.dataset.t;feed.scrollTop=feed.scrollHeight;
+      if(/шуч|ха|охуе|прекрасн|добрая/i.test(ev.delta||''))expr.smile=.55;
+      break}
+    case 'output_audio_buffer.started':setState('speaking');break;
+    case 'output_audio_buffer.stopped':case 'output_audio_buffer.cleared':
+      if(LIVE.hang){setTimeout(()=>{if(my===callId)endCall(true)},500);break}
+      setState('listening');break;
+    case 'response.done':
+      if(LIVE.hang&&!(ev.response&&ev.response.output||[]).some(o=>o.type==='message'))setTimeout(()=>{if(my===callId&&LIVE.hang)endCall(true)},2500);
+      break;
+    case 'response.function_call_arguments.done':liveTool(ev);break;
+    case 'error':console.warn('realtime',ev.error);if(ev.error&&!/cancel|no active response/i.test(ev.error.message||''))hint('ошибка: '+(ev.error.message||''));break;
+  }
+}
+function liveTool(ev){
+  let args={};try{args=JSON.parse(ev.arguments||'{}')}catch(e){}
+  let out={ok:true};
+  if(ev.name==='book_termin'){
+    const code='SQ-'+Math.floor(1000+Math.random()*9000);
+    const card=bubble('sys','');card.textContent='✓ термин · '+[args.name,args.day,args.time].filter(Boolean).join(' · ')+(args.purpose?' · '+args.purpose:'')+' · '+code;
+    card.classList.add('card');out={ok:true,code,saved:args};
+  }else if(ev.name==='end_call'){LIVE.hang=true;out={ok:true}}
+  liveSend({type:'conversation.item.create',item:{type:'function_call_output',call_id:ev.call_id,output:JSON.stringify(out)}});
+  if(ev.name!=='end_call')liveSend({type:'response.create'});
+}
+
+// ---- listening: SpeechRecognition + VAD
+const SRC=window.SpeechRecognition||window.webkitSpeechRecognition;
+let srStarted=false,srGotText=false,srLastErr='',srNetErr=0,vadOn=false,vadStart=0,vadLast=0,vadMs=0,segFrom=0,sttBusy=false,lastTick=0;
+let rec=null,recOn=false,heard='',interim='',lastAct=0,voiced=false,listenStart=0,liveB=null,srBroken=!SRC,noise=0.01,callLive=false,restartT=0;
+const wordsOf=t=>norm(t).split(' ').filter(w=>w.length>1);
+// true when what the mic heard is just Kira's own voice coming back from the speakers
+function isEcho(t){
+  const w=wordsOf(t);if(!w.length)return true;
+  const her=new Set([...wordsOf(herLine),...wordsOf(prevHerLine)].map(x=>x.slice(0,4)));
+  const hit=w.filter(x=>her.has(x.slice(0,4))).length;
+  return hit/w.length>=.5;
+}
+function showLive(){const txt=(heard+' '+interim).trim();if(!txt)return;if(!liveB)liveB=bubble('you live','');liveB.textContent=txt;feed.scrollTop=feed.scrollHeight}
+function makeRec(){
+  if(!SRC)return null;const r=new SRC();r.lang='ru-RU';r.continuous=true;r.interimResults=true;r.maxAlternatives=1;
+  r.onresult=e=>{let fin='',inte='';for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)fin+=x[0].transcript+' ';else inte+=x[0].transcript}
+    const now=performance.now();
+    srGotText=true;srNetErr=0;
+    if(state==='listening'){if(fin)heard+=fin;interim=inte;lastAct=now;voiced=true;showLive();return}
+    if(state==='speaking'||state==='thinking'){
+      const t=(fin+' '+inte).trim();
+      if(isEcho(t))return;                       // her own voice — ignore
+      if(wordsOf(t).length<2&&!fin)return;        // wait for a real word or two
+      // barge-in: user talks over her -> she shuts up and listens
+      interrupted=true;stopVoice();
+      heard=fin;interim=inte;lastAct=now;voiced=true;
+    }
+  };
+  r.onstart=()=>{srStarted=true};
+  r.onerror=e=>{
+    srLastErr=e.error;
+    if(e.error==='no-speech'||e.error==='aborted')return;
+    if(e.error==='network'&&++srNetErr<3)return;
+    srBroken=true;sttNotice();
+  };
+  r.onend=()=>{recOn=false;if(callLive&&!srBroken&&!muted){clearTimeout(restartT);restartT=setTimeout(()=>{try{r.start();recOn=true}catch(e){}},60)}};
+  return r;
+}
+const canScribe=()=>!!xi.key&&!!pcm.buf;
+function sttMode(){const m=$('sttSel').value;if(m==='scribe'&&canScribe())return 'scribe';if(m==='browser')return srBroken?'vad':'browser';if(!srBroken)return 'browser';return canScribe()?'scribe':'vad'}
+function sttNotice(){
+  const why=!SRC?'этот браузер не умеет распознавать речь':'браузер не распознаёт речь ('+(srLastErr||'нет ответа')+')';
+  hint(canScribe()?why+' · распознаю через ElevenLabs Scribe':why+' · открой в Chrome/Edge или вставь ключ ElevenLabs в настройках');
+}
+function startRec(){if(sttMode()==='scribe')return;if(srBroken||muted||!callLive)return;if(!rec)rec=makeRec();if(rec&&!recOn){try{rec.start();recOn=true}catch(e){}}}
+function micUI(){const b=$('muteBtn');b.classList.toggle('off',muted);b.classList.toggle('live',!muted&&!!micAn)}
+function hint(t){$('hint').textContent=t||''}
+function listen(my,keep){
+  if(my!==callId)return;
+  setState('listening');listenStart=performance.now();
+  if(keep){interrupted=false;showLive();lastAct=performance.now()}
+  else{heard='';interim='';voiced=false;liveB=null;lastAct=0}
+  startRec();
+  vadOn=false;vadMs=0;
+  if(muted)hint('микрофон выключен — пиши текстом');else if(!micAn)hint('микрофон недоступен — разреши доступ или пиши текстом');else if(sttMode()!=='browser')sttNotice();else hint('🎙 микрофон включён · можно перебивать');
+}
+function stopRec(){clearTimeout(restartT);if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false}}
+async function finishTurn(text){
+  const my=callId;heard='';interim='';voiced=false;interrupted=false;vadOn=false;vadMs=0;
+  if(liveB){liveB.classList.remove('live');liveB.textContent=text||'🎤 (неразборчиво)';liveB=null}else bubble('you',esc(text||'🎤 (неразборчиво)'));
+  setState('thinking');hint('');
+  const th=bubble('her','<span class="typing"><i></i><i></i><i></i></span>');
+  const plan=think(text);prewarm(plan.lines);
+  await wait(rand(380,850));th.remove();
+  brain.silences=0;
+  await speakLines(plan.lines,my);
+  if(my!==callId)return;
+  if(plan.hang&&!interrupted){await wait(300);return endCall(true)}
+  listen(my,interrupted);
+}
+// tick from render loop
+function listenTick(now){
+  const dt=lastTick?Math.min(250,now-lastTick):40;lastTick=now;
+  if(LIVE.on||state!=='listening'||sttBusy)return;
+  const lv=muted?0:rms(micAn,micData);
+  if(lv<noise*1.8)noise=noise*.995+lv*.005;
+  const talking=!!micAn&&!muted&&lv>Math.max(.016,noise*3);
+  if(talking){
+    if(!vadOn){vadOn=true;vadStart=now;vadMs=0;segFrom=Math.max(0,pcm.total-Math.floor(pcm.sr*.5))}
+    vadMs+=dt;vadLast=now;
+    if(vadMs>7000&&!(heard+interim).trim()){noise=lv/2.2;vadOn=false;vadMs=0;if(liveB&&liveB.querySelector('.typing')){liveB.remove();liveB=null}return} // steady hum, not a voice: recalibrate
+    if(vadMs>220&&!liveB){liveB=bubble('you live','<span class="typing"><i></i><i></i><i></i></span>')} // instant "I hear you"
+  }
+  const txt=(heard+' '+interim).trim();
+  const quiet=now-Math.max(lastAct,vadLast);
+  const mode=sttMode();
+  if(vadOn&&!talking&&now-vadLast>700&&vadMs<300&&!txt){vadOn=false;if(liveB&&!liveB.textContent.trim()){}if(liveB&&liveB.querySelector('.typing')){liveB.remove();liveB=null}} // a click or cough, not speech
+  if(mode==='browser'){
+    const srQuiet=now-lastAct;
+    if(txt&&srQuiet>1150&&(now-vadLast>600||srQuiet>2500)){vadOn=false;return finishTurn(txt)}
+    // VAD heard real speech but the browser recognizer returned nothing
+    if(!txt&&vadOn&&vadMs>=300&&now-vadLast>2200){
+      vadOn=false;if(!srGotText&&srStarted)srLastErr=srLastErr||'нет ответа';
+      if(canScribe())return transcribeTurn();
+      if(!srGotText){srBroken=true;sttNotice()}
+      return finishTurn('');
+    }
+  }else if(vadOn&&vadMs>=300&&now-vadLast>850){
+    vadOn=false;
+    if(mode==='scribe')return transcribeTurn();
+    return finishTurn('');
+  }
+  const typing=document.activeElement===$('txt')||$('txt').value.length>0;
+  if(typing||vadOn)listenStart=now;
+  if(!voiced&&!vadOn&&now-listenStart>11000){
+    const my=callId;brain.silences++;
+    (async()=>{
+      if(brain.silences>=3){await speakLines([pick('ghost')],my);if(!interrupted)return endCall(true);return listen(my,true)}
+      await speakLines([pick('silence')],my);listen(my,interrupted);
+    })();
+  }
+}
+setInterval(()=>listenTick(performance.now()),40); // VAD runs on its own clock, not the render loop
+async function transcribeTurn(){
+  const my=callId;sttBusy=true;
+  if(!liveB)liveB=bubble('you live','<span class="typing"><i></i><i></i><i></i></span>');
+  let text='';
+  try{const wav=grabWav(segFrom,pcm.total);if(wav)text=await scribe(wav)}catch(e){hint('Scribe: '+e.message)}
+  sttBusy=false;
+  if(my!==callId)return;
+  finishTurn(text);
+}
+async function endCall(byHer){
+  const my=++callId;callLive=false;interrupted=false;stopRec();liveClose();
+  if(speaking.src){try{speaking.src.stop()}catch(e){}}
+  if('speechSynthesis' in window)speechSynthesis.cancel();
+  clearInterval(timerIv);
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;micAn=null}
+  if(pcm.node){try{pcm.node.disconnect()}catch(e){}pcm.node=null;pcm.buf=null}
+  $('callBtn').className='callbtn';$('callTxt').textContent='ПОЗВОНИТЬ';$('muteBtn').disabled=true;$('muteBtn').classList.remove('live');
+  setState('ended');sys(byHer?'кира положила трубку':'звонок завершён · '+$('timer').textContent);hint('');
+  if(AC){for(let i=0;i<3;i++)tone(425,.32,i*.66,.09)}
+  await wait(2600);if(my===callId)setState('idle');
+}
+$('callBtn').onclick=()=>{if(state==='idle'||state==='ended'){unlockTTS();initAudio();try{const b=AC.createBuffer(1,1,22050),src=AC.createBufferSource();src.buffer=b;src.connect(AC.destination);src.start()}catch(e){}AC.resume();startCall()}else endCall(false)};
+$('muteBtn').onclick=()=>{muted=!muted;if(micStream)micStream.getAudioTracks().forEach(t=>t.enabled=!muted);micUI();if(muted){stopRec();hint('микрофон выключен — пиши текстом')}else{startRec();if(state==='listening')listen(callId,true)}};
+$('kbBtn').onclick=()=>{$('typer').classList.toggle('show');$('txt').focus()};
+const sendTxt=()=>{const v=$('txt').value.trim();if(!v)return;$('txt').value='';
+  if(LIVE.on){bubble('you',esc(v));liveSend({type:'response.cancel'});liveSend({type:'conversation.item.create',item:{type:'message',role:'user',content:[{type:'input_text',text:v}]}});liveSend({type:'response.create'});setState('thinking');return}
+  if(state==='speaking'){interrupted=true;stopVoice();heard=v;interim='';voiced=true;return}
+  if(state==='listening'){heard='';interim='';if(liveB){liveB.remove();liveB=null}finishTurn(v)}
+  else if(state==='idle'||state==='ended'){startCall().then(()=>{})}
+};
+$('send').onclick=sendTxt;$('txt').onkeydown=e=>{if(e.key==='Enter')sendTxt()};
+$('camBtn').onclick=()=>{$('camFx').checked=!$('camFx').checked;$('camBtn').classList.toggle('live',$('camFx').checked);shot({idle:'wide',ringing:'ring',speaking:'speak',listening:'listen',thinking:'think',ended:'bye'}[state])};$('camBtn').classList.add('live');
+$('gear').onclick=()=>$('drawer').classList.add('open');$('closeDrawer').onclick=()=>$('drawer').classList.remove('open');
+
+/* ================= RENDER LOOP ================= */
+const JAW=[0,0,.2];const ARMS=[[0.35,0,-0.92],[0.35,0,0.92],[0,0,0],[0,0,0]];
+const expr={smile:0,blinkT:2,blink:0,brow:0};
+const viz={her:new Float32Array(64),you:new Float32Array(64)};
+const wcv=$('waveCv'),wctx=wcv.getContext('2d'),ocv=$('orbCv'),octx=ocv.getContext('2d');
+let mouthOpen=0,mouthShape=0,herLv=0,youLv=0,simPh=0;
+const q=new THREE.Quaternion(),e3=new THREE.Euler();
+function resize(){
+  const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);composer.setSize(w,h);camera.aspect=w/h;
+  // subject sits in the upper part; the bottom melts into blur under the controls
+  camera.setViewOffset(w,h,0,h*(w<=820?.17:.12),w,h);
+  camera.updateProjectionMatrix();
+  const dw=wcv.clientWidth,dh=wcv.clientHeight;wcv.width=dw*2;wcv.height=dh*2;
+}
+addEventListener('resize',resize);
+const clock=new THREE.Clock();
+function frame(){
+  requestAnimationFrame(frame);
+  const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime,now=performance.now();
+  // audio levels
+  let hl=AC?rms(herAn,herData):0;
+  if(LIVE.an)hl=Math.max(hl,rms(LIVE.an,LIVE.anData)*1.3);
+  if(speaking.sim){simPh+=dt*(9+Math.sin(t*1.7)*3);const syl=Math.max(0,Math.sin(simPh))*(.6+.4*Math.sin(t*3.1));hl=Math.max(hl,syl*.16+(speaking.bump?.06:0));speaking.bump=0}
+  herLv+= (hl-herLv)*Math.min(1,dt*18);
+  const yl=(state==='listening'&&!muted)?rms(micAn,micData):0;youLv+=(yl-youLv)*Math.min(1,dt*18);
+  if(girl.ready){
+    // mouth
+    const target=window.__dbg&&__dbg.mouth!=null?__dbg.mouth:Math.min(1,herLv*5.5);
+    mouthOpen+=(target-mouthOpen)*Math.min(1,dt*22);
+    mouthShape+=((Math.sin(t*7.3)+Math.sin(t*4.1))*.5-mouthShape)*Math.min(1,dt*6);
+    setMorph('V_Open',mouthOpen*.75);
+    setMorph('V_Wide',Math.max(0,mouthShape)*mouthOpen*.6);
+    setMorph('V_Tight_O',Math.max(0,-mouthShape)*mouthOpen*.55);
+    setMorph('V_Explosive',mouthOpen<.08&&state==='speaking'?.25:0);
+    const jaw=girl.bones.CC_Base_JawRoot;const JA=(window.__dbg&&__dbg.jaw)||JAW;if(jaw){q.setFromEuler(e3.set(JA[0]*mouthOpen,JA[1]*mouthOpen,JA[2]*mouthOpen));jaw.quaternion.copy(jaw.userData.q0).multiply(q)}
+    // blink
+    expr.blinkT-=dt;if(expr.blinkT<0){expr.blink=1;expr.blinkT=rand(1.8,5.2);if(Math.random()<.15)expr.blinkT=.18}
+    expr.blink=Math.max(0,expr.blink-dt*7);const bl=Math.sin(Math.min(1,expr.blink)*Math.PI);
+    setMorph('Eye_Blink_L',bl);setMorph('Eye_Blink_R',bl);
+    // expression
+    const sm=state==='speaking'?expr.smile:(state==='listening'?.12:.05);expr.s=(expr.s||0)+(sm-(expr.s||0))*dt*3;
+    setMorph('Mouth_Smile',expr.s*.7);setMorph('Cheek_Raise_L',expr.s*.4);setMorph('Cheek_Raise_R',expr.s*.4);
+    const br=state==='listening'?.35+youLv*3:(state==='thinking'?.6:0);expr.brow+=(Math.min(1,br)-expr.brow)*dt*4;
+    setMorph('Brow_Raise_Left',expr.brow*.6);setMorph('Brow_Raise_Right',expr.brow*.45);
+    setMorph('Eye_Squint_L',state==='thinking'?.35:0);
+    // body idle
+    const B=girl.bones;const br2=Math.sin(t*1.3);
+    const rot=(b,x,y,z)=>{if(!b)return;q.setFromEuler(e3.set(x,y,z));b.quaternion.copy(b.userData.q0).multiply(q)};
+    const AP=(window.__dbg&&__dbg.arms)||ARMS;
+    rot(B.CC_Base_L_Upperarm,AP[0][0],AP[0][1]+br2*.01,AP[0][2]);rot(B.CC_Base_R_Upperarm,AP[1][0],AP[1][1]-br2*.01,AP[1][2]);
+    rot(B.CC_Base_L_Forearm,AP[2][0],AP[2][1],AP[2][2]);rot(B.CC_Base_R_Forearm,AP[3][0],AP[3][1],AP[3][2]);
+    rot(B.CC_Base_Spine02,br2*.012,0,0);
+    rot(B.CC_Base_Waist,0,Math.sin(t*.4)*.025,Math.sin(t*.55)*.012);
+    // head look toward camera
+    const lookYaw=THREE.MathUtils.clamp(Math.atan2(camera.position.x,camera.position.z),-.6,.6)*.6;
+    const lookPitch=THREE.MathUtils.clamp((camera.position.y-girl.head.y)*.35,-.25,.25);
+    const nod=state==='speaking'?Math.sin(t*5.2)*herLv*.5:0;
+    const tilt=state==='listening'?.07:(state==='thinking'?-.1:0);
+    expr.hy=(expr.hy||0)+(lookYaw+Math.sin(t*.7)*.04-(expr.hy||0))*dt*2.5;
+    expr.hp=(expr.hp||0)+(-lookPitch+nod+Math.sin(t*.9)*.02-(expr.hp||0))*dt*3;
+    expr.ht=(expr.ht||0)+(tilt-(expr.ht||0))*dt*2;
+    rot(B.CC_Base_NeckTwist01,expr.hp*.4,expr.hy*.4,expr.ht*.4);
+    rot(B.CC_Base_Head,expr.hp*.6,expr.hy*.6,expr.ht*.6);
+    // suit glow pulse
+    for(const k in girl.mats){const m=girl.mats[k];if(m.userData.glow)m.emissiveIntensity=.45+herLv*4+Math.sin(t*2)*.08}
+  }
+  // camera
+  const k=Math.min(1,dt*1.4);
+  cam.pos.lerp(cam.tPos,k);cam.look.lerp(cam.tLook,k);cam.fov+=(cam.tFov-cam.fov)*k;
+  const cf=$('camFx').checked;const drift=cf?1:.3;
+  camera.position.set(cam.pos.x+Math.sin(t*.23)*.06*drift+mouse.x*.08,cam.pos.y+Math.sin(t*.31)*.025*drift-mouse.y*.04,cam.pos.z+Math.sin(t*.17)*.04*drift);
+  camera.lookAt(cam.look.x+Math.sin(t*.5)*.006*drift,cam.look.y,cam.look.z);
+  if(Math.abs(camera.fov-cam.fov)>.01){camera.fov=cam.fov;camera.updateProjectionMatrix()}
+  faceFill.position.set(camera.position.x*.6,girl.head.y+.1,camera.position.z*.6+.3);
+  // fx
+  const lvAll=Math.min(1,herLv*4+youLv*3);
+  wallMat.uniforms.t.value=t;wallMat.uniforms.lv.value=lvAll;floorMat.uniforms.t.value=t;floorMat.uniforms.lv.value=lvAll;
+  parts.rotation.y=t*.02;parts.position.y=Math.sin(t*.2)*.05;
+  rimC.intensity=14+herLv*40;rimM.intensity=12+youLv*40;
+  bloom.strength=.22+herLv*.5;
+  composer.render();
+  drawViz(t);
+}
+function drawViz(t){
+  // wave: her left half, you right half
+  const W=wcv.width,H=wcv.height;wctx.clearRect(0,0,W,H);
+  viz.her.copyWithin(0,1);viz.her[63]=herLv;viz.you.copyWithin(0,1);viz.you[63]=youLv;
+  const n=40,bw=W/(n*2+4);
+  for(let i=0;i<n;i++){
+    const a=Math.min(1,viz.her[63-(n-1-i)]*7),b=Math.min(1,viz.you[63-i]*9);
+    const ha=Math.max(3,a*H*.8),hb=Math.max(3,b*H*.8);
+    wctx.fillStyle=`rgba(255,61,165,${.25+a*.75})`;wctx.fillRect(i*bw*2+2,(H-ha)/2,bw*1.1,ha);
+    wctx.fillStyle=`rgba(61,255,154,${.25+b*.75})`;wctx.fillRect(W/2+bw*2+i*bw*2,(H-hb)/2,bw*1.1,hb);
+  }
+  // orb ring
+  const s=ocv.width,c=s/2;octx.clearRect(0,0,s,s);octx.lineWidth=3;
+  const lv=Math.min(1,herLv*6+youLv*5);
+  for(let r=0;r<2;r++){octx.beginPath();for(let i=0;i<=96;i++){const a=i/96*Math.PI*2;const rr=s*.34+Math.sin(a*6+t*3+r*2)*lv*12*(r?1:-1)+Math.sin(a*3-t*2)*4;const x=c+Math.cos(a)*rr,y=c+Math.sin(a)*rr;i?octx.lineTo(x,y):octx.moveTo(x,y)}
+    octx.strokeStyle=r?'rgba(255,61,165,.7)':'rgba(124,249,255,.8)';octx.stroke()}
+}
+setInterval(()=>{const d=new Date();$('clock').textContent=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+' CET'},1000);
+
+/* ================= BOOT ================= */
+resize();shot('wide');cam.pos.set(0,1.5,5);cam.look.set(0,1.4,0);
+frame();
+try{await loadModel();}catch(e){console.error(e);$('loader').querySelector('div').innerHTML='<b>упс</b>модель не загрузилась: '+esc(String(e.message||e))}
+shot('wide');
+setTimeout(()=>$('loader').classList.add('done'),300);
+setMode($('brainSel').value==='offline'?'заготовки':'живой режим · OpenAI');
+$('brainSel').addEventListener('change',()=>setMode($('brainSel').value==='offline'?'заготовки':'живой режим · OpenAI'));
+window.__app={live:{onLive,LIVE,liveStart,cid:()=>callId},dbg:()=>({lv:rms(micAn,micData),noise,state,vadOn,vadMs,mode:sttMode(),pcm:pcm.total,mic:!!micAn}),snap:()=>{cam.pos.copy(cam.tPos);cam.look.copy(cam.tLook);cam.fov=cam.tFov},setState,shot,setMorph,girl,think,P};
+window.RESULT_READY=true;
+</script>
+</body>
+</html>
