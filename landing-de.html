@@ -98,7 +98,7 @@ h1 .serif{font-size:1.08em;letter-spacing:-.03em;background:linear-gradient(95de
 
 /* ticker */
 .ticker{position:relative;padding:20px 0;overflow:hidden;border-block:1px solid var(--line);transform:rotate(-1.5deg) scale(1.03);background:linear-gradient(90deg,rgba(183,104,255,.12),rgba(255,107,214,.08))}
-.ticker .tr{display:flex;gap:48px;width:max-content;animation:mq 70s linear infinite}
+.ticker .tr{display:flex;gap:48px;width:max-content;will-change:transform}
 .ticker span{font:600 clamp(20px,2.4vw,32px)/1.2 var(--disp);letter-spacing:-.03em;white-space:nowrap;display:flex;align-items:center;gap:48px}
 .ticker span::after{content:"✦";color:var(--lime);font-size:.7em}
 @keyframes mq{to{transform:translateX(-50%)}}
@@ -357,7 +357,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
       <div class="card c6 rv"><span class="k">Einbau</span><h3>Eine Zeile auf jede Website</h3><p>iframe rein — und deine Seite hat eine Empfangsdame mit Charakter. API-Keys bleiben auf dem Server.</p><div class="code"><button class="copy" id="copyBtn">COPY</button><span id="snip"><span class="t">&lt;iframe</span> <span class="a">src</span>=<span class="s">"https://kira-squat-line.vercel.app/call/"</span>
   <span class="a">allow</span>=<span class="s">"microphone; autoplay"</span>
   <span class="a">style</span>=<span class="s">"width:390px;height:780px;border:0;border-radius:32px"</span><span class="t">&gt;&lt;/iframe&gt;</span></span></div></div>
-      <a class="card c7 ar rv" href="https://kira-ar.vercel.app" target="_blank" rel="noopener"><img data-src="ar_card.webp" alt="Kira in AR auf einem Schreibtisch" loading="lazy"><div class="shade"></div><div class="scan"></div><div class="in"><span class="k">Kira AR · Bonus</span><h3>Sie steht in deinem Zimmer</h3><p>Kamera auf — Raum scannen — Kira steht in voller Größe auf deinem Boden. Drumherum laufen, ganz nah ran, quatschen. Hier ist sie kein Empfang mehr, sondern deine Lästerfreundin.</p><span class="btn ghost">AR öffnen ↗</span></div></a>
+      <a class="card c7 ar rv" href="https://kira-ar.vercel.app" target="_blank" rel="noopener"><img data-src="ar_card.webp" alt="Kira in AR auf einem Schreibtisch" loading="lazy"><div class="shade"></div><div class="in"><span class="k">Kira AR · Bonus</span><h3>Sie steht in deinem Zimmer</h3><p>Kamera auf — Raum scannen — Kira steht in voller Größe auf deinem Boden. Drumherum laufen, ganz nah ran, quatschen. Hier ist sie kein Empfang mehr, sondern deine Lästerfreundin.</p><span class="btn ghost">AR öffnen ↗</span></div></a>
     </div>
   </div>
 </section>
@@ -395,7 +395,10 @@ var rs=$('rot').children,ri=0;setInterval(function(){rs[ri].classList.remove('on
 
 /* ticker */
 var Q=['Squat, verdammt. Was willst du?','Mach schnell, mein Kaffee wird kalt.','Falls du vom Finanzamt bist — wir sind nicht da.','Eingetragen. Komm pünktlich, ich bin schlecht gelaunt.','Bot? Selber Bot.','Preise? Kommt drauf an. Auf dich.','Eingang durch die graue Tür mit Graffiti. Nicht durchs Fenster.','Freitag, sieben. Fertig. Tschüss.'];
-var tk='';for(var k=0;k<2;k++)Q.forEach(function(q){tk+='<span>'+q+'</span>'});$('tick').innerHTML=tk;
+var tk='';for(var k=0;k<2;k++)Q.forEach(function(q){tk+='<span>'+q+'</span>'});var TR=$('tick');TR.innerHTML=tk;
+/* ticker runs in JS so it moves everywhere (also with iOS "Reduce Motion") */
+(function(){var x=0,last=0,half=0;function measure(){half=TR.scrollWidth/2}measure();addEventListener('resize',measure);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(measure);
+function f(t){var dt=last?Math.min(64,t-last):16;last=t;if(!half)measure();x-=dt*.06;if(half&&-x>=half)x+=half;TR.style.transform='translate3d('+x.toFixed(2)+'px,0,0)';requestAnimationFrame(f)}requestAnimationFrame(f)})();
 
 /* hero phone: slideshow + tilt */
 var hs=document.querySelectorAll('.hero .scr>img'),hi=0;setInterval(function(){hs[hi].classList.remove('on');hi=(hi+1)%hs.length;hs[hi].classList.add('on')},3600);
