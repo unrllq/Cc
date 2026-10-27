@@ -119,9 +119,11 @@ h2 .serif{color:var(--vio);font-size:1.06em}
 .ilc-row{flex-shrink:0;height:400px;padding-bottom:80px;display:flex;justify-content:center;align-items:flex-end;transform-style:preserve-3d}
 .ilc-slot{height:0;margin-bottom:80px;flex-shrink:0;perspective:1200px;transform-style:preserve-3d;display:flex;align-items:center;justify-content:center}
 .ilc-card{position:relative;display:block;aspect-ratio:3/4;overflow:hidden;cursor:pointer;transform-style:preserve-3d;border-radius:14px;background:#111;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
-.ilc-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;pointer-events:none}
+.ilc-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;pointer-events:none}
 .ilc-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55));pointer-events:none}
 .ilc-card[aria-current]{box-shadow:0 0 0 2px var(--vio),0 30px 60px -10px rgba(183,104,255,.6)}
+.ilc-lab{position:absolute;left:8px;top:8px;z-index:2;padding:5px 8px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font:600 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#fff}
+.ilc-card[aria-current] .ilc-lab{background:var(--lime);color:#111}
 .ilc-num{position:absolute;left:10px;bottom:8px;z-index:2;font:600 11px/1 var(--mono);color:#fff}
 .pill{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:12px;padding:0 6px;border-radius:999px}
 .pbtn{display:grid;place-items:center;padding:9px;border-radius:999px;transition:opacity .2s,transform .2s}
@@ -156,6 +158,12 @@ h2 .serif{color:var(--vio);font-size:1.06em}
 .vfc-holder{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center;will-change:transform}
 .vfc-photo{flex-shrink:0;display:block;overflow:hidden;cursor:pointer;background:#15131b}
 .vfc-photo img{width:100%;height:100%;max-width:none;display:block;object-fit:cover;pointer-events:none}
+.vfc-txt{width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:22px;text-align:left}
+.vfc-txt b{font:800 clamp(40px,5vw,64px)/.9 var(--disp);letter-spacing:-.05em}
+.vfc-txt b small{font:400 .4em/1 var(--serif);font-style:italic;letter-spacing:0;margin-left:.15em}
+.vfc-txt span{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.vfc-txt.lime{background:var(--lime);color:#0b0b0b}
+.vfc-txt.vio{background:radial-gradient(120% 90% at 20% 10%,#e3b8ff,var(--vio) 45%,#4b1a8a);color:#fff}
 .vfc-frame{position:absolute;inset:0;margin:auto;box-sizing:content-box;border:2px solid var(--lime);pointer-events:none;animation:vfcp var(--d) ease-in-out}
 .vfc-frame::before,.vfc-frame::after{content:"REC";position:absolute;top:-26px;left:0;font:600 10px/1 var(--mono);letter-spacing:.14em;color:var(--lime)}
 .vfc-frame::after{content:attr(data-n);left:auto;right:0}
@@ -210,14 +218,14 @@ h2 .serif{color:var(--vio);font-size:1.06em}
 .offl{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px}
 .offl span{padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.07);font-size:12px;color:var(--mute)}
 .ar{padding:0;min-height:430px}
-.ar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%;z-index:-2}
-.ar .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(6,5,9,.94),rgba(6,5,9,.55) 50%,transparent 80%)}
+.ar img{position:absolute;top:0;right:0;width:62%;height:100%;object-fit:cover;object-position:80% 0%;z-index:-2;-webkit-mask-image:linear-gradient(90deg,transparent,#000 30%);mask-image:linear-gradient(90deg,transparent,#000 30%)}
+.ar .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(6,5,9,.9),rgba(6,5,9,.35) 45%,transparent 70%)}
 .ar .scan{position:absolute;left:0;right:0;height:90px;z-index:-1;background:linear-gradient(180deg,transparent,rgba(200,255,77,.16) 70%,rgba(200,255,77,.8) 99%,transparent);animation:sweep 3.4s cubic-bezier(.45,0,.55,1) infinite}
 @keyframes sweep{0%{top:-90px}100%{top:100%}}
-.ar .in{padding:30px;display:flex;flex-direction:column;gap:12px;height:100%;max-width:440px}
+.ar .in{padding:30px;display:flex;flex-direction:column;gap:12px;height:100%;max-width:min(440px,52%)}
 .ar .in .btn{margin-top:auto;align-self:flex-start}
 @media(max-width:980px){.bento{grid-template-columns:1fr 1fr}.c1,.c6,.c7{grid-column:span 2}.c2,.c3,.c4,.c5{grid-column:span 1}}
-@media(max-width:640px){.bento{grid-template-columns:1fr}.bento>*{grid-column:auto!important}.ar .shade{background:linear-gradient(0deg,rgba(6,5,9,.95) 15%,rgba(6,5,9,.35) 65%,transparent)}.ar .in{justify-content:flex-end;min-height:430px}.ar .in .btn{margin-top:8px}}
+@media(max-width:640px){.bento{grid-template-columns:1fr}.bento>*{grid-column:auto!important}.ar .in{max-width:none}.ar img{width:100%;height:62%;object-position:80% 0%;-webkit-mask-image:linear-gradient(180deg,#000 60%,transparent);mask-image:linear-gradient(180deg,#000 60%,transparent)}.ar .shade{background:linear-gradient(0deg,rgba(6,5,9,.95) 15%,rgba(6,5,9,.35) 65%,transparent)}.ar .in{justify-content:flex-end;min-height:430px}.ar .in .btn{margin-top:8px}}
 
 /* final */
 .final{text-align:center;padding:clamp(110px,15vw,200px) 0 130px;overflow:hidden}
@@ -349,7 +357,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
       <div class="card c6 rv"><span class="k">Einbau</span><h3>Eine Zeile auf jede Website</h3><p>iframe rein — und deine Seite hat eine Empfangsdame mit Charakter. API-Keys bleiben auf dem Server.</p><div class="code"><button class="copy" id="copyBtn">COPY</button><span id="snip"><span class="t">&lt;iframe</span> <span class="a">src</span>=<span class="s">"https://kira-squat-line.vercel.app/call/"</span>
   <span class="a">allow</span>=<span class="s">"microphone; autoplay"</span>
   <span class="a">style</span>=<span class="s">"width:390px;height:780px;border:0;border-radius:32px"</span><span class="t">&gt;&lt;/iframe&gt;</span></span></div></div>
-      <a class="card c7 ar rv" href="https://kira-ar.vercel.app" target="_blank" rel="noopener"><img data-src="de_07_ar.webp" alt="Kira in AR auf einem Schreibtisch" loading="lazy"><div class="shade"></div><div class="scan"></div><div class="in"><span class="k">Kira AR · Bonus</span><h3>Sie steht in deinem Zimmer</h3><p>Kamera auf — Raum scannen — Kira steht in voller Größe auf deinem Boden. Drumherum laufen, ganz nah ran, quatschen. Hier ist sie kein Empfang mehr, sondern deine Lästerfreundin.</p><span class="btn ghost">AR öffnen ↗</span></div></a>
+      <a class="card c7 ar rv" href="https://kira-ar.vercel.app" target="_blank" rel="noopener"><img data-src="ar_card.webp" alt="Kira in AR auf einem Schreibtisch" loading="lazy"><div class="shade"></div><div class="scan"></div><div class="in"><span class="k">Kira AR · Bonus</span><h3>Sie steht in deinem Zimmer</h3><p>Kamera auf — Raum scannen — Kira steht in voller Größe auf deinem Boden. Drumherum laufen, ganz nah ran, quatschen. Hier ist sie kein Empfang mehr, sondern deine Lästerfreundin.</p><span class="btn ghost">AR öffnen ↗</span></div></a>
     </div>
   </div>
 </section>
@@ -395,20 +403,20 @@ var hp=$('heroPhone');if(matchMedia('(pointer:fine)').matches&&!reduced)addEvent
 
 /* ===== Isometric Lift Carousel — Ablauf ===== */
 var STEPS=[
- {img:'de_01_idle.webp',t:'Grüner Knopf auf deiner Seite',d:'Besucher tippt auf „Anrufen“. Kein Formular, keine App, kein Login — nur ein Anruf im Browser.',q:'Ruf Kira an.'},
- {img:'de_02_ring.webp',t:'Es klingelt. Sie hebt ab.',d:'Zwei Freizeichen, dann ist sie dran. Das Mikro geht von selbst an.',q:'…tuut… tuut…'},
- {img:'de_03_hello.webp',t:'Begrüßung mit Attitüde',d:'Kira meldet sich so, wie man es von einem Empfang nicht erwartet — und genau das bleibt hängen.',q:'Squat, verdammt. Was willst du?'},
- {img:'de_04_listen.webp',t:'Sie hört wirklich zu',d:'Sie wartet, bis du fertig bist, antwortet in einer halben Sekunde und lässt sich unterbrechen.',q:'Freitag, okay. Wann tauchst du auf?'},
- {img:'de_05_termin.webp',t:'Termin steht',d:'Name, Tag, Uhrzeit — sobald sie es hat, ist der Termin eingetragen und bestätigt.',q:'Max, Freitag, 19 Uhr. Sei pünktlich.'},
- {img:'de_06_bot.webp',t:'Und wenn du sie testest?',d:'Off-Topic, Provokation, „Bist du ein Bot?“ — sie kontert und dreht das Gespräch zurück zum Termin.',q:'Bot? Selber Bot.'},
- {img:'de_08_ar2.webp',t:'Bonus: Sie kommt zu dir',d:'In der AR-Version steht Kira in deinem Raum — auf Tisch oder Boden, zum Drumherumlaufen.',q:'Schick hier. Bisschen unordentlich.'}
+ {img:'p_ui_call.webp',k:'Anruf',t:'Grüner Knopf auf deiner Seite',d:'Besucher tippt auf „Anrufen“. Kein Formular, keine App, kein Login — nur ein Anruf im Browser.',q:'Ruf Kira an.'},
+ {img:'p_low.webp',k:'Abheben',t:'Es klingelt. Sie hebt ab.',d:'Zwei Freizeichen, dann ist sie dran. Das Mikro geht von selbst an.',q:'…tuut… tuut…'},
+ {img:'p_lips.webp',k:'Hallo',t:'Begrüßung mit Attitüde',d:'Kira meldet sich so, wie man es von einem Empfang nicht erwartet — und genau das bleibt hängen. Lippen im Takt, live.',q:'Squat, verdammt. Was willst du?'},
+ {img:'p_three.webp',k:'Zuhören',t:'Sie hört wirklich zu',d:'Sie wartet, bis du fertig bist, antwortet in einer halben Sekunde und lässt sich unterbrechen.',q:'Freitag, okay. Wann tauchst du auf?'},
+ {img:'p_ui_termin.webp',k:'Termin',t:'Termin steht',d:'Name, Tag, Uhrzeit — sobald sie es hat, ist der Termin eingetragen und bestätigt.',q:'Max, Freitag, 19 Uhr. Sei pünktlich.'},
+ {img:'p_eyes.webp',k:'Kontra',t:'Und wenn du sie testest?',d:'Off-Topic, Provokation, „Bist du ein Bot?“ — sie kontert und dreht das Gespräch zurück zum Termin.',q:'Bot? Selber Bot.'},
+ {img:'p_ar.webp',k:'AR',t:'Bonus: Sie kommt zu dir',d:'In der AR-Version steht Kira in deinem Raum — auf Tisch oder Boden, zum Drumherumlaufen.',q:'Schick hier. Bisschen unordentlich.'}
 ];
 (function(){
   var n=STEPS.length,act=2,row=$('ilcRow'),sp=spring(.25,.6),cards=[],timer=null;
   var W=function(){return innerWidth<640?{c:'92px',a:'172px',lift:130}:{c:'clamp(84px,8.4vw,116px)',a:'clamp(150px,14vw,196px)',lift:150}};
   STEPS.forEach(function(s,i){var slot=document.createElement('div');slot.className='ilc-slot';slot.style.transform='translateZ('+(n-i)*20+'px) translateX(-150px)';
     var c=document.createElement('button');c.type='button';c.className='ilc-card';c.setAttribute('aria-label',(i+1)+' von '+n+': '+s.t);
-    c.innerHTML='<img alt="" draggable="false" decoding="async" src="'+BASE+s.img+'"><span class="ilc-num">0'+(i+1)+'</span>';
+    c.innerHTML='<img alt="" draggable="false" decoding="async" src="'+BASE+s.img+'"><span class="ilc-lab">'+s.k+'</span><span class="ilc-num">0'+(i+1)+'</span>';
     c.style.transition='width '+sp.ms+'ms '+sp.e+', transform '+sp.ms+'ms '+sp.e;
     c.onclick=function(){if(sw.done)return;go(i,true)};slot.appendChild(c);row.appendChild(slot);cards.push(c)});
   row.style.gap='12px';row.style.transform='rotateX(-10deg) rotateY(50deg)';
@@ -430,22 +438,24 @@ var STEPS=[
 
 /* ===== Viewfinder Flip Carousel — Momente ===== */
 var MOM=[
- {img:'sq_3.webp',q:'Squat, verdammt. Was willst du?',m:'Begrüßung'},
- {img:'sq_2.webp',q:'Mach schnell, mein Kaffee wird kalt.',m:'Geduld: 0'},
- {img:'sq_4.webp',q:'Freitag, okay. Sieben passt?',m:'Terminabfrage'},
- {img:'sq_1.webp',q:'Eingetragen. Komm pünktlich.',m:'Termin bestätigt'},
- {img:'sq_0.webp',q:'Bot? Selber Bot.',m:'Identitätskrise'},
- {img:'sq_5.webp',q:'Falls du vom Finanzamt bist — wir sind nicht da.',m:'Steuerberatung'},
- {img:'sq_6.webp',q:'Schick hier. Bisschen unordentlich.',m:'Kira AR'}
+ {img:'v_eyes.webp',q:'Ich seh dich. Leider.',m:'Extreme Close-up'},
+ {img:'v_profile.webp',q:'Squat, verdammt. Was willst du?',m:'Profil · Begrüßung'},
+ {txt:'„Bot?<br>Selber<br>Bot.“',sub:'Identitätskrise',bg:'lime',q:'Ich bin eine KI-Empfangsdame mit Charakter.',m:'Zitat'},
+ {img:'v_top.webp',q:'Mach schnell, mein Kaffee wird kalt.',m:'Vogelperspektive'},
+ {img:'v_lips.webp',q:'Freitag, okay. Sieben passt?',m:'Lippen im Takt'},
+ {txt:'0,5<small>Sek.</small>',sub:'bis sie antwortet',bg:'vio',q:'Schneller als jede Warteschleife.',m:'Latenz'},
+ {img:'v_back.webp',q:'Eingang durch die graue Tür. Nicht durchs Fenster.',m:'Von hinten'},
+ {img:'v_hair.webp',q:'Falls du vom Finanzamt bist — wir sind nicht da.',m:'Detail'},
+ {img:'v_ar.webp',q:'Schick hier. Bisschen unordentlich.',m:'Kira AR · auf deinem Tisch'}
 ];
 (function(){
-  var n=MOM.length,act=3,stage=$('vfcStage'),strip=$('vfcStrip'),holders=[],lock=0;
+  var n=MOM.length,act=1,stage=$('vfcStage'),strip=$('vfcStrip'),holders=[],lock=0;
   var dur=.8,FOLD='cubic-bezier(1,-0.03,0.413,0.965)',sp=spring(.2,dur);
   var cfg=function(){return innerWidth<640?{size:220,fold:48,open:250,tilt:60,roll:90}:{size:300,fold:70,open:380,tilt:60,roll:90}};
   var c=cfg();
   MOM.forEach(function(m,i){var slot=document.createElement('div');slot.className='vfc-slot';var h=document.createElement('div');h.className='vfc-holder';
     var b=document.createElement('button');b.type='button';b.className='vfc-photo';b.setAttribute('aria-label',(i+1)+' von '+n+': '+m.q);
-    b.innerHTML='<img alt="" draggable="false" decoding="async" src="'+BASE+m.img+'">';b.onclick=function(){if(sw.done)return;go(i)};
+    b.innerHTML=m.txt?'<div class="vfc-txt '+m.bg+'"><b>'+m.txt+'</b><span>'+m.sub+'</span></div>':'<img alt="" draggable="false" decoding="async" src="'+BASE+m.img+'">';b.onclick=function(){if(sw.done)return;go(i)};
     h.appendChild(b);slot.appendChild(h);strip.appendChild(slot);holders.push({slot:slot,h:h,b:b})});
   var frame=document.createElement('div');frame.className='vfc-frame';frame.setAttribute('aria-hidden','true');stage.appendChild(frame);
   var ds=dots($('vfcDots'),n,function(i){return 'Moment '+(i+1)},go);
